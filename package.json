@@ -1,0 +1,20 @@
+{
+  "name": "recursive-praxis",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "lambda": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --experimental-strip-types --test tests/cli.test.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "typescript": "^5.8.2"
+  }
+}
