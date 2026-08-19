@@ -28,3 +28,20 @@ npx lambda --help
 reservations only**. Their presence does not resolve observer-vs-runtime
 or any other Problem Model unknown. They must not score, revise constants,
 or pretend measurement until a later change owns that behavior.
+
+## External research: quarry Controlled Rupture CLI
+
+Sequence generation / InverseSolver experiments stay **outside** this
+`lambda` binary. Use the quarry CLI directly (research-only; not a
+RecursivePraxis subcommand):
+
+```bash
+cd ../recursive-ai-framework/recursive-extraction-engine/compiler
+python3 controlled_rupture_cli.py diagnose <topic>
+python3 controlled_rupture_cli.py list
+python3 controlled_rupture_cli.py custom <Op>…
+python3 controlled_rupture_cli.py analyze <seq>
+```
+
+Do not treat quarry `λ_effective` or cost breakdowns as measured Praxis
+scores. Vocabulary hard-checks live on `lambda operators` / `lambda check`.
