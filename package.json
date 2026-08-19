@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --experimental-strip-types --test tests/cli.test.ts"
+    "test": "npm run build && node --experimental-strip-types --test tests/*.test.ts"
   },
   "engines": {
     "node": ">=20"
