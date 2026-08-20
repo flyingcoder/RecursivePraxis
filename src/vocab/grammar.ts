@@ -1,5 +1,5 @@
 /**
- * CORE Step 5 hard constraints — pure reject (no soft-warning path).
+ * Sequence grammar hard constraints — pure reject (no soft-warning path).
  * The accept/reject decision itself is delegated to the ported kernel
  * (src/kernel/constraints.ts: violatesHardConstraint/violatesSequenceEndConstraint),
  * which is now the single source of truth for the grammar. This module keeps
@@ -37,7 +37,7 @@ function reject(constraint: ConstraintId, reason: string): CheckReject {
   return { accepted: false, constraint, reason };
 }
 
-/** Names the specific CORE Step 5 rule behind a kernel violatesHardConstraint()
+/** Names the specific sequence-grammar rule behind a kernel violatesHardConstraint()
  * rejection, so the CLI can report a stable constraint id and reason. */
 function namedStepRejection(prefix: readonly Operator[], cur: Operator): CheckReject {
   if (cur === "Meta" && trailingRunLength(prefix, "Meta") >= MAX_CONSECUTIVE_META) {
@@ -57,8 +57,8 @@ function namedStepRejection(prefix: readonly Operator[], cur: Operator): CheckRe
 }
 
 /**
- * Validate an operator-name sequence against CORE Step 5.
- * Names are expected to be canonical CORE spellings (caller may resolve case).
+ * Validate an operator-name sequence against the sequence grammar.
+ * Names are expected to be canonical operator spellings (caller may resolve case).
  */
 export function checkForbiddenSequence(ops: readonly string[]): CheckResult {
   if (ops.length === 0) {

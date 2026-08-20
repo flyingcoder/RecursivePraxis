@@ -63,7 +63,7 @@ Evaluate a proposed operator sequence — λ_eff, simulated trajectory, and gram
 
     lambda analyze "Op1,Op2,Op3" --json
 
-Operators are comma-separated (or \`∘\`-separated) names from the 20-operator CORE alphabet. List them with \`lambda operators list\`.
+Operators are comma-separated (or \`∘\`-separated) names from the 20-operator alphabet. List them with \`lambda operators list\`.
 
 ## When to use
 

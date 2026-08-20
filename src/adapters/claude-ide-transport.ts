@@ -50,7 +50,7 @@ export class ClaudeIdeTransport implements JsonModelTransport {
 
   private async execute(input: ModelStepInput): Promise<ModelStepOutput> {
     const text = await this.runQuery(
-      `You are executing operator "${input.operator}" from the CORE reasoning alphabet ` +
+      `You are executing operator "${input.operator}" from the RecursivePraxis operator alphabet ` +
         "against a budgeted, capability-gated task runtime. Produce a structured, evidenced " +
         "step output. Never assert evidence you did not derive from the given references.\n\n" +
         JSON.stringify({

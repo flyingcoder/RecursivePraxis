@@ -16,7 +16,7 @@ export function trailingRunLength(sequence: readonly Operator[], op: Operator): 
 
 /**
  * Hard constraints on the *next* operator given the sequence so far.
- * Ported from inverse_solver.py `violates_constraints`, plus the CORE
+ * Ported from inverse_solver.py `violates_constraints`, plus the RecursivePraxis
  * addition (not present in the Python solver): Vale is never terminal —
  * if the last op was Vale, only Kata/Ortho/Telo may follow.
  */

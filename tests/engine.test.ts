@@ -10,6 +10,7 @@ import {
   OPERATOR_PACK,
   TRUSTED_POLICY,
   createTaskState,
+  operatorContract,
   planTask,
   type PolicyProfile,
 } from "../dist/engine/core.js";
@@ -24,11 +25,26 @@ import {
   verifyReplay,
   type ModelHost,
 } from "../dist/engine/orchestrator.js";
+import { applyOperator, classifyAttractor } from "../dist/kernel/index.js";
 
 test("operator pack contains twenty versioned typed contracts", () => {
   assert.equal(OPERATOR_PACK.length, 20);
   assert.ok(OPERATOR_PACK.every((spec) => spec.version === "1.0.0"));
   assert.ok(OPERATOR_PACK.every((spec) => spec.prior.provenance === "authored"));
+});
+
+test("operatorContract resolves a known operator and throws on an unknown one", () => {
+  const contract = operatorContract("Vale");
+  assert.equal(contract.name, "Vale");
+  assert.equal(contract.version, "1.0.0");
+  assert.equal(contract.prior.provenance, "authored");
+  // Vale is a tool-capable operator, so it carries a non-empty tool allowlist.
+  assert.deepEqual([...contract.allowedTools], ["read", "fetch"]);
+
+  assert.throws(
+    () => operatorContract("NotAnOperator" as never),
+    /unknown operator contract: NotAnOperator/,
+  );
 });
 
 test("planner is deterministic for identical observable state", () => {
@@ -240,6 +256,93 @@ test("validator failure causes one conditional deterministic replan", async () =
     1,
   );
   assert.equal(trace.events.filter((event) => event.type === "planned").length, 2);
+});
+
+test("semantic replay still accepts a legacy 1.1.0 trace after the 1.2.0 schema bump", async () => {
+  const trace = await runTask({
+    state: createTaskState("Legacy schema replay"),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+    modelHost: new DeterministicFakeModelHost(),
+  });
+  assert.equal(trace.schemaVersion, "1.2.0");
+
+  // Downgrade to how this same run would have been recorded under 1.1.0,
+  // including that schema's ASCII spelling of the collapse attractor.
+  const { traceHash: _oldHash, ...unsigned } = trace;
+  const legacyUnsigned = {
+    ...unsigned,
+    schemaVersion: "1.1.0" as const,
+    attractor: trace.attractor === "∅" ? ("void" as const) : trace.attractor,
+  };
+  const legacy = {
+    ...legacyUnsigned,
+    traceHash: createHash("sha256").update(JSON.stringify(legacyUnsigned)).digest("hex"),
+  };
+
+  const replay = verifyReplay(legacy);
+  assert.deepEqual(replay.reasons, []);
+  assert.equal(replay.reproducible, true);
+});
+
+test("semantic replay normalizes a legacy 1.1.0 \"void\" attractor to ∅", async () => {
+  const trace = await runTask({
+    state: createTaskState("Legacy collapse attractor replay"),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+    modelHost: new DeterministicFakeModelHost(),
+  });
+  const operators = trace.events
+    .filter((event) => event.type === "step-completed")
+    .map((event) => event.operator);
+  assert.ok(operators.length > 0);
+
+  // Re-anchor the same operator sequence at a collapse-bound initial state so
+  // the replay genuinely terminates in ∅. Operator legality depends on the
+  // sequence and not on (D, C), so every other recorded semantic still holds.
+  const collapseInitial = { D: 1, C: 1 };
+  let finalState = collapseInitial;
+  for (const operator of operators) finalState = applyOperator(finalState, operator);
+  assert.equal(classifyAttractor(finalState.D, finalState.C), "∅");
+
+  const { traceHash: _oldHash, ...unsigned } = trace;
+  const legacyUnsigned = {
+    ...unsigned,
+    schemaVersion: "1.1.0" as const,
+    initialDissipation: collapseInitial,
+    finalDissipation: finalState,
+    // The 1.1.0 spelling of the collapse attractor.
+    attractor: "void" as const,
+  };
+  const legacy = {
+    ...legacyUnsigned,
+    traceHash: createHash("sha256").update(JSON.stringify(legacyUnsigned)).digest("hex"),
+  };
+
+  const replay = verifyReplay(legacy);
+  assert.deepEqual(replay.reasons, []);
+  assert.equal(replay.reproducible, true);
+});
+
+test("semantic replay rejects a trace whose schema version is genuinely unsupported", async () => {
+  const trace = await runTask({
+    state: createTaskState("Unsupported schema replay"),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+    modelHost: new DeterministicFakeModelHost(),
+  });
+  const { traceHash: _oldHash, ...unsigned } = trace;
+  const stale = { ...unsigned, schemaVersion: "1.0.0" as unknown as "1.1.0" };
+  const traceHash = createHash("sha256").update(JSON.stringify(stale)).digest("hex");
+
+  const replay = verifyReplay({ ...stale, traceHash });
+  assert.equal(replay.reproducible, false);
+  assert.ok(
+    replay.reasons.includes("unsupported trace schema; semantic replay requires 1.1.0 or 1.2.0"),
+  );
 });
 
 test("semantic replay rejects a rehashed trace with a forged terminal state", async () => {

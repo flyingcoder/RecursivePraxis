@@ -1,6 +1,12 @@
 export * from "./types.js";
 
-export { lambdaIntrinsic, operatorClass, operatorMeaning, allOperators } from "./formalism.js";
+export {
+  lambdaIntrinsic,
+  operatorClass,
+  operatorMeaning,
+  operatorSymbol,
+  allOperators,
+} from "./formalism.js";
 export { commutatorMagnitude, commutatorPairCount } from "./commutator.js";
 
 export {

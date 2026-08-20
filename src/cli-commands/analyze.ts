@@ -11,7 +11,7 @@ function checkWarnings(sequence: readonly Operator[], trajectory: readonly Traje
   if (metaCount > 2) {
     warnings.push(`${metaCount} Meta operators in sequence (collapse risk)`);
   }
-  if (trajectory.some((step) => step.attractor === "void")) {
+  if (trajectory.some((step) => step.attractor === "∅")) {
     warnings.push("trajectory enters void — requires rescue");
   }
   for (let i = 0; i < sequence.length - 1; i += 1) {

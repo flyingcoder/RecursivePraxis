@@ -114,6 +114,7 @@ execution** — not remote model calls, tool side effects, or the truth of unava
 | | |
 |---|---|
 | 📐 [Current architecture and audit](docs/CURRENT_STATE.md) | System design, invariants, and audit notes |
+| 🔤 [Vocabulary](docs/VOCABULARY.md) | How specification terms map to code identifiers |
 | ✅ [Requirements matrix](docs/REQUIREMENTS_MATRIX.md) | Verified coverage and remaining boundaries |
 | 💻 [CLI reference](docs/CLI_REFERENCE.md) | Full command and flag reference |
 | 🤝 [Contributing](CONTRIBUTING.md) | Development conventions |

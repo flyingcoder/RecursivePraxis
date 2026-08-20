@@ -104,8 +104,28 @@ export type TraceEvent =
       readonly at: string;
     };
 
+/** Schema version written by this build. */
+export const TRACE_SCHEMA_VERSION = "1.2.0" as const;
+
+/** Schema versions this build can still verify on replay. */
+const SUPPORTED_TRACE_SCHEMAS: ReadonlySet<string> = new Set(["1.1.0", "1.2.0"]);
+
+/**
+ * Schema 1.1.0 recorded the collapse attractor as the ASCII string "void";
+ * 1.2.0 records the formalism glyph "∅" (see AttractorLabel). Legacy traces
+ * are normalized for *comparison only* and never rewritten, so their recorded
+ * traceHash — computed over the original "void" body — stays verifiable.
+ */
+export const LEGACY_VOID_ATTRACTOR = "void";
+
+type RecordedAttractor = AttractorLabel | typeof LEGACY_VOID_ATTRACTOR;
+
+function normalizeAttractor(recorded: RecordedAttractor): AttractorLabel {
+  return recorded === LEGACY_VOID_ATTRACTOR ? "∅" : recorded;
+}
+
 export interface TaskTrace {
-  readonly schemaVersion: "1.1.0";
+  readonly schemaVersion: "1.1.0" | "1.2.0";
   readonly taskId: string;
   readonly objectiveHash: string;
   readonly rawContentIncluded: false;
@@ -120,7 +140,8 @@ export interface TaskTrace {
   /** Abstract state only; no task content is retained in the trace. */
   readonly initialDissipation: DissipationState;
   readonly finalDissipation: DissipationState;
-  readonly attractor: AttractorLabel;
+  /** "∅" in schema 1.2.0; may be the legacy "void" in a 1.1.0 trace. */
+  readonly attractor: RecordedAttractor;
   readonly bound: boolean;
   readonly haliraMode: 1 | 2;
   readonly traceHash: string;
@@ -453,7 +474,7 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
   }
 
   const unsigned = {
-    schemaVersion: "1.1.0" as const,
+    schemaVersion: TRACE_SCHEMA_VERSION,
     taskId: state.taskId,
     objectiveHash: hash(state.objective),
     rawContentIncluded: false as const,
@@ -547,8 +568,8 @@ function sameDissipation(a: DissipationState, b: DissipationState): boolean {
 
 function replaySemantics(trace: TaskTrace): readonly string[] {
   const reasons: string[] = [];
-  if (trace.schemaVersion !== "1.1.0") {
-    return ["unsupported trace schema; semantic replay requires 1.1.0"];
+  if (!SUPPORTED_TRACE_SCHEMAS.has(trace.schemaVersion)) {
+    return ["unsupported trace schema; semantic replay requires 1.1.0 or 1.2.0"];
   }
   if (
     !Number.isFinite(trace.initialDissipation.D) ||
@@ -631,7 +652,7 @@ function replaySemantics(trace: TaskTrace): readonly string[] {
   if (!sameDissipation(session.state, trace.finalDissipation)) {
     reasons.push("final dissipation does not match deterministic replay");
   }
-  if (classifyAttractor(session.state.D, session.state.C) !== trace.attractor) {
+  if (classifyAttractor(session.state.D, session.state.C) !== normalizeAttractor(trace.attractor)) {
     reasons.push("recorded attractor does not match deterministic replay");
   }
   if (session.bound !== trace.bound) reasons.push("recorded bound state does not match deterministic replay");

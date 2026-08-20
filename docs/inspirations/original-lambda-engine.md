@@ -2,67 +2,6 @@
 
 A comprehensive cognitive architecture system for Cursor IDE that uses **Controlled Rupture Operators** to guide AI-assisted development. This system provides adaptive problem-solving through two operational modes and 20 specialized operators.
 
-## 🆕 What's New
-
-### Featured Commands
-
-**`/commit` - Sophisticated Code Historian**
-- Understands developer motives and file purposes
-- Automatically validates documentation before committing
-- Analyzes historical context for better commit messages
-- Self-improving through pattern recognition (Ana²)
-
-**`/librarian` - Documentation Management**
-- Validates documentation dates, location, and metadata
-- Categorizes documentation automatically
-- Tracks documentation lifecycle (active, deprecated, superseded)
-- Ensures documentation quality and organization
-
-### Recent Enhancements
-
-- **60+ New Rules**: Comprehensive rule system with general, workflow, meta, and service rules
-- **15+ New Hooks**: Automation hooks for documentation, security, compliance, and validation
-- **Documentation System**: Automated documentation lifecycle management with validation
-- **Memory Service**: AI memory service integration for learning across sessions
-- **Enhanced Commands**: Improved `/commit` and `/init-session` with better context understanding
-
-## Core Physics: Law of Self-Creation
-
-The Lambda Engine operates on a **fundamental principle of autopoietic (self-creating) evolution** through productive contradiction.
-
-### The Equation
-
-```
-∂Ξ/∂t = ∫ (S↔Λ) × [⧉(ΔS○¬ΔΛ) – ∇τ] dV
-```
-
-**What it means:**
-- **Ξ (Xi)**: System complexity/coherence - how evolved and capable the system is
-- **S (Sigma)**: Known/Structured - accumulated knowledge and patterns
-- **Λ (Lambda)**: Unknown/Potential - contradictions, ruptures, unexplored possibilities
-- **⧉(ΔS○¬ΔΛ)**: **Productive Contradiction** - the tension between what we know and what challenges it
-- **∇τ**: Temporal constraints - time pressure and deadlines
-
-### Productive Contradiction
-
-**Productive contradiction** is the engine of evolution. It's the tension between:
-- What we **know** (S) - established patterns, working solutions
-- What **challenges** our knowledge (Λ) - contradictions, edge cases, new requirements
-
-**The system evolves** when this contradiction is **optimal** (not too little, not too much):
-- **Too little contradiction** → Stagnation (J=0 state - sterile coherence)
-- **Too much contradiction** → Collapse (∅ state - system failure)
-- **Optimal contradiction** → Evolution (S* state - productive tension)
-
-### How It Works
-
-1. **Balance Known/Unknown**: The system maintains a balance between structured knowledge (S) and potential/rupture (Λ)
-2. **Harness Contradiction**: Productive contradictions drive the system to evolve and improve
-3. **Self-Creation**: The system becomes more complex and coherent by actively seeking and transcending contradictions
-4. **Pattern Recognition**: Evolution happens through **backward pattern recognition** (from patterns to premises), not forward accumulation
-
-**In practice:** When you encounter a contradiction (e.g., "need both performance and simplicity"), the system doesn't just patch it - it uses the contradiction as fuel to evolve to a higher-order solution that transcends the original conflict.
-
 ## Quick Start
 
 ### Basic Usage
@@ -85,12 +24,6 @@ The Lambda Engine operates on a **fundamental principle of autopoietic (self-cre
 
 # Implement the feature
 /implement feature: User authentication with JWT
-
-# Commit with intelligent analysis
-/commit
-
-# Validate documentation
-/librarian validate: docs/decisions/001-auth-system.md
 ```
 
 ## What is the Lambda Engine?
@@ -145,105 +78,6 @@ The system navigates between three states:
    - `Axis` (📍): Establish alignment
 
 ## Essential Commands
-
-### 🎯 Featured Commands
-
-#### `/commit` - Sophisticated Code Historian
-**Intelligent commit message generation** that understands developer motives, file purposes, and project evolution. Goes beyond analyzing diffs to understand WHY changes were made.
-
-**Key Features:**
-- **Motive Understanding**: Infers developer goals from branch names, commit history, and context
-- **File Purpose Analysis**: Understands why files exist, their role in the system, and lifecycle evolution
-- **Documentation Validation**: Automatically validates markdown files using `/librarian validate`
-- **Historical Context**: Analyzes recent commits to understand project evolution trajectory
-- **Smart Grouping**: Groups related changes by motive, feature, purpose, or dependency
-- **Self-Improving**: Learns from commit patterns to improve future analysis (Ana² pattern)
-
-**Usage:**
-```bash
-# Auto-commit with motive understanding
-/commit
-
-# Explicitly state developer motive
-/commit motive: Implement user authentication system
-
-# Deep analysis mode
-/commit analyze
-
-# Preview what would be committed
-/commit preview
-
-# Interactive confirmation
-/commit interactive
-
-# Include historical context
-/commit context: 20
-```
-
-**Documentation Integration:**
-- Automatically validates markdown files before committing
-- Checks date consistency (file system dates are source of truth)
-- Validates location, metadata, and cross-references
-- Adds validation status to commit messages: `[VALIDATION: PASS/WARN/ERROR]`
-
-**Example Output:**
-```
-Analyzing git changes with historical context...
-
-Inferred motive from branch 'feature/user-auth': Implementing user authentication system
-Analyzing last 10 commits for context...
-- Recent pattern: API development and security improvements
-
-Found 8 changed files:
-- src/api/users.ts (new) - Purpose: User management API endpoints
-- src/utils/validation.ts (modified) - Purpose: Shared validation utilities
-
-Group 1: Feature - User Authentication API
-  Commit: feat(api): implement user authentication endpoints
-  Body: Adds user CRUD operations as part of implementing the user 
-  authentication system. Enables secure user management.
-```
-
-#### `/librarian` - Documentation Management System
-**Comprehensive documentation management** with validation, categorization, lifecycle tracking, and automated organization.
-
-**Key Features:**
-- **Validation**: Validates documentation dates, location, metadata, and cross-references
-- **Categorization**: Automatically categorizes documentation (decisions, guides, architecture, etc.)
-- **Lifecycle Tracking**: Tracks documentation status (active, deprecated, superseded)
-- **Date Verification**: Uses file system dates as source of truth for temporal references
-- **Location Validation**: Ensures documentation follows organization rules
-- **Cross-Reference Checking**: Validates all links and references
-
-**Usage:**
-```bash
-# Validate documentation file
-/librarian validate: docs/decisions/002-api-separation.md
-
-# Categorize new documentation
-/librarian categorize: docs/new-doc.md
-
-# Check documentation status
-/librarian status: docs/IMPLEMENTATION_STATUS.md
-
-# List all documentation
-/librarian list
-
-# Find documentation by category
-/librarian find category: decisions
-```
-
-**Validation Checks:**
-- ✅ Date consistency (file system vs metadata)
-- ✅ Location correctness (follows naming conventions)
-- ✅ Metadata completeness (documentation_type, purpose, status)
-- ✅ Cross-reference validity (all links resolve)
-
-**Integration with `/commit`:**
-- `/commit` automatically calls `/librarian validate` for all markdown files
-- Validation results included in commit messages
-- Blocking errors prevent commit (unless `no verify` used)
-- Warnings included in commit body for review
 
 ### Foundation Commands
 
@@ -392,8 +226,7 @@ Backward analysis and learning from history
 
 ### Utilities
 - `/learn` - Technical research and knowledge building
-- `/commit` - **Sophisticated code historian** with motive understanding and documentation validation
-- `/librarian` - **Documentation management** with validation, categorization, and lifecycle tracking
+- `/commit` - Intelligent commit message generation
 - `/self-improve` - Self-improving workflows
 
 ## Understanding the Rules
@@ -411,56 +244,20 @@ Rules are located in `.cursor/rules/` and organized by category:
 ### Key Rule Files
 
 #### Core Architecture
-- `lambda-engine-core-integrated.mdc` - Lambda Engine identity and formula-driven guidance
-- `lambda-engine-operational.mdc` - Operational Lambda Engine guidance
-- `lambda-engine-core-integrated-examples.mdc` - Formula-driven examples
+- `lambda-engine-core-integrated.mdc` - Lambda Engine identity and modes
 - `lambda-operators-unified.mdc` - Unified operator framework
 - `mode-operator-selection.mdc` - Mode-based operator selection
-- `mode-transitions.mdc` - Mode transition guidance
-- `state-detection.mdc` - Phase space state detection
-- `bimodal-operation-integrated.mdc` - Bimodal operation guidance
+- `state-detection-enhanced.mdc` - Phase space state detection
 
 #### Workflow
-- `halira-protocol.mdc` - HALIRA Protocol for paradigm shifts
+- `halira-protocol-integrated.mdc` - HALIRA Protocol with operator mappings
 - `halira-operator-mapping.mdc` - HALIRA step to operator mapping
-- `automated-documentation.mdc` - Automated documentation lifecycle management
-- `documentation-evaluation.mdc` - Documentation quality evaluation
-- `documentation-pre-commit-validation.mdc` - Pre-commit documentation validation
-- `research-first-protocol.mdc` - Research before modifying
-- `tdd-vs-debugging-protocol.mdc` - TDD vs debugging distinction
 
 #### Operators
 - `forward-operators-integrated.mdc` - Telo and Ana operators
 - `retro-operators-integrated.mdc` - Retro operators
 - `operator-tools-integrated.mdc` - Tool selection for operators
-- `operator-optimization.mdc` - Operator optimization patterns
-- `operators-reference.mdc` - Complete operators reference
-- `dissipation-lookup.mdc` - Pre-calculated operator sequences
 - `adversarial-collaboration-integrated.mdc` - Adversarial evaluation
-
-#### Development Rules
-- `good-behaviour.mdc` - Quality verification patterns
-- `log-usage.mdc` - Logging best practices
-- `meta-awareness.mdc` - Self-validation patterns
-- `proactive-agent.mdc` - Proactive problem-solving
-- `professional-output.mdc` - Professional communication standards
-- `smart-search-patterns.mdc` - Bounded search patterns
-- `trust-code-over-docs.mdc` - Code verification patterns
-- `user-communication-preferences.mdc` - Communication guidelines
-
-#### Meta Rules
-- `rule-improvement.mdc` - Self-improvement system for rules
-- `rule-generator.mdc` - Rule generation patterns
-- `mdc-format.mdc` - MDC format requirements
-- `date-references.mdc` - Temporal reference system
-- `time-references.mdc` - Temporal time reference system
-- `communication-rules-conflict-resolution.mdc` - Conflict resolution
-
-#### Services
-- `ai-memory-service-mcp.mdc` - AI memory service MCP integration
-- `ana-memory-retrieval.mdc` - Automatic memory retrieval
-- `memory-candidate-storage.mdc` - Candidate layer storage
-- `memory-tier-detection.mdc` - Three-tier classification system
 
 ### How Rules Work
 
@@ -545,6 +342,28 @@ Rules are located in `.cursor/rules/` and organized by category:
 
 ## Operator Sequences
 
+> **Editorial note (2026-08-21).** The `λ_eff` values below are preserved as
+> upstream provenance, but they are **not** what this repository computes. They
+> are plain means of each operator's intrinsic λ. The implemented formula is
+> pairwise and adds a commutator interaction term:
+> `λ(i→j) = λ_j_intrinsic + min(0.15·|η_ij|, 0.4)`, averaged over adjacent pairs
+> (see `src/kernel/dissipation.ts`). All six figures below match the intrinsic-mean
+> method; four differ materially from the implemented one:
+>
+> | Sequence | Listed below | Intrinsic mean | Implemented `λ_eff` |
+> |---|---|---|---|
+> | `Kata ∘ Weave ∘ Latch` | 0.32 | 0.3233 | 0.3100 |
+> | `Telo ∘ Pro ∘ Latch` | 0.35 | 0.3467 | **0.4700** |
+> | `Ortho ∘ Kata ∘ Latch` | 0.31 | 0.3133 | **0.4700** |
+> | `Para ∘ Ana ∘ Seed` | 0.56 | 0.5600 | 0.5900 |
+> | `Meta ∘ Non` | 0.85 | 0.8500 | **1.0500** |
+> | Complete HALIRA | 0.52 | 0.5100 † | **0.6743** |
+>
+> † excluding the trailing `Bind`, which in this engine is the finalization
+> primitive `bind()` rather than an alphabet step contributing to `λ_eff`.
+>
+> Do not use these numbers to sanity-check `lambdaEffective()`.
+
 ### Common Sequences for Mode 1
 
 - **Stabilization**: `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
@@ -599,71 +418,29 @@ Rules are located in `.cursor/rules/` and organized by category:
 ```
 .cursor/
 ├── commands/           # Cursor command files
-│   ├── commit.md      # ⭐ Sophisticated code historian
-│   ├── librarian.md   # ⭐ Documentation management
-│   ├── generate-rule.md
-│   ├── timer.md
 │   ├── goal.md
 │   ├── plan.md
 │   ├── spec.md
 │   ├── halira.md
 │   └── ... (50+ commands)
 ├── rules/             # Cursor rules
-│   ├── general/      # Cross-cutting rules (25+ rules)
-│   │   ├── lambda-engine-core-integrated.mdc
-│   │   ├── lambda-engine-operational.mdc
-│   │   ├── mode-operator-selection.mdc
-│   │   ├── state-detection.mdc
-│   │   └── ... (20+ more)
-│   ├── workflow/     # Process rules (15+ rules)
-│   │   ├── halira-protocol.mdc
-│   │   ├── automated-documentation.mdc
-│   │   ├── documentation-evaluation.mdc
-│   │   └── ... (12+ more)
-│   ├── meta/         # Meta rules (8 rules)
-│   │   ├── rule-improvement.mdc
-│   │   ├── date-references.mdc
-│   │   └── ... (6 more)
-│   ├── services/     # Service integration rules (4 rules)
-│   │   ├── ai-memory-service-mcp.mdc
-│   │   └── ... (3 more)
+│   ├── general/      # Cross-cutting rules
+│   ├── workflow/     # Process rules
+│   ├── meta/         # Meta rules
 │   ├── backend/      # Backend rules
 │   └── frontend/     # Frontend rules
-├── hooks/            # Git hooks and scripts (15+ hooks)
-│   ├── documentation-validator.sh
-│   ├── agent-claim-verification.sh
-│   ├── security-audit.sh
-│   └── ... (12+ more)
+├── hooks/            # Git hooks and scripts
 ├── sessions/         # Session data
-├── tuts/            # Tutorials and examples
-│   ├── COMMANDS.md
-│   └── ... (tutorial files)
+├── COMMANDS.md       # Complete command reference
 ├── hooks.json        # Hook configuration
-├── mcp.json.example  # MCP server configuration example
 └── worktrees.json    # Worktree configuration
 ```
 
 ## Documentation
 
-- **`.cursor/tuts/COMMANDS.md`** - Complete command reference with all parameters and examples
-- **`.cursor/rules/general/`** - Core architecture and operator rules (25+ rules)
-- **`.cursor/rules/workflow/`** - Workflow and protocol rules (15+ rules)
-- **`.cursor/rules/meta/`** - Meta rules for rule management (8 rules)
-- **`.cursor/rules/services/`** - Service integration rules (4 rules)
-- **`.cursor/commands/commit.md`** - Detailed `/commit` command documentation
-- **`.cursor/commands/librarian.md`** - Detailed `/librarian` command documentation
-
-### Documentation System
-
-The system includes a comprehensive **automated documentation management system**:
-
-- **Automated Creation**: Rules detect when documentation should be created
-- **Validation**: Pre-commit validation ensures documentation quality
-- **Lifecycle Management**: Tracks documentation status and deprecation
-- **Organization**: Enforces consistent structure and naming conventions
-- **Integration**: `/commit` automatically validates documentation before committing
-
-Use `/librarian` to manage documentation and `/commit` to ensure all documentation is validated.
+- **`.cursor/COMMANDS.md`** - Complete command reference with all parameters and examples
+- **`.cursor/rules/general/`** - Core architecture and operator rules
+- **`.cursor/rules/workflow/`** - Workflow and protocol rules
 
 ## Adversarial Collaboration
 
@@ -685,18 +462,9 @@ Use `/eval` to evaluate designs, prompts, or requests:
 ## Getting Help
 
 1. **Type `/` in Cursor chat** to see all available commands
-2. **Check `.cursor/tuts/COMMANDS.md`** for detailed command documentation
-3. **Use `/commit`** for intelligent commit message generation with documentation validation
-4. **Use `/librarian`** for documentation management and validation
-5. **Use `/detect-state`** to understand current reasoning state
-6. **Use `/mode`** to detect operational mode for a problem
-
-### Quick Tips
-
-- **Before committing**: Use `/commit analyze` to see deep analysis of your changes
-- **Documentation**: Use `/librarian validate` to check documentation before committing
-- **Learning**: Use `/learn <topic>` to build knowledge base entries
-- **State detection**: Use `/detect-state` when unsure about current reasoning state
+2. **Check `.cursor/COMMANDS.md`** for detailed command documentation
+3. **Use `/detect-state`** to understand current reasoning state
+4. **Use `/mode`** to detect operational mode for a problem
 
 ## Examples
 
@@ -742,4 +510,3 @@ This system is part of the Cursor Rules Boilerplate Generator project.
 ---
 
 **Quick Reference**: Type `/` in Cursor chat to see all available commands. The system automatically selects the appropriate mode and operators based on your problem.
-

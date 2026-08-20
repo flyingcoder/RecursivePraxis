@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { OPERATORS } from "../../src/kernel/types.js";
-import { commutatorPairCount } from "../../src/kernel/commutator.js";
+import { commutatorMagnitude, commutatorPairCount } from "../../src/kernel/commutator.js";
 import {
   lambdaEffective,
   lambdaPairwise,
@@ -15,6 +15,37 @@ describe("formalism/commutator ground truth", () => {
 
   it("has a full 20x20 = 400 commutator pair table", () => {
     expect(commutatorPairCount()).toBe(400);
+  });
+});
+
+/**
+ * Characterization tests for contradictions inherited from the upstream assets
+ * (see src/assets/NOTICE.md). These pin what the loader ACTUALLY reads, so that
+ * "tidying" the JSON to match its own declarative algebra_relations block trips
+ * a test instead of silently shifting every computed λ.
+ */
+describe("upstream asset inconsistencies (pinned, not corrected)", () => {
+  it("treats Bind/Weave as non-commuting despite neutral_commutations claiming [Bind, Weave] = 0", () => {
+    expect(commutatorMagnitude("Bind", "Weave")).toBe(1.0);
+    expect(commutatorMagnitude("Weave", "Bind")).toBe(1.0);
+  });
+
+  it("treats Seed/Crux as non-commuting despite neutral_commutations claiming [Seed, Crux] = 0", () => {
+    expect(commutatorMagnitude("Seed", "Crux")).toBe(1.0);
+    expect(commutatorMagnitude("Crux", "Seed")).toBe(1.0);
+  });
+
+  it("keeps the genuinely commuting pairs at magnitude 0 in both directions", () => {
+    expect(commutatorMagnitude("Telo", "Para")).toBe(0.0);
+    expect(commutatorMagnitude("Para", "Telo")).toBe(0.0);
+    expect(commutatorMagnitude("Pro", "Kata")).toBe(0.0);
+    expect(commutatorMagnitude("Kata", "Pro")).toBe(0.0);
+  });
+
+  it("yields an interaction term of exactly 0.15 for any non-commuting pair", () => {
+    // Magnitudes are {0, 1} only, so the term is c*1.0 = 0.15 — never c*0.4.
+    expect(lambdaPairwise("Ana", "Kata") - 0.35).toBeCloseTo(0.15, 10);
+    expect(lambdaPairwise("Meta", "Non") - 0.9).toBeCloseTo(0.15, 10);
   });
 });
 

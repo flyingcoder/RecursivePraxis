@@ -8,7 +8,7 @@ export const VOID_C_THRESHOLD = 0.9;
 const ATTRACTOR_PENALTIES: Record<AttractorLabel, number> = {
   "J=0": 0.1,
   "S*": 0.3,
-  void: 1.0,
+  "∅": 1.0,
 };
 
 /** Ported verbatim from phase_portrait.py `_default_operator_effects`. */
@@ -49,7 +49,7 @@ export function lyapunov(D: number, C: number): number {
 export function classifyAttractor(D: number, C: number): AttractorLabel {
   const V = lyapunov(D, C);
   if (V < STABILITY_THRESHOLD) return "J=0";
-  if (D > VOID_D_THRESHOLD || C > VOID_C_THRESHOLD) return "void";
+  if (D > VOID_D_THRESHOLD || C > VOID_C_THRESHOLD) return "∅";
   return "S*";
 }
 

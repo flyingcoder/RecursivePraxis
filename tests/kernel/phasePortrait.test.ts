@@ -20,12 +20,12 @@ describe("classifyAttractor", () => {
     expect(classifyAttractor(0.1, 0.1)).toBe("J=0");
   });
 
-  it("returns void when D > 0.8", () => {
-    expect(classifyAttractor(0.85, 0.1)).toBe("void");
+  it("returns ∅ when D > 0.8", () => {
+    expect(classifyAttractor(0.85, 0.1)).toBe("∅");
   });
 
-  it("returns void when C > 0.9", () => {
-    expect(classifyAttractor(0.1, 0.95)).toBe("void");
+  it("returns ∅ when C > 0.9", () => {
+    expect(classifyAttractor(0.1, 0.95)).toBe("∅");
   });
 
   it("returns S* for the productive-contradiction middle region", () => {
@@ -61,7 +61,7 @@ describe("attractorPenalty", () => {
   it("matches formalism.json inverse_solver.attractor_penalties", () => {
     expect(attractorPenalty("J=0")).toBeCloseTo(0.1, 10);
     expect(attractorPenalty("S*")).toBeCloseTo(0.3, 10);
-    expect(attractorPenalty("void")).toBeCloseTo(1.0, 10);
+    expect(attractorPenalty("∅")).toBeCloseTo(1.0, 10);
   });
 });
 

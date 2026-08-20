@@ -7,6 +7,7 @@ interface FormalismOperatorEntry {
   readonly class: OperatorClass;
   readonly lambda_intrinsic: number;
   readonly meaning: string;
+  readonly symbol: string;
 }
 
 interface FormalismDissipationRules {
@@ -36,6 +37,16 @@ export function operatorClass(op: Operator): OperatorClass {
 
 export function operatorMeaning(op: Operator): string {
   return formalism.operators[op].meaning;
+}
+
+/**
+ * The operator's Unicode glyph from the formalism spec (e.g. Ana = "↑").
+ * Display-only: the canonical identifier everywhere in this engine is the
+ * operator *name*. Note that Vale's glyph is "∅", the same character the
+ * phase portrait uses for the collapse attractor — see docs/VOCABULARY.md.
+ */
+export function operatorSymbol(op: Operator): string {
+  return formalism.operators[op].symbol;
 }
 
 export function allOperators(): readonly Operator[] {

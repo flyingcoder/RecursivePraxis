@@ -81,8 +81,8 @@ function printHelp(): void {
     "  lambda <verb>",
     "",
     "Vocabulary:",
-    "  operators  — list / show CORE alphabet (authored λ)",
-    "  check      — hard-reject CORE forbidden sequences",
+    "  operators  — list / show the operator alphabet (authored λ)",
+    "  check      — hard-reject forbidden operator sequences",
     "  plan       — build a deterministic, budgeted operator plan",
     "  run        — execute through the capability-gated model host",
     "  inspect    — inspect a redacted local task trace",
@@ -141,7 +141,8 @@ function runOperators(args: string[]): void {
       process.exit(1);
     }
     for (const opName of allOperatorNames()) {
-      console.log(opName);
+      const op = lookupOperator(opName);
+      console.log(op ? `${op.symbol}  ${opName}` : opName);
     }
     process.exit(0);
   }
@@ -159,6 +160,7 @@ function runOperators(args: string[]): void {
     console.log(
       [
         `name: ${op.name}`,
+        `symbol: ${op.symbol}`,
         `class: ${op.className}`,
         formatAuthoredLambda(op),
       ].join("\n"),

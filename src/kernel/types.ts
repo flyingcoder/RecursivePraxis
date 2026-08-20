@@ -34,7 +34,12 @@ export interface DissipationState {
   readonly C: number;
 }
 
-export type AttractorLabel = "J=0" | "S*" | "void";
+/**
+ * Phase-portrait attractor labels, using the formalism's own glyphs.
+ * Traces written before schema 1.2.0 recorded the collapse attractor as the
+ * ASCII string "void"; see LEGACY_VOID_ATTRACTOR in engine/orchestrator.ts.
+ */
+export type AttractorLabel = "J=0" | "S*" | "∅";
 
 export type LambdaBand = "low" | "mid" | "high";
 

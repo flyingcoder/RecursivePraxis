@@ -66,7 +66,7 @@ export class AnthropicMessagesTransport implements JsonModelTransport {
       model: this.model,
       max_tokens: Math.max(1, Math.min(input.maxTokens, 4_096)),
       system:
-        `You are executing operator "${input.operator}" from the CORE reasoning alphabet ` +
+        `You are executing operator "${input.operator}" from the RecursivePraxis operator alphabet ` +
         "against a budgeted, capability-gated task runtime. Produce a structured, evidenced " +
         "step output. Never assert evidence you did not derive from the given references.",
       messages: [

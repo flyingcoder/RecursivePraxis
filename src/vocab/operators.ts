@@ -1,5 +1,5 @@
 /**
- * CORE Step 3 alphabet — authored λ only (not measured / not quarry λ_effective).
+ * Operator alphabet — authored λ only (not measured / not quarry λ_effective).
  * Sourced from the ported kernel (src/kernel/formalism.ts), which loads
  * src/assets/formalism.json as the single source of truth for operator
  * class and authored λ. This file is a thin adapter preserving the prior
@@ -10,6 +10,7 @@ import {
   OPERATORS,
   lambdaIntrinsic,
   operatorClass,
+  operatorSymbol,
   type Operator,
   type OperatorClass,
 } from "../kernel/index.js";
@@ -21,6 +22,8 @@ export type AuthoredOperator = {
   readonly className: OperatorClass;
   readonly lambda: number;
   readonly lambdaKind: "authored";
+  /** Display-only Unicode glyph from the formalism spec; the name is the identifier. */
+  readonly symbol: string;
 };
 
 export const ALL_OPERATORS: readonly AuthoredOperator[] = OPERATORS.map((name) => ({
@@ -28,6 +31,7 @@ export const ALL_OPERATORS: readonly AuthoredOperator[] = OPERATORS.map((name) =
   className: operatorClass(name),
   lambda: lambdaIntrinsic(name),
   lambdaKind: "authored",
+  symbol: operatorSymbol(name),
 }));
 
 const INDEX = Object.fromEntries(
