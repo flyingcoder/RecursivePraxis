@@ -1,9 +1,16 @@
 # RecursivePraxis — agent boundary
 
+Parent folder `ai-labs/` is the **build workspace** (OpenSpec + Λ-Engine CORE).
+This repo is the **product**. `lambda` must run with OpenSpec and
+`recursive-ai-framework/` absent. Do not read workspace-root `AGENTS.md` as
+product runtime requirements. Workspace rule:
+`../.cursor/rules/workspace-vs-recursivepraxis.mdc`.
+
 ## Ownership
 
-- **OpenSpec** in store `ai-labs` owns delivery (what to build, change
-  artifacts, `/opsx-*` workflows).
+- **OpenSpec** in store `ai-labs` owns *workspace* delivery (what to build,
+  change artifacts, `/opsx-*` workflows). It is not a RecursivePraxis
+  runtime dependency.
 - **RecursivePraxis** owns cognition (how `lambda` reasons: record →
   validate → score → revise). Do not treat this repo as a second delivery
   system.

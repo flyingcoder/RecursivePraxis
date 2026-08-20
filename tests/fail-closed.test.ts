@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import test from "node:test";
+import { test } from "vitest";
 
 const cliPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),

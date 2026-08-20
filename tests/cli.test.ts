@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import test from "node:test";
+import { test } from "vitest";
+import os from "node:os";
+import { mkdtempSync, rmSync } from "node:fs";
 
 const cliPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -37,4 +39,48 @@ test("lambda score exits non-zero and states not implemented", () => {
   assert.match(out, /score is not implemented/i);
   assert.doesNotMatch(out, /λ_eff/);
   assert.doesNotMatch(out, /\b\d+\.\d+\b/);
+});
+
+test("plan emits a deterministic provider-neutral plan", () => {
+  const first = runLambda("plan", "Fix", "the", "parser");
+  const second = runLambda("plan", "Fix", "the", "parser");
+  assert.equal(first.status, 0);
+  assert.equal(first.stdout, second.stdout);
+  const plan = JSON.parse(first.stdout) as { id: string; steps: unknown[] };
+  assert.ok(plan.id);
+  assert.ok(plan.steps.length > 0);
+});
+
+test("run, inspect, and replay form a redacted local vertical slice", () => {
+  const cwd = mkdtempSync(path.join(os.tmpdir(), "praxis-cli-"));
+  try {
+    const run = spawnSync(process.execPath, [cliPath, "run", "Handle", "private", "task"], {
+      encoding: "utf8",
+      cwd,
+    });
+    assert.equal(run.status, 0);
+    const output = JSON.parse(run.stdout) as { taskId: string };
+    const inspect = spawnSync(process.execPath, [cliPath, "inspect", output.taskId], {
+      encoding: "utf8",
+      cwd,
+    });
+    assert.equal(inspect.status, 0);
+    assert.doesNotMatch(inspect.stdout, /Handle private task/);
+    const replay = spawnSync(process.execPath, [cliPath, "replay", output.taskId], {
+      encoding: "utf8",
+      cwd,
+    });
+    assert.equal(replay.status, 0);
+    assert.match(replay.stdout, /"reproducible": true/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("eval runs all benchmark domains", () => {
+  const result = runLambda("eval");
+  assert.equal(result.status, 0);
+  for (const domain of ["software-engineering", "research-synthesis", "general-reasoning"]) {
+    assert.match(result.stdout, new RegExp(domain));
+  }
 });

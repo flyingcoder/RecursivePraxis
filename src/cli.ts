@@ -6,6 +6,26 @@ import {
   lookupOperator,
 } from "./vocab/operators.js";
 import { checkForbiddenSequence } from "./vocab/grammar.js";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import {
+  TRUSTED_POLICY,
+  createTaskState,
+  planTask,
+  type PolicyProfile,
+} from "./engine/core.js";
+import {
+  FileTraceRepository,
+  runTask,
+  verifyReplay,
+  type TaskTrace,
+} from "./engine/orchestrator.js";
+import { DeterministicFakeModelHost } from "./adapters/model-hosts.js";
+import {
+  promoteExperimentalPolicy,
+  runCapabilityBenchmark,
+  type BenchmarkResult,
+} from "./engine/evaluation.js";
 
 const VERSION = "0.0.0";
 
@@ -27,11 +47,23 @@ function printHelp(): void {
     "  lambda operators list",
     "  lambda operators show <Op>",
     "  lambda check <Op> [<Op>…]",
+    "  lambda plan <task>",
+    "  lambda run <task>",
+    "  lambda inspect <task-id>",
+    "  lambda replay <task-id>",
+    "  lambda eval",
+    "  lambda promote <experimental-policy.json> <benchmark.json>",
     "  lambda <verb>",
     "",
     "Vocabulary:",
     "  operators  — list / show CORE alphabet (authored λ)",
     "  check      — hard-reject CORE forbidden sequences",
+    "  plan       — build a deterministic, budgeted operator plan",
+    "  run        — execute through the capability-gated fake host",
+    "  inspect    — inspect a redacted local task trace",
+    "  replay     — verify trace integrity and reproduce its plan",
+    "  eval       — run the grounded multi-domain fake-host benchmark",
+    "  promote    — promote an experimental policy from grounded results",
     "",
     "Reserved verbs (not implemented):",
     "  record    — not implemented",
@@ -123,7 +155,94 @@ function runCheck(rawOps: string[]): void {
   process.exit(1);
 }
 
-function main(argv: string[]): void {
+const traceRepository = new FileTraceRepository(
+  path.resolve(process.cwd(), ".recursive-praxis/traces"),
+);
+
+function taskFrom(args: string[], command: string): string {
+  const objective = args.join(" ").trim();
+  if (!objective) {
+    console.error(`usage: lambda ${command} <task>`);
+    process.exit(1);
+  }
+  return objective;
+}
+
+function runPlan(args: string[]): void {
+  const state = createTaskState(taskFrom(args, "plan"));
+  const plan = planTask({
+    state,
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+  });
+  console.log(JSON.stringify(plan, null, 2));
+}
+
+async function runExecution(args: string[]): Promise<void> {
+  const state = createTaskState(taskFrom(args, "run"));
+  const trace = await runTask({
+    state,
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+    modelHost: new DeterministicFakeModelHost(),
+    useRouter: true,
+  });
+  const location = await traceRepository.save(trace);
+  console.log(
+    JSON.stringify(
+      { taskId: trace.taskId, status: trace.status, trace: location, usage: trace.finalUsage },
+      null,
+      2,
+    ),
+  );
+}
+
+async function runInspect(args: string[]): Promise<void> {
+  if (args.length !== 1) {
+    console.error("usage: lambda inspect <task-id>");
+    process.exit(1);
+  }
+  console.log(JSON.stringify(await traceRepository.load(args[0]!), null, 2));
+}
+
+async function runReplay(args: string[]): Promise<void> {
+  if (args.length !== 1) {
+    console.error("usage: lambda replay <task-id>");
+    process.exit(1);
+  }
+  const result = verifyReplay(await traceRepository.load(args[0]!));
+  console.log(JSON.stringify(result, null, 2));
+  if (!result.reproducible) process.exit(1);
+}
+
+async function runEval(args: string[]): Promise<void> {
+  if (args.length !== 0) {
+    console.error("usage: lambda eval");
+    process.exit(1);
+  }
+  const result = await runCapabilityBenchmark(new DeterministicFakeModelHost());
+  console.log(JSON.stringify(result, null, 2));
+}
+
+async function runPromote(args: string[]): Promise<void> {
+  if (args.length !== 2) {
+    console.error("usage: lambda promote <experimental-policy.json> <benchmark.json>");
+    process.exit(1);
+  }
+  const [policyText, benchmarkText] = await Promise.all([
+    readFile(path.resolve(args[0]!), "utf8"),
+    readFile(path.resolve(args[1]!), "utf8"),
+  ]);
+  const result = promoteExperimentalPolicy(
+    JSON.parse(policyText) as PolicyProfile,
+    JSON.parse(benchmarkText) as BenchmarkResult,
+  );
+  console.log(JSON.stringify(result, null, 2));
+}
+
+async function main(argv: string[]): Promise<void> {
   const args = argv.slice(2);
 
   if (args.length === 0) {
@@ -151,6 +270,36 @@ function main(argv: string[]): void {
     runCheck(rest);
   }
 
+  if (first === "plan") {
+    runPlan(rest);
+    return;
+  }
+
+  if (first === "run") {
+    await runExecution(rest);
+    return;
+  }
+
+  if (first === "inspect") {
+    await runInspect(rest);
+    return;
+  }
+
+  if (first === "replay") {
+    await runReplay(rest);
+    return;
+  }
+
+  if (first === "eval") {
+    await runEval(rest);
+    return;
+  }
+
+  if (first === "promote") {
+    await runPromote(rest);
+    return;
+  }
+
   if (first === "sequence") {
     failNotImplemented("sequence");
   }
@@ -162,4 +311,7 @@ function main(argv: string[]): void {
   failUnknown(first!);
 }
 
-main(process.argv);
+main(process.argv).catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(1);
+});
