@@ -46,6 +46,11 @@ export class CursorModelHost extends TransportModelHost {
   readonly version = "adapter-stub-1";
 }
 
+export class ClaudeIdeModelHost extends TransportModelHost {
+  readonly id = "claude-ide";
+  readonly version = "adapter-stub-1";
+}
+
 export class DeterministicFakeModelHost implements ModelHost {
   readonly id = "deterministic-fake";
   readonly version = "1";

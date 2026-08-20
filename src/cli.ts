@@ -18,9 +18,13 @@ import {
   FileTraceRepository,
   runTask,
   verifyReplay,
+  type ModelHost,
   type TaskTrace,
 } from "./engine/orchestrator.js";
 import { DeterministicFakeModelHost } from "./adapters/model-hosts.js";
+import { createAnthropicHostFromEnv } from "./adapters/anthropic-transport.js";
+import { createCursorHostFromEnv } from "./adapters/cursor-transport.js";
+import { createClaudeIdeHostFromEnv } from "./adapters/claude-ide-transport.js";
 import {
   promoteExperimentalPolicy,
   runCapabilityBenchmark,
@@ -48,10 +52,10 @@ function printHelp(): void {
     "  lambda operators show <Op>",
     "  lambda check <Op> [<Op>…]",
     "  lambda plan <task>",
-    "  lambda run <task>",
+    "  lambda run [--host fake|anthropic|cursor|claude-ide] <task>",
     "  lambda inspect <task-id>",
     "  lambda replay <task-id>",
-    "  lambda eval",
+    "  lambda eval [--host fake|anthropic|cursor|claude-ide]",
     "  lambda promote <experimental-policy.json> <benchmark.json>",
     "  lambda <verb>",
     "",
@@ -59,10 +63,10 @@ function printHelp(): void {
     "  operators  — list / show CORE alphabet (authored λ)",
     "  check      — hard-reject CORE forbidden sequences",
     "  plan       — build a deterministic, budgeted operator plan",
-    "  run        — execute through the capability-gated fake host",
+    "  run        — execute through the capability-gated model host",
     "  inspect    — inspect a redacted local task trace",
     "  replay     — verify trace integrity and reproduce its plan",
-    "  eval       — run the grounded multi-domain fake-host benchmark",
+    "  eval       — run the grounded multi-domain benchmark",
     "  promote    — promote an experimental policy from grounded results",
     "",
     "Reserved verbs (not implemented):",
@@ -168,6 +172,34 @@ function taskFrom(args: string[], command: string): string {
   return objective;
 }
 
+function extractHostFlag(args: string[]): { host?: string; rest: string[] } {
+  const rest: string[] = [];
+  let host: string | undefined;
+  for (let i = 0; i < args.length; i++) {
+    const value = args[i]!;
+    if (value === "--host") {
+      host = args[i + 1];
+      i += 1;
+      continue;
+    }
+    if (value.startsWith("--host=")) {
+      host = value.slice("--host=".length);
+      continue;
+    }
+    rest.push(value);
+  }
+  return { host, rest };
+}
+
+function resolveHost(host: string | undefined): ModelHost {
+  if (host === undefined || host === "fake") return new DeterministicFakeModelHost();
+  if (host === "anthropic") return createAnthropicHostFromEnv();
+  if (host === "cursor") return createCursorHostFromEnv();
+  if (host === "claude-ide") return createClaudeIdeHostFromEnv();
+  console.error(`unknown host: ${host} (expected fake, anthropic, cursor, or claude-ide)`);
+  process.exit(1);
+}
+
 function runPlan(args: string[]): void {
   const state = createTaskState(taskFrom(args, "plan"));
   const plan = planTask({
@@ -180,13 +212,14 @@ function runPlan(args: string[]): void {
 }
 
 async function runExecution(args: string[]): Promise<void> {
-  const state = createTaskState(taskFrom(args, "run"));
+  const { host, rest } = extractHostFlag(args);
+  const state = createTaskState(taskFrom(rest, "run"));
   const trace = await runTask({
     state,
     capabilities: ["model", "read", "shell"],
     privacy: "metadata-only",
     policy: TRUSTED_POLICY,
-    modelHost: new DeterministicFakeModelHost(),
+    modelHost: resolveHost(host),
     useRouter: true,
   });
   const location = await traceRepository.save(trace);
@@ -218,11 +251,12 @@ async function runReplay(args: string[]): Promise<void> {
 }
 
 async function runEval(args: string[]): Promise<void> {
-  if (args.length !== 0) {
-    console.error("usage: lambda eval");
+  const { host, rest } = extractHostFlag(args);
+  if (rest.length !== 0) {
+    console.error("usage: lambda eval [--host fake|anthropic|cursor|claude-ide]");
     process.exit(1);
   }
-  const result = await runCapabilityBenchmark(new DeterministicFakeModelHost());
+  const result = await runCapabilityBenchmark(resolveHost(host));
   console.log(JSON.stringify(result, null, 2));
 }
 
