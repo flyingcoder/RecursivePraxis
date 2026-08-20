@@ -7,6 +7,7 @@ import {
   lambdaIntrinsic,
   solve,
   type DissipationState,
+  type HaliraStep,
   type Operator,
   type SolveResult,
 } from "../kernel/index.js";
@@ -254,12 +255,17 @@ function ensureAnomalyArtifact(sequence: readonly Operator[]): readonly Operator
   return [...stabilized, "Non"];
 }
 
-function makePlan(result: SolveResult, request: PlanRequest): Plan | undefined {
+function makePlan(
+  proposedSequence: readonly Operator[],
+  request: PlanRequest,
+  sourceRationale: string,
+  ensureArtifact = true,
+): Plan | undefined {
   // An empty solver sequence means the initial state is already within the
   // solver's distance threshold of the target — ensureAnomalyArtifact still
   // produces a minimal valid (["Non"]) plan for that case rather than
   // treating "already near target" as "no plan possible".
-  const sequence = ensureAnomalyArtifact(result.sequence);
+  const sequence = ensureArtifact ? ensureAnomalyArtifact(proposedSequence) : proposedSequence;
   if (!checkForbiddenSequence(sequence).accepted) return undefined;
 
   const analysis = analyzeSequence(sequence);
@@ -327,7 +333,7 @@ function makePlan(result: SolveResult, request: PlanRequest): Plan | undefined {
     estimatedCostUsd: cost,
     rationale: [
       "hard grammar and capability grants accepted",
-      `solver-derived sequence toward stable target dissipation state (cost ${result.cost.toFixed(4)})`,
+      sourceRationale,
     ],
   };
 }
@@ -338,9 +344,52 @@ export function planTask(request: PlanRequest): Plan {
     target: STABLE_TARGET_DISSIPATION,
     beamWidth: DEFAULT_BEAM_WIDTH,
   });
-  const plan = makePlan(result, request);
+  const plan = makePlan(
+    result.sequence,
+    request,
+    `solver-derived sequence toward stable target dissipation state (cost ${result.cost.toFixed(4)})`,
+  );
   if (!plan) {
     throw new Error("no valid plan within capability grants and budget");
+  }
+  return plan;
+}
+
+/**
+ * The fixed, inspectable recovery program used after the kernel has entered
+ * HALIRA Mode 2.  It deliberately does not invoke the beam solver: Mode 2 is
+ * a prescribed corrective procedure, not another unconstrained attempt at
+ * optimization.  The final Recognition step is represented by bind(), not a
+ * model operator, so it has no plan step here.
+ */
+const HALIRA_RECOVERY_PROGRAM: readonly Operator[] = [
+  "Seed",
+  "Axis",
+  "Meta",
+  "Weave",
+  "Retro",
+  "Ortho",
+];
+
+export function planHaliraRecoveryTask(
+  request: PlanRequest,
+  haliraStep: HaliraStep,
+): Plan {
+  if (haliraStep < 1 || haliraStep > 7) {
+    throw new Error("HALIRA recovery has not started");
+  }
+  const sequence = HALIRA_RECOVERY_PROGRAM.slice(haliraStep - 1);
+  if (sequence.length === 0) {
+    throw new Error("HALIRA recovery is ready for recognition and binding");
+  }
+  const plan = makePlan(
+    sequence,
+    request,
+    `HALIRA Mode-2 recovery program from step ${haliraStep}`,
+    false,
+  );
+  if (!plan) {
+    throw new Error("no valid HALIRA recovery plan within capability grants and budget");
   }
   return plan;
 }

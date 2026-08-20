@@ -2,3 +2,4 @@ node_modules/
 dist/
 .recursive-praxis/
 coverage/
+.DS_Store

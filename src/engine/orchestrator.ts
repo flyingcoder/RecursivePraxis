@@ -11,6 +11,7 @@ import {
   type PlanStep,
   budgetAllows,
   operatorContract,
+  planHaliraRecoveryTask,
   planTask,
   remainingBudget,
 } from "./core.js";
@@ -20,6 +21,7 @@ import {
   classifyAttractor,
   createInitialSession,
   haliraStart,
+  haliraNext,
   recordMode1Failure,
   step as kernelStep,
   type AttractorLabel,
@@ -103,7 +105,7 @@ export type TraceEvent =
     };
 
 export interface TaskTrace {
-  readonly schemaVersion: "1.0.0";
+  readonly schemaVersion: "1.1.0";
   readonly taskId: string;
   readonly objectiveHash: string;
   readonly rawContentIncluded: false;
@@ -115,6 +117,8 @@ export interface TaskTrace {
   readonly events: readonly TraceEvent[];
   readonly finalUsage: BudgetUsage;
   readonly status: "completed" | "stopped" | "failed" | "unbound";
+  /** Abstract state only; no task content is retained in the trace. */
+  readonly initialDissipation: DissipationState;
   readonly finalDissipation: DissipationState;
   readonly attractor: AttractorLabel;
   readonly bound: boolean;
@@ -140,14 +144,96 @@ function addUsage(current: BudgetUsage, delta: Partial<BudgetUsage>): BudgetUsag
   };
 }
 
-function validateStepOutput(output: ModelStepOutput): boolean {
+const EVIDENCE_KINDS = new Set([
+  "input",
+  "validator",
+  "tool-result",
+  "test",
+  "human-acceptance",
+  "domain-check",
+]);
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isEvidenceRef(value: unknown): value is EvidenceRef {
   return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    value.id.length > 0 &&
+    typeof value.kind === "string" &&
+    EVIDENCE_KINDS.has(value.kind) &&
+    typeof value.hash === "string" &&
+    /^[a-f0-9]{64}$/i.test(value.hash)
+  );
+}
+
+function isToolCall(value: unknown): value is ToolCall {
+  return (
+    isRecord(value) &&
+    typeof value.name === "string" &&
+    typeof value.capability === "string" &&
+    ["read", "write", "shell", "network"].includes(value.capability) &&
+    isRecord(value.args) &&
+    typeof value.timeoutMs === "number" &&
+    Number.isFinite(value.timeoutMs)
+  );
+}
+
+function isReportedUsage(
+  value: unknown,
+): value is Pick<BudgetUsage, "tokens" | "costUsd" | "latencyMs"> {
+  return (
+    isRecord(value) &&
+    typeof value.tokens === "number" &&
+    typeof value.costUsd === "number" &&
+    typeof value.latencyMs === "number" &&
+    Number.isFinite(value.tokens) &&
+    Number.isFinite(value.costUsd) &&
+    Number.isFinite(value.latencyMs) &&
+    value.tokens >= 0 &&
+    value.costUsd >= 0 &&
+    value.latencyMs >= 0
+  );
+}
+
+function validateStepOutput(output: unknown): output is ModelStepOutput {
+  return (
+    isRecord(output) &&
     typeof output.summary === "string" &&
     Array.isArray(output.evidenceRefs) &&
+    output.evidenceRefs.every(isEvidenceRef) &&
     Array.isArray(output.artifacts) &&
-    (output.requestedTools === undefined || Array.isArray(output.requestedTools)) &&
-    output.usage.tokens >= 0 &&
-    output.usage.costUsd >= 0
+    output.artifacts.every(
+      (artifact) =>
+        isRecord(artifact) &&
+        typeof artifact.mediaType === "string" &&
+        typeof artifact.content === "string",
+    ) &&
+    (output.requestedTools === undefined ||
+      (Array.isArray(output.requestedTools) && output.requestedTools.every(isToolCall))) &&
+    isReportedUsage(output.usage) &&
+    typeof output.validatorPassed === "boolean" &&
+    typeof output.uncertainty === "number" &&
+    Number.isFinite(output.uncertainty) &&
+    output.uncertainty >= 0 &&
+    output.uncertainty <= 1
+  );
+}
+
+function validateRoutingEvidence(routing: unknown): routing is RoutingEvidence {
+  return (
+    isRecord(routing) &&
+    typeof routing.uncertainty === "number" &&
+    Number.isFinite(routing.uncertainty) &&
+    routing.uncertainty >= 0 &&
+    routing.uncertainty <= 1 &&
+    typeof routing.contradictionDetected === "boolean" &&
+    Array.isArray(routing.unresolvedClaims) &&
+    routing.unresolvedClaims.every((claim) => typeof claim === "string") &&
+    Array.isArray(routing.evidenceRefs) &&
+    routing.evidenceRefs.every(isEvidenceRef)
   );
 }
 
@@ -159,24 +245,30 @@ export interface RunRequest extends PlanRequest {
 
 export async function runTask(request: RunRequest): Promise<TaskTrace> {
   let state: ObservableTaskState = request.state;
-  let routingUsage = zeroUsage();
   if (request.useRouter && request.modelHost.route) {
+    const routingUsage: BudgetUsage = { ...zeroUsage(), calls: 1 };
+    if (!budgetAllows(remainingBudget(state), routingUsage)) {
+      throw new Error("router budget denied");
+    }
     const routing = await request.modelHost.route(state.objective);
+    if (!validateRoutingEvidence(routing)) {
+      throw new Error("malformed routing output");
+    }
     state = {
       ...state,
       uncertainty: routing.uncertainty,
       contradictionDetected: routing.contradictionDetected,
       unresolvedClaims: routing.unresolvedClaims,
       toolResults: [...state.toolResults, ...routing.evidenceRefs],
+      usage: addUsage(state.usage, routingUsage),
     };
-    routingUsage = addUsage(routingUsage, { calls: 1 });
   }
 
   let plan = planTask({ ...request, state });
   const events: TraceEvent[] = [
     { type: "planned", planId: plan.id, at: new Date().toISOString() },
   ];
-  let usage = addUsage(state.usage, routingUsage);
+  let usage = state.usage;
   let status: TaskTrace["status"] = "completed";
   let pendingSteps = [...plan.steps];
   let kernelSession: Session = createInitialSession(state.dissipation);
@@ -207,6 +299,13 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
     if (!validateStepOutput(output)) {
       throw new Error(`malformed model output for ${step.operator}`);
     }
+    // Estimates reserve capacity before a call, but the host's reported use is
+    // authoritative for the hard gate.  Do not let an over-reporting host turn
+    // a budgeted plan into an apparently successful overrun.
+    const actualUsage: BudgetUsage = { ...output.usage, calls: 1, toolCalls: 0 };
+    if (!budgetAllows(remainingBudget({ ...state, usage }), actualUsage)) {
+      throw new Error(`model budget exceeded for ${step.operator}`);
+    }
     usage = addUsage(usage, { ...output.usage, calls: 1 });
 
     // Advance the kernel session in lockstep with the executed plan step —
@@ -226,6 +325,24 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
     }
     kernelSession = stepped.value;
 
+    // Mode 2 is a deterministic recovery program rather than free-form
+    // replanning.  Each completed corrective operator advances its program
+    // counter; at step 7 only bind() may complete the session.
+    if (kernelSession.mode === 2 && kernelSession.haliraStep < 7) {
+      const advanced = haliraNext(kernelSession);
+      if (!advanced.ok) {
+        events.push({
+          type: "bind",
+          result: "rejected",
+          reason: advanced.error ?? "HALIRA recovery could not advance",
+          at: new Date().toISOString(),
+        });
+        status = "failed";
+        break;
+      }
+      kernelSession = advanced.value;
+    }
+
     const toolEvidence: EvidenceRef[] = [];
     const toolArtifactHashes: string[] = [];
     for (const toolCall of output.requestedTools ?? []) {
@@ -240,6 +357,9 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
         throw new Error(`tool budget denied: ${toolCall.name}`);
       }
       const result = await request.toolHost!.call(toolCall);
+      if (!Number.isFinite(result.durationMs) || result.durationMs < 0 || result.durationMs > toolCall.timeoutMs) {
+        throw new Error(`invalid tool result duration: ${toolCall.name}`);
+      }
       usage = addUsage(usage, { toolCalls: 1, latencyMs: result.durationMs });
       toolEvidence.push(result.evidence);
       if (result.artifactHash) toolArtifactHashes.push(result.artifactHash);
@@ -296,7 +416,7 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
             decision(step, "replan", "HALIRA mode-2 escalation after repeated Mode-1 failures"),
           );
           state = { ...state, uncertainty: output.uncertainty, usage, dissipation: kernelSession.state };
-          plan = planTask({ ...request, state });
+          plan = planHaliraRecoveryTask({ ...request, state }, kernelSession.haliraStep);
           pendingSteps = [...plan.steps];
           events.push({ type: "planned", planId: plan.id, at: new Date().toISOString() });
           continue;
@@ -333,7 +453,7 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
   }
 
   const unsigned = {
-    schemaVersion: "1.0.0" as const,
+    schemaVersion: "1.1.0" as const,
     taskId: state.taskId,
     objectiveHash: hash(state.objective),
     rawContentIncluded: false as const,
@@ -345,6 +465,7 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
     events,
     finalUsage: usage,
     status,
+    initialDissipation: request.state.dissipation,
     finalDissipation: kernelSession.state,
     attractor: classifyAttractor(kernelSession.state.D, kernelSession.state.C),
     bound,
@@ -420,15 +541,119 @@ export class FileTraceRepository {
   }
 }
 
+function sameDissipation(a: DissipationState, b: DissipationState): boolean {
+  return Object.is(a.D, b.D) && Object.is(a.C, b.C);
+}
+
+function replaySemantics(trace: TaskTrace): readonly string[] {
+  const reasons: string[] = [];
+  if (trace.schemaVersion !== "1.1.0") {
+    return ["unsupported trace schema; semantic replay requires 1.1.0"];
+  }
+  if (
+    !Number.isFinite(trace.initialDissipation.D) ||
+    !Number.isFinite(trace.initialDissipation.C) ||
+    !Number.isFinite(trace.finalDissipation.D) ||
+    !Number.isFinite(trace.finalDissipation.C)
+  ) {
+    return ["trace contains non-finite dissipation state"];
+  }
+
+  let session = createInitialSession(trace.initialDissipation);
+  let sawTerminalBind = false;
+  for (let index = 0; index < trace.events.length; index += 1) {
+    const event = trace.events[index]!;
+    if (event.type === "planned") {
+      if (!event.planId) reasons.push("planned event has no plan id");
+      continue;
+    }
+    if (event.type === "bind") {
+      sawTerminalBind = true;
+      continue;
+    }
+    if (event.type === "decision") {
+      if (event.action === "stop" && trace.status !== "stopped") {
+        reasons.push("stop decision conflicts with non-stopped trace status");
+      }
+      continue;
+    }
+
+    const stepped = kernelStep(session, event.operator);
+    if (!stepped.ok) {
+      reasons.push(`recorded operator ${event.operator} is illegal during replay`);
+      break;
+    }
+    session = stepped.value;
+    if (session.mode === 2 && session.haliraStep < 7) {
+      const advanced = haliraNext(session);
+      if (!advanced.ok) {
+        reasons.push(advanced.error ?? "HALIRA recovery could not advance during replay");
+        break;
+      }
+      session = advanced.value;
+    }
+
+    const decisionEvent = trace.events[index + 1];
+    if (!decisionEvent || decisionEvent.type !== "decision" || decisionEvent.operator !== event.operator) {
+      reasons.push(`step ${event.operator} is not followed by its recorded decision`);
+      continue;
+    }
+    if (decisionEvent.action === "replan") {
+      if (session.mode !== 1) {
+        reasons.push(`replan after ${event.operator} occurred outside Mode 1`);
+      } else {
+        session = recordMode1Failure(session);
+        if (decisionEvent.reason === "HALIRA mode-2 escalation after repeated Mode-1 failures") {
+          const escalated = haliraStart(session);
+          if (!escalated.ok) reasons.push(escalated.error ?? "HALIRA escalation failed during replay");
+          else session = escalated.value;
+        }
+      }
+    }
+  }
+
+  const terminalBind = trace.events.filter((event) => event.type === "bind").at(-1);
+  if (trace.status === "completed") {
+    const bound = kernelBind(session);
+    if (!bound.ok || !trace.bound || terminalBind?.result !== "bound") {
+      reasons.push("completed trace does not reproduce a successful bind");
+    } else {
+      session = bound.value;
+    }
+  } else if (trace.status === "unbound") {
+    if (kernelBind(session).ok || trace.bound || terminalBind?.result !== "rejected") {
+      reasons.push("unbound trace does not reproduce a rejected bind");
+    }
+  } else if (trace.bound || sawTerminalBind) {
+    reasons.push("non-terminal trace reports binding activity");
+  }
+
+  if (!sameDissipation(session.state, trace.finalDissipation)) {
+    reasons.push("final dissipation does not match deterministic replay");
+  }
+  if (classifyAttractor(session.state.D, session.state.C) !== trace.attractor) {
+    reasons.push("recorded attractor does not match deterministic replay");
+  }
+  if (session.bound !== trace.bound) reasons.push("recorded bound state does not match deterministic replay");
+  if (session.mode !== trace.haliraMode) reasons.push("recorded HALIRA mode does not match deterministic replay");
+  return reasons;
+}
+
 export function verifyReplay(trace: TaskTrace): {
   readonly reproducible: boolean;
   readonly plan: Plan;
   readonly eventCount: number;
+  readonly reasons: readonly string[];
 } {
   const { traceHash, ...unsigned } = trace;
+  const reasons = [
+    ...(hash(JSON.stringify(unsigned)) === traceHash ? [] : ["trace hash does not match content"]),
+    ...replaySemantics(trace),
+  ];
   return {
-    reproducible: hash(JSON.stringify(unsigned)) === traceHash,
+    reproducible: reasons.length === 0,
     plan: trace.plan,
     eventCount: trace.events.length,
+    reasons,
   };
 }

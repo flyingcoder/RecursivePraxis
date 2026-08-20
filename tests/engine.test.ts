@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -56,6 +57,89 @@ test("planner rejects plans exceeding hard budget", () => {
   );
 });
 
+test("execution fails closed when a model reports usage beyond the remaining budget", async () => {
+  const host: ModelHost = {
+    id: "over-budget-host",
+    version: "1",
+    async execute() {
+      return {
+        summary: "overrun",
+        evidenceRefs: [],
+        artifacts: [],
+        usage: { tokens: AUTHORED_DEFAULT_BUDGET.maxTokens + 1, costUsd: 0, latencyMs: 1 },
+        validatorPassed: true,
+        uncertainty: 0,
+      };
+    },
+  };
+  await assert.rejects(
+    runTask({
+      state: createTaskState("Bounded execution"),
+      capabilities: ["model"],
+      privacy: "metadata-only",
+      policy: TRUSTED_POLICY,
+      modelHost: host,
+    }),
+    /model budget exceeded/,
+  );
+});
+
+test("execution rejects malformed evidence references from an untrusted model host", async () => {
+  const host: ModelHost = {
+    id: "malformed-evidence-host",
+    version: "1",
+    async execute() {
+      return {
+        summary: "bad evidence",
+        evidenceRefs: [{ id: "missing-hash", kind: "validator", hash: "not-a-sha256" }],
+        artifacts: [],
+        usage: { tokens: 1, costUsd: 0, latencyMs: 1 },
+        validatorPassed: true,
+        uncertainty: 0,
+      };
+    },
+  };
+  await assert.rejects(
+    runTask({
+      state: createTaskState("Evidence integrity"),
+      capabilities: ["model"],
+      privacy: "metadata-only",
+      policy: TRUSTED_POLICY,
+      modelHost: host,
+    }),
+    /malformed model output/,
+  );
+});
+
+test("routing is denied before it can consume an exhausted call budget", async () => {
+  let routed = false;
+  const host: ModelHost = {
+    id: "router-host",
+    version: "1",
+    async route() {
+      routed = true;
+      return { uncertainty: 0, contradictionDetected: false, unresolvedClaims: [], evidenceRefs: [] };
+    },
+    async execute() {
+      throw new Error("must not execute");
+    },
+  };
+  await assert.rejects(
+    runTask({
+      state: createTaskState("No routing capacity", {
+        budget: { ...AUTHORED_DEFAULT_BUDGET, maxCalls: 0 },
+      }),
+      capabilities: ["model"],
+      privacy: "metadata-only",
+      policy: TRUSTED_POLICY,
+      modelHost: host,
+      useRouter: true,
+    }),
+    /router budget denied/,
+  );
+  assert.equal(routed, false);
+});
+
 test("planner enforces capability grants before ranking outcome", () => {
   const state = createTaskState("Fix failed checks", { failedChecks: ["test"] });
   const plan = planTask({
@@ -84,6 +168,7 @@ test("trace is redacted, atomic, and replay integrity is reproducible", async ()
     const repository = new FileTraceRepository(directory);
     await repository.save(trace);
     const loaded = await repository.load(trace.taskId);
+    assert.deepEqual(verifyReplay(loaded).reasons, []);
     assert.equal(verifyReplay(loaded).reproducible, true);
   } finally {
     await rm(directory, { recursive: true, force: true });
@@ -155,6 +240,62 @@ test("validator failure causes one conditional deterministic replan", async () =
     1,
   );
   assert.equal(trace.events.filter((event) => event.type === "planned").length, 2);
+});
+
+test("semantic replay rejects a rehashed trace with a forged terminal state", async () => {
+  const trace = await runTask({
+    state: createTaskState("Replay semantic verification"),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+    modelHost: new DeterministicFakeModelHost(),
+  });
+  const { traceHash: _oldHash, ...forgedUnsigned } = trace;
+  const forged = {
+    ...forgedUnsigned,
+    finalDissipation: { ...trace.finalDissipation, D: trace.finalDissipation.D + 0.01 },
+  };
+  const traceHash = createHash("sha256").update(JSON.stringify(forged)).digest("hex");
+  const replay = verifyReplay({ ...forged, traceHash });
+  assert.equal(replay.reproducible, false);
+  assert.ok(replay.reasons.includes("final dissipation does not match deterministic replay"));
+});
+
+test("repeated validation failures enter and complete the deterministic HALIRA recovery program", async () => {
+  let calls = 0;
+  const host: ModelHost = {
+    id: "halira-recovery-host",
+    version: "1",
+    async execute(input) {
+      calls += 1;
+      return {
+        summary: input.operator,
+        evidenceRefs: [],
+        artifacts: [],
+        usage: { tokens: 1, costUsd: 0, latencyMs: 1 },
+        validatorPassed: calls > 2,
+        uncertainty: 0,
+      };
+    },
+  };
+  const trace = await runTask({
+    state: createTaskState("Recover after repeated validator failures", {
+      budget: { ...AUTHORED_DEFAULT_BUDGET, maxCalls: 20 },
+    }),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+    modelHost: host,
+  });
+  const completed = trace.events.filter((event) => event.type === "step-completed");
+  assert.equal(trace.haliraMode, 2);
+  assert.equal(trace.bound, true);
+  assert.equal(trace.status, "completed");
+  assert.deepEqual(verifyReplay(trace).reasons, []);
+  assert.deepEqual(
+    completed.slice(-6).map((event) => event.operator),
+    ["Seed", "Axis", "Meta", "Weave", "Retro", "Ortho"],
+  );
 });
 
 test("benchmark spans three domains and promotion requires grounded passes", async () => {

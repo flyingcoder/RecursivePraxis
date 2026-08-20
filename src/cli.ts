@@ -39,6 +39,7 @@ import { runDiagnose, listDiagnoseProblems } from "./cli-commands/diagnose.js";
 import { runHalira } from "./cli-commands/halira.js";
 import { runBind } from "./cli-commands/bind.js";
 import { runIr } from "./cli-commands/ir.js";
+import { runInit } from "./cli-commands/init.js";
 
 const VERSION = "0.0.0";
 const SESSION_BASE_DIR = path.resolve(process.cwd(), ".recursive-praxis");
@@ -76,6 +77,7 @@ function printHelp(): void {
     "  lambda halira start|next|status [--json]",
     "  lambda bind [--json]",
     "  lambda ir [--json]",
+    "  lambda init --tools claude,cursor,codex | all | none [--json]",
     "  lambda <verb>",
     "",
     "Vocabulary:",
@@ -98,6 +100,11 @@ function printHelp(): void {
     "  halira     — Mode-2 escalation step machine (start | next | status)",
     "  bind       — finalize the session; fails closed without an anomaly artifact",
     "  ir         — print the current turn's instruction surface (legalNext only)",
+    "",
+    "Agent integrations:",
+    "  init       — generate host-native Claude Code / Cursor / Codex skill and",
+    "               command files that teach agents to call this CLI (cognition",
+    "               only — no OpenSpec, no delivery workflow, no new runtime)",
     "",
     "Reserved verbs (not implemented):",
     "  record    — not implemented",
@@ -428,6 +435,12 @@ async function main(argv: string[]): Promise<void> {
   if (first === "ir") {
     const { json } = extractJsonFlag(rest);
     await runIr(SESSION_BASE_DIR, json);
+    return;
+  }
+
+  if (first === "init") {
+    const { json, rest: initArgs } = extractJsonFlag(rest);
+    await runInit(initArgs, process.cwd(), json);
     return;
   }
 
