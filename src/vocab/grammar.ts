@@ -1,6 +1,19 @@
 /**
  * CORE Step 5 hard constraints — pure reject (no soft-warning path).
+ * The accept/reject decision itself is delegated to the ported kernel
+ * (src/kernel/constraints.ts: violatesHardConstraint/violatesSequenceEndConstraint),
+ * which is now the single source of truth for the grammar. This module keeps
+ * its prior CONSTRAINT/CheckResult public contract and attaches a specific
+ * named reason for CLI/test consumers.
  */
+
+import {
+  MAX_CONSECUTIVE_META,
+  trailingRunLength,
+  violatesHardConstraint,
+  violatesSequenceEndConstraint,
+  type Operator,
+} from "../kernel/index.js";
 
 export const CONSTRAINT = {
   META_MAX_TWO: "meta-max-two-consecutive",
@@ -20,10 +33,27 @@ export type CheckReject = {
 };
 export type CheckResult = CheckOk | CheckReject;
 
-const VALE_STABILIZERS = new Set(["Kata", "Ortho", "Telo"]);
-
 function reject(constraint: ConstraintId, reason: string): CheckReject {
   return { accepted: false, constraint, reason };
+}
+
+/** Names the specific CORE Step 5 rule behind a kernel violatesHardConstraint()
+ * rejection, so the CLI can report a stable constraint id and reason. */
+function namedStepRejection(prefix: readonly Operator[], cur: Operator): CheckReject {
+  if (cur === "Meta" && trailingRunLength(prefix, "Meta") >= MAX_CONSECUTIVE_META) {
+    return reject(CONSTRAINT.META_MAX_TWO, "reject: at most two consecutive Meta");
+  }
+  const prev = prefix.length > 0 ? prefix[prefix.length - 1] : undefined;
+  if (prev === "Meta" && cur === "Non") {
+    return reject(CONSTRAINT.META_THEN_NON, "reject: Non immediately after Meta");
+  }
+  if (prev === "Non" && cur === "Para") {
+    return reject(CONSTRAINT.NON_THEN_PARA, "reject: Para immediately after Non");
+  }
+  return reject(
+    CONSTRAINT.VALE_STABILIZER,
+    "reject: Vale lacks a following stabilizer (Kata, Ortho, or Telo)",
+  );
 }
 
 /**
@@ -35,50 +65,20 @@ export function checkForbiddenSequence(ops: readonly string[]): CheckResult {
     return reject(CONSTRAINT.END_ON_ANA, "reject: empty sequence");
   }
 
-  let metaRun = 0;
-  for (let i = 0; i < ops.length; i++) {
-    const cur = ops[i]!;
-    const prev = i > 0 ? ops[i - 1]! : undefined;
+  const sequence = ops as readonly Operator[];
 
-    if (cur === "Meta") {
-      metaRun += 1;
-      if (metaRun > 2) {
-        return reject(
-          CONSTRAINT.META_MAX_TWO,
-          "reject: at most two consecutive Meta",
-        );
-      }
-    } else {
-      metaRun = 0;
-    }
-
-    if (prev === "Meta" && cur === "Non") {
-      return reject(
-        CONSTRAINT.META_THEN_NON,
-        "reject: Non immediately after Meta",
-      );
-    }
-
-    if (prev === "Non" && cur === "Para") {
-      return reject(
-        CONSTRAINT.NON_THEN_PARA,
-        "reject: Para immediately after Non",
-      );
-    }
-
-    if (prev === "Vale" && !VALE_STABILIZERS.has(cur)) {
-      return reject(
-        CONSTRAINT.VALE_STABILIZER,
-        "reject: Vale lacks a following stabilizer (Kata, Ortho, or Telo)",
-      );
+  for (let i = 0; i < sequence.length; i++) {
+    const cur = sequence[i]!;
+    const prefix = sequence.slice(0, i);
+    if (violatesHardConstraint(prefix, cur)) {
+      return namedStepRejection(prefix, cur);
     }
   }
 
-  const last = ops[ops.length - 1]!;
-  if (last === "Ana") {
+  if (violatesSequenceEndConstraint(sequence)) {
     return reject(CONSTRAINT.END_ON_ANA, "reject: ending on Ana");
   }
-  if (last === "Vale") {
+  if (sequence[sequence.length - 1] === "Vale") {
     return reject(
       CONSTRAINT.VALE_STABILIZER,
       "reject: Vale lacks a following stabilizer (Kata, Ortho, or Telo)",

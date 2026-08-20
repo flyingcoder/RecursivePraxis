@@ -17,7 +17,7 @@ export interface JsonModelTransport {
 abstract class TransportModelHost implements ModelHost {
   abstract readonly id: string;
   abstract readonly version: string;
-  private readonly transport?: JsonModelTransport;
+  private readonly transport?: JsonModelTransport | undefined;
 
   constructor(transport?: JsonModelTransport) {
     this.transport = transport;

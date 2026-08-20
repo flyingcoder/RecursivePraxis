@@ -30,8 +30,18 @@ import {
   runCapabilityBenchmark,
   type BenchmarkResult,
 } from "./engine/evaluation.js";
+import { runSense } from "./cli-commands/sense.js";
+import { runStep } from "./cli-commands/step.js";
+import { runStatus } from "./cli-commands/status.js";
+import { runAnalyze } from "./cli-commands/analyze.js";
+import { runSolve } from "./cli-commands/solve.js";
+import { runDiagnose, listDiagnoseProblems } from "./cli-commands/diagnose.js";
+import { runHalira } from "./cli-commands/halira.js";
+import { runBind } from "./cli-commands/bind.js";
+import { runIr } from "./cli-commands/ir.js";
 
 const VERSION = "0.0.0";
+const SESSION_BASE_DIR = path.resolve(process.cwd(), ".recursive-praxis");
 
 const RESERVED_VERBS = ["record", "validate", "score", "revise"] as const;
 
@@ -57,6 +67,15 @@ function printHelp(): void {
     "  lambda replay <task-id>",
     "  lambda eval [--host fake|anthropic|cursor|claude-ide]",
     "  lambda promote <experimental-policy.json> <benchmark.json>",
+    "  lambda status [--json]",
+    "  lambda sense --d <n> --c <n> | --from <json> [--json]",
+    "  lambda step [--op <Op>] [--json]",
+    "  lambda analyze <Op[,Op…]> [--json]",
+    "  lambda solve --initial D,C --target D,C [--beam-width N] [--json]",
+    "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating>] [--json]",
+    "  lambda halira start|next|status [--json]",
+    "  lambda bind [--json]",
+    "  lambda ir [--json]",
     "  lambda <verb>",
     "",
     "Vocabulary:",
@@ -68,6 +87,17 @@ function printHelp(): void {
     "  replay     — verify trace integrity and reproduce its plan",
     "  eval       — run the grounded multi-domain benchmark",
     "  promote    — promote an experimental policy from grounded results",
+    "",
+    "Kernel (dissipation solver, .recursive-praxis/session.json):",
+    "  status     — attractor, V, D/C, λ_eff, mode, legalNext for the current session",
+    "  sense      — set the session's D/C state directly",
+    "  step       — apply one operator to the session (auto-picks if --op omitted)",
+    "  analyze    — λ_eff / trajectory / warnings for an arbitrary sequence",
+    "  solve      — beam search from --initial to --target D,C",
+    "  diagnose   — canned problem templates (run with no argument to list them)",
+    "  halira     — Mode-2 escalation step machine (start | next | status)",
+    "  bind       — finalize the session; fails closed without an anomaly artifact",
+    "  ir         — print the current turn's instruction surface (legalNext only)",
     "",
     "Reserved verbs (not implemented):",
     "  record    — not implemented",
@@ -172,7 +202,7 @@ function taskFrom(args: string[], command: string): string {
   return objective;
 }
 
-function extractHostFlag(args: string[]): { host?: string; rest: string[] } {
+function extractHostFlag(args: string[]): { host?: string | undefined; rest: string[] } {
   const rest: string[] = [];
   let host: string | undefined;
   for (let i = 0; i < args.length; i++) {
@@ -189,6 +219,11 @@ function extractHostFlag(args: string[]): { host?: string; rest: string[] } {
     rest.push(value);
   }
   return { host, rest };
+}
+
+function extractJsonFlag(args: string[]): { json: boolean; rest: string[] } {
+  const rest = args.filter((value) => value !== "--json");
+  return { json: rest.length !== args.length, rest };
 }
 
 function resolveHost(host: string | undefined): ModelHost {
@@ -334,12 +369,70 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
-  if (first === "sequence") {
-    failNotImplemented("sequence");
+  if (first === "status") {
+    const { json } = extractJsonFlag(rest);
+    await runStatus(SESSION_BASE_DIR, json);
+    return;
   }
 
-  if (isReservedVerb(first)) {
-    failNotImplemented(first);
+  if (first === "sense") {
+    const { json, rest: senseArgs } = extractJsonFlag(rest);
+    await runSense(senseArgs, SESSION_BASE_DIR, json);
+    return;
+  }
+
+  if (first === "step") {
+    const { json, rest: stepArgs } = extractJsonFlag(rest);
+    await runStep(stepArgs, SESSION_BASE_DIR, json);
+    return;
+  }
+
+  if (first === "analyze") {
+    const { json, rest: analyzeArgs } = extractJsonFlag(rest);
+    if (analyzeArgs.length !== 1) {
+      console.error('usage: lambda analyze "Ana,Meta,Non"');
+      process.exit(1);
+    }
+    runAnalyze(analyzeArgs[0]!, json);
+    return;
+  }
+
+  if (first === "solve") {
+    const { json, rest: solveArgs } = extractJsonFlag(rest);
+    runSolve(solveArgs, json);
+    return;
+  }
+
+  if (first === "diagnose") {
+    const { json, rest: diagnoseArgs } = extractJsonFlag(rest);
+    if (diagnoseArgs.length === 0) {
+      listDiagnoseProblems(json);
+    } else {
+      runDiagnose(diagnoseArgs[0]!, json);
+    }
+    return;
+  }
+
+  if (first === "halira") {
+    const { json, rest: haliraArgs } = extractJsonFlag(rest);
+    await runHalira(haliraArgs[0], SESSION_BASE_DIR, json);
+    return;
+  }
+
+  if (first === "bind") {
+    const { json, rest: bindArgs } = extractJsonFlag(rest);
+    await runBind(bindArgs, SESSION_BASE_DIR, json);
+    return;
+  }
+
+  if (first === "ir") {
+    const { json } = extractJsonFlag(rest);
+    await runIr(SESSION_BASE_DIR, json);
+    return;
+  }
+
+  if (isReservedVerb(first!)) {
+    failNotImplemented(first!);
   }
 
   failUnknown(first!);

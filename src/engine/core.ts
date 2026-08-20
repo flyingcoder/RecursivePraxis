@@ -1,6 +1,15 @@
 import { createHash } from "node:crypto";
 import { checkForbiddenSequence } from "../vocab/grammar.js";
 import { ALL_OPERATORS } from "../vocab/operators.js";
+import {
+  DEFAULT_BEAM_WIDTH,
+  analyzeSequence,
+  lambdaIntrinsic,
+  solve,
+  type DissipationState,
+  type Operator,
+  type SolveResult,
+} from "../kernel/index.js";
 
 export type Provenance = "authored" | "inferred" | "measured" | "grounded";
 export type Capability = "model" | "read" | "write" | "shell" | "network";
@@ -20,7 +29,7 @@ export interface EvidenceRef {
 
 export interface OperatorContract {
   readonly version: "1.0.0";
-  readonly name: string;
+  readonly name: Operator;
   readonly intent: string;
   readonly inputSchema: Readonly<Record<string, string>>;
   readonly outputSchema: Readonly<Record<string, string>>;
@@ -65,6 +74,7 @@ export interface ObservableTaskState {
   readonly progress: number;
   readonly uncertainty: number;
   readonly contradictionDetected: boolean;
+  readonly dissipation: DissipationState;
   readonly budget: TaskBudget;
   readonly usage: BudgetUsage;
 }
@@ -78,7 +88,7 @@ export interface PlanRequest {
 
 export interface PlanStep {
   readonly index: number;
-  readonly operator: string;
+  readonly operator: Operator;
   readonly requiredCapabilities: readonly Capability[];
   readonly expectedUtility: number;
   readonly estimatedTokens: number;
@@ -167,7 +177,7 @@ export const OPERATOR_PACK: readonly OperatorContract[] = ALL_OPERATORS.map((op)
   validators: ["structured-output", "evidence-reference-integrity"],
   prior: {
     // Authored bootstrap priors; learning may adjust these only through versioned policy.
-    expectedUtility: op.className === "Constructive" ? 0.66 : 0.58,
+    expectedUtility: op.className === "A-Constructive" ? 0.66 : 0.58,
     estimatedTokens: op.name === "Vale" ? 1_400 : 700,
     estimatedCostUsd: op.name === "Vale" ? 0.08 : 0.04,
     provenance: "authored",
@@ -176,7 +186,7 @@ export const OPERATOR_PACK: readonly OperatorContract[] = ALL_OPERATORS.map((op)
 
 const SPEC_INDEX = new Map(OPERATOR_PACK.map((spec) => [spec.name, spec]));
 
-export function operatorContract(name: string): OperatorContract {
+export function operatorContract(name: Operator): OperatorContract {
   const spec = SPEC_INDEX.get(name);
   if (!spec) throw new Error(`unknown operator contract: ${name}`);
   return spec;
@@ -205,42 +215,77 @@ export function budgetAllows(
   );
 }
 
-function candidateSequences(state: ObservableTaskState): readonly string[][] {
-  const candidates: string[][] = [["Telo", "Kata", "Latch"]];
-  if (state.failedChecks.length > 0) candidates.push(["Ortho", "Kata", "Latch"]);
-  if (state.unresolvedClaims.length > 0) candidates.push(["Seed", "Weave", "Latch"]);
-  if (state.uncertainty >= 0.5) candidates.push(["Axis", "Para", "Weave", "Latch"]);
-  if (state.contradictionDetected) candidates.push(["Non", "Weave", "Ortho", "Latch"]);
-  if (state.progress === 0) candidates.push(["Seed", "Telo", "Kata", "Latch"]);
-  return candidates;
+/**
+ * Fixed target attractor for sequencing: a low-D, low-C stable ("J=0")
+ * dissipation state. planTask() always searches from the task's current
+ * dissipation state toward this target; the initial state carries the
+ * task-specific signal (see deriveInitialDissipation), the target does not.
+ */
+export const STABLE_TARGET_DISSIPATION: DissipationState = { D: 0.1, C: 0.1 };
+
+/**
+ * Mirrors the kernel's Mode-1 nextAnomalyArtifact() rule (session.ts): a
+ * sequence carries an anomaly artifact once it contains a Non, or a
+ * Para/Retro immediately after a Meta.
+ */
+function hasAnomalyArtifact(sequence: readonly Operator[]): boolean {
+  for (let index = 0; index < sequence.length; index += 1) {
+    const cur = sequence[index]!;
+    const prev = index > 0 ? sequence[index - 1] : undefined;
+    if (cur === "Non") return true;
+    if ((cur === "Para" || cur === "Retro") && prev === "Meta") return true;
+  }
+  return false;
 }
 
-function makePlan(
-  sequence: readonly string[],
-  request: PlanRequest,
-): Plan | undefined {
+/**
+ * The beam solver optimizes purely for reaching the target dissipation
+ * state cheaply; it has no notion of the kernel's bind() requirement that a
+ * committed sequence carry an anomaly artifact. Rather than teach the
+ * (verbatim-ported) solver about bind-feasibility, guarantee it here: if the
+ * solved sequence lacks one, append a stabilizer (only if the sequence ends
+ * on Vale, which requires one before anything else may follow) and then
+ * Non. This keeps every Plan this module returns bindable by construction.
+ */
+function ensureAnomalyArtifact(sequence: readonly Operator[]): readonly Operator[] {
+  if (hasAnomalyArtifact(sequence)) return sequence;
+  const endsOnVale = sequence[sequence.length - 1] === "Vale";
+  const stabilized: readonly Operator[] = endsOnVale ? [...sequence, "Kata"] : sequence;
+  return [...stabilized, "Non"];
+}
+
+function makePlan(result: SolveResult, request: PlanRequest): Plan | undefined {
+  // An empty solver sequence means the initial state is already within the
+  // solver's distance threshold of the target — ensureAnomalyArtifact still
+  // produces a minimal valid (["Non"]) plan for that case rather than
+  // treating "already near target" as "no plan possible".
+  const sequence = ensureAnomalyArtifact(result.sequence);
   if (!checkForbiddenSequence(sequence).accepted) return undefined;
+
+  const analysis = analyzeSequence(sequence);
   const grants = new Set(request.capabilities);
   const steps: PlanStep[] = [];
   let utility = 0;
   let tokens = 0;
   let cost = 0;
   let toolCalls = 0;
+
   for (const [index, name] of sequence.entries()) {
     const spec = operatorContract(name);
     const required = spec.allowedCapabilities.filter((capability) => capability === "model");
     if (required.some((capability) => !grants.has(capability))) return undefined;
     if (required.some((capability) => capability !== "model")) toolCalls += 1;
-    const relevance =
-      (request.state.failedChecks.length > 0 && name === "Ortho" ? 0.12 : 0) +
-      (request.state.unresolvedClaims.length > 0 && ["Seed", "Weave"].includes(name)
-        ? 0.08
-        : 0) +
-      (request.state.contradictionDetected && ["Non", "Ortho"].includes(name) ? 0.1 : 0);
-    const adjusted =
-      spec.prior.expectedUtility +
-      relevance +
-      (request.policy.utilityAdjustments[name] ?? 0);
+
+    // Per-step utility from the kernel's dissipation cost model: the cost of
+    // the transition into this step (the first step has no predecessor, so
+    // it falls back to the operator's own intrinsic λ), mapped through
+    // 1/(1+cost) so lower dissipation cost yields higher utility.
+    const transitionCost =
+      index === 0
+        ? lambdaIntrinsic(name)
+        : (analysis.pairwiseCosts[index - 1]?.lambda ?? lambdaIntrinsic(name));
+    const adjusted = 1 / (1 + transitionCost) + (request.policy.utilityAdjustments[name] ?? 0);
+
     utility += adjusted;
     tokens += spec.prior.estimatedTokens;
     cost += spec.prior.estimatedCostUsd;
@@ -254,13 +299,19 @@ function makePlan(
       validators: spec.validators,
     });
   }
-  if (!budgetAllows(remainingBudget(request.state), {
-    tokens,
-    costUsd: cost,
-    calls: steps.length,
-    toolCalls,
-    latencyMs: steps.length * 10_000,
-  })) return undefined;
+
+  if (
+    !budgetAllows(remainingBudget(request.state), {
+      tokens,
+      costUsd: cost,
+      calls: steps.length,
+      toolCalls,
+      latencyMs: steps.length * 10_000,
+    })
+  ) {
+    return undefined;
+  }
+
   const stable = JSON.stringify({
     taskId: request.state.taskId,
     sequence,
@@ -276,27 +327,46 @@ function makePlan(
     estimatedCostUsd: cost,
     rationale: [
       "hard grammar and capability grants accepted",
-      "ranked by expected grounded utility, then estimated cost",
+      `solver-derived sequence toward stable target dissipation state (cost ${result.cost.toFixed(4)})`,
     ],
   };
 }
 
 export function planTask(request: PlanRequest): Plan {
-  const plans = candidateSequences(request.state)
-    .map((sequence) => makePlan(sequence, request))
-    .filter((plan): plan is Plan => plan !== undefined);
-  plans.sort(
-    (a, b) =>
-      b.expectedUtility - a.expectedUtility ||
-      a.estimatedCostUsd - b.estimatedCostUsd ||
-      a.estimatedTokens - b.estimatedTokens ||
-      a.id.localeCompare(b.id),
-  );
-  const selected = plans[0];
-  if (!selected) {
+  const result = solve({
+    initial: request.state.dissipation,
+    target: STABLE_TARGET_DISSIPATION,
+    beamWidth: DEFAULT_BEAM_WIDTH,
+  });
+  const plan = makePlan(result, request);
+  if (!plan) {
     throw new Error("no valid plan within capability grants and budget");
   }
-  return selected;
+  return plan;
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+/**
+ * Deterministic mapping from observable task-state signals to an initial
+ * dissipation state for the solver to search from. Higher uncertainty and
+ * more failed checks raise D (dissipation); unresolved claims and detected
+ * contradictions raise C. Authored constants, not measured.
+ */
+function deriveInitialDissipation(
+  state: Pick<
+    ObservableTaskState,
+    "uncertainty" | "failedChecks" | "unresolvedClaims" | "contradictionDetected"
+  >,
+): DissipationState {
+  return {
+    D: clamp01(0.2 + state.uncertainty * 0.4 + state.failedChecks.length * 0.1),
+    C: clamp01(
+      0.15 + state.unresolvedClaims.length * 0.08 + (state.contradictionDetected ? 0.25 : 0),
+    ),
+  };
 }
 
 export function createTaskState(
@@ -306,7 +376,7 @@ export function createTaskState(
   const taskId =
     options.taskId ??
     createHash("sha256").update(objective).digest("hex").slice(0, 16);
-  return {
+  const merged: ObservableTaskState = {
     taskId,
     objective,
     failedChecks: [],
@@ -317,8 +387,11 @@ export function createTaskState(
     progress: 0,
     uncertainty: 0.25,
     contradictionDetected: false,
+    dissipation: STABLE_TARGET_DISSIPATION,
     budget: AUTHORED_DEFAULT_BUDGET,
     usage: { tokens: 0, costUsd: 0, calls: 0, toolCalls: 0, latencyMs: 0 },
     ...options,
   };
+  if (options.dissipation) return merged;
+  return { ...merged, dissipation: deriveInitialDissipation(merged) };
 }

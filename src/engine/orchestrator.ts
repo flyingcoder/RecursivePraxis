@@ -14,6 +14,19 @@ import {
   planTask,
   remainingBudget,
 } from "./core.js";
+import {
+  MODE2_GATE_THRESHOLD,
+  bind as kernelBind,
+  classifyAttractor,
+  createInitialSession,
+  haliraStart,
+  recordMode1Failure,
+  step as kernelStep,
+  type AttractorLabel,
+  type DissipationState,
+  type Operator,
+  type Session,
+} from "../kernel/index.js";
 
 export interface RoutingEvidence {
   readonly uncertainty: number;
@@ -25,7 +38,7 @@ export interface RoutingEvidence {
 export interface ModelStepInput {
   readonly taskId: string;
   readonly objective: string;
-  readonly operator: string;
+  readonly operator: Operator;
   readonly evidenceRefs: readonly EvidenceRef[];
   readonly maxTokens: number;
 }
@@ -37,7 +50,7 @@ export interface ModelStepOutput {
   readonly usage: Pick<BudgetUsage, "tokens" | "costUsd" | "latencyMs">;
   readonly validatorPassed: boolean;
   readonly uncertainty: number;
-  readonly requestedTools?: readonly ToolCall[];
+  readonly requestedTools?: readonly ToolCall[] | undefined;
 }
 
 export interface ModelHost {
@@ -69,17 +82,23 @@ export type TraceEvent =
   | { readonly type: "planned"; readonly planId: string; readonly at: string }
   | {
       readonly type: "decision";
-      readonly operator: string;
+      readonly operator: Operator;
       readonly action: "continue" | "replan" | "stop";
       readonly reason: string;
       readonly at: string;
     }
   | {
       readonly type: "step-completed";
-      readonly operator: string;
+      readonly operator: Operator;
       readonly evidenceRefs: readonly EvidenceRef[];
       readonly artifactHashes: readonly string[];
       readonly usage: BudgetUsage;
+      readonly at: string;
+    }
+  | {
+      readonly type: "bind";
+      readonly result: "bound" | "rejected";
+      readonly reason: string;
       readonly at: string;
     };
 
@@ -95,7 +114,11 @@ export interface TaskTrace {
   readonly plan: Plan;
   readonly events: readonly TraceEvent[];
   readonly finalUsage: BudgetUsage;
-  readonly status: "completed" | "stopped" | "failed";
+  readonly status: "completed" | "stopped" | "failed" | "unbound";
+  readonly finalDissipation: DissipationState;
+  readonly attractor: AttractorLabel;
+  readonly bound: boolean;
+  readonly haliraMode: 1 | 2;
   readonly traceHash: string;
 }
 
@@ -155,8 +178,8 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
   ];
   let usage = addUsage(state.usage, routingUsage);
   let status: TaskTrace["status"] = "completed";
-  let replanCount = 0;
   let pendingSteps = [...plan.steps];
+  let kernelSession: Session = createInitialSession(state.dissipation);
 
   while (pendingSteps.length > 0) {
     const step = pendingSteps.shift()!;
@@ -185,6 +208,24 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
       throw new Error(`malformed model output for ${step.operator}`);
     }
     usage = addUsage(usage, { ...output.usage, calls: 1 });
+
+    // Advance the kernel session in lockstep with the executed plan step —
+    // this should always be legal since planTask() only ever returns
+    // grammar-accepted sequences, but a rejection here fails the task
+    // closed rather than silently diverging session state from the trace.
+    const stepped = kernelStep(kernelSession, step.operator);
+    if (!stepped.ok) {
+      events.push({
+        type: "bind",
+        result: "rejected",
+        reason: stepped.error ?? "kernel step rejected",
+        at: new Date().toISOString(),
+      });
+      status = "failed";
+      break;
+    }
+    kernelSession = stepped.value;
+
     const toolEvidence: EvidenceRef[] = [];
     const toolArtifactHashes: string[] = [];
     for (const toolCall of output.requestedTools ?? []) {
@@ -215,7 +256,12 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
       at: new Date().toISOString(),
     });
 
-    if ((!output.validatorPassed || output.uncertainty >= 0.7) && replanCount === 0) {
+    const failed = !output.validatorPassed || output.uncertainty >= 0.7;
+
+    // First Mode-1 failure: exactly one conditional replan (mirrors the
+    // prior replanCount === 0 gate), now tracked on the kernel session.
+    if (failed && kernelSession.mode === 1 && kernelSession.mode1FailureCount === 0) {
+      kernelSession = recordMode1Failure(kernelSession);
       events.push(
         decision(
           step,
@@ -223,7 +269,6 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
           output.validatorPassed ? "uncertainty threshold exceeded" : "validator failed",
         ),
       );
-      replanCount += 1;
       state = {
         ...state,
         failedChecks: output.validatorPassed
@@ -231,13 +276,60 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
           : [...state.failedChecks, `${step.operator}:validator`],
         uncertainty: output.uncertainty,
         usage,
+        dissipation: kernelSession.state,
       };
       plan = planTask({ ...request, state });
       pendingSteps = [...plan.steps];
       events.push({ type: "planned", planId: plan.id, at: new Date().toISOString() });
       continue;
     }
+
+    // A second (or later) Mode-1 failure escalates into HALIRA Mode 2 once
+    // the recorded-failure gate is met, instead of replanning indefinitely.
+    if (failed && kernelSession.mode === 1 && kernelSession.mode1FailureCount >= 1) {
+      kernelSession = recordMode1Failure(kernelSession);
+      if (kernelSession.mode1FailureCount >= MODE2_GATE_THRESHOLD) {
+        const escalated = haliraStart(kernelSession);
+        if (escalated.ok) {
+          kernelSession = escalated.value;
+          events.push(
+            decision(step, "replan", "HALIRA mode-2 escalation after repeated Mode-1 failures"),
+          );
+          state = { ...state, uncertainty: output.uncertainty, usage, dissipation: kernelSession.state };
+          plan = planTask({ ...request, state });
+          pendingSteps = [...plan.steps];
+          events.push({ type: "planned", planId: plan.id, at: new Date().toISOString() });
+          continue;
+        }
+      }
+      events.push(decision(step, "continue", "validator failed (HALIRA mode-2 gate not yet met)"));
+      continue;
+    }
+
     events.push(decision(step, "continue", "validated structured output"));
+  }
+
+  let bound = false;
+  if (status === "completed") {
+    const finalized = kernelBind(kernelSession);
+    if (finalized.ok) {
+      kernelSession = finalized.value;
+      bound = true;
+      events.push({
+        type: "bind",
+        result: "bound",
+        reason: "sequence carries an anomaly artifact and does not end on Ana",
+        at: new Date().toISOString(),
+      });
+    } else {
+      status = "unbound";
+      events.push({
+        type: "bind",
+        result: "rejected",
+        reason: finalized.error ?? "kernel bind rejected",
+        at: new Date().toISOString(),
+      });
+    }
   }
 
   const unsigned = {
@@ -253,6 +345,10 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
     events,
     finalUsage: usage,
     status,
+    finalDissipation: kernelSession.state,
+    attractor: classifyAttractor(kernelSession.state.D, kernelSession.state.C),
+    bound,
+    haliraMode: kernelSession.mode,
   };
   return { ...unsigned, traceHash: hash(JSON.stringify(unsigned)) };
 }
