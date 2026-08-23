@@ -7,6 +7,7 @@ import type {
 } from "../engine/orchestrator.js";
 import { AnthropicClaudeHost, type JsonModelTransport } from "./model-hosts.js";
 import { routingSchema, stepOutputSchema, toPlainJsonSchema } from "./schemas.js";
+import { Settings } from "../config/settings.js";
 
 const STEP_TOOL_NAME = "emit_step_output";
 const ROUTING_TOOL_NAME = "emit_routing_evidence";
@@ -101,14 +102,13 @@ function extractToolInput(message: Anthropic.Message, toolName: string): unknown
   return block.input;
 }
 
-export function anthropicTransportFromEnv(): AnthropicMessagesTransport {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  const model = process.env.ANTHROPIC_MODEL;
-  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
-  if (!model) throw new Error("ANTHROPIC_MODEL is not configured");
-  return new AnthropicMessagesTransport({ apiKey, model });
+export function createAnthropicTransport(settings: Settings): AnthropicMessagesTransport {
+  return new AnthropicMessagesTransport({
+    apiKey: settings.require("anthropicApiKey"),
+    model: settings.require("anthropicModel"),
+  });
 }
 
-export function createAnthropicHostFromEnv(): ModelHost {
-  return new AnthropicClaudeHost(anthropicTransportFromEnv());
+export function createAnthropicHost(settings: Settings): ModelHost {
+  return new AnthropicClaudeHost(createAnthropicTransport(settings));
 }

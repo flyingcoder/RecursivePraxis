@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, appendFileSync, mkdirSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from "node:fs";
 import { describe, it } from "vitest";
 import { parseToolsValue } from "../src/init/tools-flag.js";
 import { TOOL_IDS } from "../src/init/targets.js";
@@ -346,5 +346,68 @@ describe("lambda --help mentions init", () => {
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
+  });
+});
+
+// --- init as the configuration surface -------------------------------------------
+
+describe("lambda init configuration", () => {
+  it("writes the chosen host and model to .recursive-praxis/config.json", () => {
+    const cwd = tmpProject();
+    const result = runLambda(["init", "--tools", "none", "--host", "ollama", "--model", "qwen3"], cwd);
+
+    assert.equal(result.status, 0);
+    const written = JSON.parse(
+      readFileSync(path.join(cwd, ".recursive-praxis", "config.json"), "utf8"),
+    ) as Record<string, string>;
+    assert.deepEqual(written, { defaultHost: "ollama", ollamaModel: "qwen3" });
+  });
+
+  it("reports local Ollama defaults without writing when no config flag is passed", () => {
+    const cwd = tmpProject();
+    const result = runLambda(["init", "--tools", "none", "--json"], cwd);
+    const payload = JSON.parse(result.stdout) as {
+      config: { settings: Record<string, string>; sources: Record<string, string>; written: boolean };
+    };
+
+    assert.equal(payload.config.written, false);
+    assert.equal(payload.config.settings.defaultHost, "ollama");
+    assert.equal(payload.config.settings.ollamaBaseUrl, "http://127.0.0.1:11434");
+    assert.equal(payload.config.sources.defaultHost, "default");
+    assert.equal(existsSync(path.join(cwd, ".recursive-praxis", "config.json")), false);
+  });
+
+  it("keeps earlier choices when a later init changes only one setting", () => {
+    const cwd = tmpProject();
+    runLambda(["init", "--tools", "none", "--ollama-url", "http://127.0.0.1:9999"], cwd);
+    runLambda(["init", "--tools", "none", "--model", "qwen3"], cwd);
+
+    const written = JSON.parse(
+      readFileSync(path.join(cwd, ".recursive-praxis", "config.json"), "utf8"),
+    ) as Record<string, string>;
+    assert.deepEqual(written, { ollamaBaseUrl: "http://127.0.0.1:9999", ollamaModel: "qwen3" });
+  });
+
+  it("rejects an unknown host without writing a config file", () => {
+    const cwd = tmpProject();
+    const result = runLambda(["init", "--tools", "none", "--host", "gpt"], cwd);
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /unknown host: gpt/);
+    assert.equal(existsSync(path.join(cwd, ".recursive-praxis", "config.json")), false);
+  });
+
+  it("rejects an invalid ollama url without writing a config file", () => {
+    const cwd = tmpProject();
+    const result = runLambda(["init", "--tools", "none", "--ollama-url", "nope"], cwd);
+
+    assert.equal(result.status, 1);
+    assert.equal(existsSync(path.join(cwd, ".recursive-praxis", "config.json")), false);
+  });
+
+  it("still requires --tools", () => {
+    const result = runLambda(["init", "--host", "ollama"], tmpProject());
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /requires --tools/);
   });
 });

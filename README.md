@@ -77,6 +77,69 @@ node dist/cli.js replay <task-id>
 
 <br />
 
+## CLI commands
+
+The binary is `lambda` (`node dist/cli.js` in a checkout). Full flags and examples live in
+[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md).
+
+**Global**
+
+| Command | Purpose |
+|---|---|
+| `lambda --help` / `-h` | Print the grouped command listing. |
+| `lambda --version` / `-v` | Print the version. |
+
+**Vocabulary and grammar** — the authored operator alphabet
+
+| Command | Purpose |
+|---|---|
+| `lambda operators list` | List the 20 operator names with their symbols. |
+| `lambda operators show <Op>` | Show one operator's symbol, class, and authored λ. |
+| `lambda check <Op> [<Op>…]` | Hard-reject forbidden operator sequences. |
+
+**Planning and execution** — model-facing task runtime
+
+| Command | Purpose |
+|---|---|
+| `lambda plan <task>` | Build a deterministic, budgeted operator plan. Calls no model. |
+| `lambda run [--host <id>] <task>` | Execute through the capability-gated model host and save a redacted trace. |
+| `lambda inspect <task-id>` | Print a saved, redacted task trace. |
+| `lambda replay <task-id>` | Verify trace integrity and reproduce its plan. Exits non-zero when not reproducible. |
+| `lambda eval [--host <id>]` | Run the grounded multi-domain capability benchmark. |
+| `lambda promote <policy.json> <benchmark.json>` | Promote an experimental policy from grounded results. |
+
+`<id>` is one of `ollama`, `fake`, `anthropic`, `cursor`, `claude-ide`. With `--host` omitted, the host
+recorded by `lambda init` is used — out of the box, a local Ollama server.
+
+**Kernel** — the dissipation solver over `.recursive-praxis/session.json`
+
+| Command | Purpose |
+|---|---|
+| `lambda status [--json]` | Attractor, `V`, `D`/`C`, `λ_eff`, mode, and `legalNext` for the session. |
+| `lambda sense --d <n> --c <n> \| --from <json> [--json]` | Set the session's `D`/`C` state directly. |
+| `lambda step [--op <Op>] [--json]` | Apply one operator; auto-picks the lowest-cost legal one if `--op` is omitted. |
+| `lambda analyze <Op[,Op…]> [--json]` | `λ_eff`, trajectory, and warnings for an arbitrary sequence. |
+| `lambda solve --initial D,C --target D,C [--beam-width N] [--json]` | Deterministic beam search between states. |
+| `lambda diagnose [<problem>] [--json]` | Canned problem templates; run with no argument to list them. |
+| `lambda halira start\|next\|status [--json]` | Drive or inspect the HALIRA Mode-2 escalation machine. |
+| `lambda bind [--json]` | Finalize the session. Fails closed without an anomaly artifact; `--force` is rejected. |
+| `lambda ir [--json]` | Print the current turn's instruction surface (`legalNext` only). |
+
+`<problem>` is one of `stuck`, `overwhelmed`, `rigid`, `collapsed`, `procrastinating`.
+
+**Agent integrations**
+
+| Command | Purpose |
+|---|---|
+| `lambda init --tools claude,cursor,codex \| all \| none [--host <id>] [--model <name>] [--ollama-url <url>] [--json]` | Generate host-native skill and command files that teach agents to call this CLI, and record the model host settings in `.recursive-praxis/config.json`. |
+
+**Reserved (fail-closed)**
+
+`record`, `validate`, `score`, and `revise` are not implemented. Each exits non-zero and emits no scores
+or `λ_effective`.
+
+<br />
+
 ## Core model
 
 The kernel has **20 named operators**, including `Seed`, `Meta`, `Non`, `Weave`, `Ortho`, and `Kata`. A

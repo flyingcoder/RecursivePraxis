@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { test } from "vitest";
 import os from "node:os";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 
 const cliPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -54,7 +54,7 @@ test("plan emits a deterministic provider-neutral plan", () => {
 test("run, inspect, and replay form a redacted local vertical slice", () => {
   const cwd = mkdtempSync(path.join(os.tmpdir(), "praxis-cli-"));
   try {
-    const run = spawnSync(process.execPath, [cliPath, "run", "Handle", "private", "task"], {
+    const run = spawnSync(process.execPath, [cliPath, "run", "--host", "fake", "Handle", "private", "task"], {
       encoding: "utf8",
       cwd,
     });
@@ -78,9 +78,34 @@ test("run, inspect, and replay form a redacted local vertical slice", () => {
 });
 
 test("eval runs all benchmark domains", () => {
-  const result = runLambda("eval");
+  const result = runLambda("eval", "--host", "fake");
   assert.equal(result.status, 0);
   for (const domain of ["software-engineering", "research-synthesis", "general-reasoning"]) {
     assert.match(result.stdout, new RegExp(domain));
+  }
+});
+
+test("run defaults to the locally configured Ollama host", () => {
+  const cwd = mkdtempSync(path.join(os.tmpdir(), "praxis-host-"));
+  try {
+    mkdirSync(path.join(cwd, ".recursive-praxis"), { recursive: true });
+    writeFileSync(
+      path.join(cwd, ".recursive-praxis", "config.json"),
+      JSON.stringify({ ollamaBaseUrl: "http://127.0.0.1:1" }),
+      "utf8",
+    );
+
+    // No --host flag: the host configured by `lambda init` is used, and an
+    // unreachable local server fails closed with an actionable message.
+    const run = spawnSync(process.execPath, [cliPath, "run", "Do", "the", "thing"], {
+      encoding: "utf8",
+      cwd,
+    });
+
+    assert.equal(run.status, 1);
+    assert.match(run.stderr, /cannot reach the local Ollama server at http:\/\/127\.0\.0\.1:1/);
+    assert.match(run.stderr, /ollama serve/);
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
   }
 });

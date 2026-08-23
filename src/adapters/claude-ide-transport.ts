@@ -7,6 +7,7 @@ import type {
 } from "../engine/orchestrator.js";
 import { ClaudeIdeModelHost, type JsonModelTransport } from "./model-hosts.js";
 import { routingSchema, stepOutputSchema, toPlainJsonSchema } from "./schemas.js";
+import { Settings } from "../config/settings.js";
 
 export interface ClaudeIdeTransportConfig {
   readonly model: string;
@@ -87,12 +88,10 @@ export class ClaudeIdeTransport implements JsonModelTransport {
   }
 }
 
-export function claudeIdeTransportFromEnv(): ClaudeIdeTransport {
-  const model = process.env.CLAUDE_IDE_MODEL;
-  if (!model) throw new Error("CLAUDE_IDE_MODEL is not configured");
-  return new ClaudeIdeTransport({ model });
+export function createClaudeIdeTransport(settings: Settings): ClaudeIdeTransport {
+  return new ClaudeIdeTransport({ model: settings.require("claudeIdeModel") });
 }
 
-export function createClaudeIdeHostFromEnv(): ModelHost {
-  return new ClaudeIdeModelHost(claudeIdeTransportFromEnv());
+export function createClaudeIdeHost(settings: Settings): ModelHost {
+  return new ClaudeIdeModelHost(createClaudeIdeTransport(settings));
 }

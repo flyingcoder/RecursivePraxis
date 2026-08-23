@@ -22,9 +22,11 @@ import {
   type TaskTrace,
 } from "./engine/orchestrator.js";
 import { DeterministicFakeModelHost } from "./adapters/model-hosts.js";
-import { createAnthropicHostFromEnv } from "./adapters/anthropic-transport.js";
-import { createCursorHostFromEnv } from "./adapters/cursor-transport.js";
-import { createClaudeIdeHostFromEnv } from "./adapters/claude-ide-transport.js";
+import { createAnthropicHost } from "./adapters/anthropic-transport.js";
+import { createCursorHost } from "./adapters/cursor-transport.js";
+import { createClaudeIdeHost } from "./adapters/claude-ide-transport.js";
+import { createOllamaHost } from "./adapters/ollama-transport.js";
+import { MODEL_HOST_IDS, Settings } from "./config/settings.js";
 import {
   promoteExperimentalPolicy,
   runCapabilityBenchmark,
@@ -63,10 +65,10 @@ function printHelp(): void {
     "  lambda operators show <Op>",
     "  lambda check <Op> [<Op>…]",
     "  lambda plan <task>",
-    "  lambda run [--host fake|anthropic|cursor|claude-ide] <task>",
+    "  lambda run [--host ollama|fake|anthropic|cursor|claude-ide] <task>",
     "  lambda inspect <task-id>",
     "  lambda replay <task-id>",
-    "  lambda eval [--host fake|anthropic|cursor|claude-ide]",
+    "  lambda eval [--host ollama|fake|anthropic|cursor|claude-ide]",
     "  lambda promote <experimental-policy.json> <benchmark.json>",
     "  lambda status [--json]",
     "  lambda sense --d <n> --c <n> | --from <json> [--json]",
@@ -77,7 +79,9 @@ function printHelp(): void {
     "  lambda halira start|next|status [--json]",
     "  lambda bind [--json]",
     "  lambda ir [--json]",
-    "  lambda init --tools claude,cursor,codex | all | none [--json]",
+    "  lambda init --tools claude,cursor,codex | all | none",
+    "              [--host ollama|fake|anthropic|cursor|claude-ide]",
+    "              [--model <name>] [--ollama-url <url>] [--json]",
     "  lambda <verb>",
     "",
     "Vocabulary:",
@@ -85,6 +89,8 @@ function printHelp(): void {
     "  check      — hard-reject forbidden operator sequences",
     "  plan       — build a deterministic, budgeted operator plan",
     "  run        — execute through the capability-gated model host",
+    "               (defaults to the host configured by `lambda init`;",
+    "               out of the box that is a local Ollama server)",
     "  inspect    — inspect a redacted local task trace",
     "  replay     — verify trace integrity and reproduce its plan",
     "  eval       — run the grounded multi-domain benchmark",
@@ -102,9 +108,12 @@ function printHelp(): void {
     "  ir         — print the current turn's instruction surface (legalNext only)",
     "",
     "Agent integrations:",
-    "  init       — generate host-native Claude Code / Cursor / Codex skill and",
-    "               command files that teach agents to call this CLI (cognition",
-    "               only — no OpenSpec, no delivery workflow, no new runtime)",
+    "  init       — install: generate host-native Claude Code / Cursor / Codex",
+    "               skill and command files that teach agents to call this CLI",
+    "               (cognition only — no OpenSpec, no delivery workflow, no new",
+    "               runtime), and record the model host / model settings in",
+    "               .recursive-praxis/config.json. These settings are chosen",
+    "               here and nowhere else; API keys stay in the environment.",
     "",
     "Reserved verbs (not implemented):",
     "  record    — not implemented",
@@ -235,12 +244,26 @@ function extractJsonFlag(args: string[]): { json: boolean; rest: string[] } {
   return { json: rest.length !== args.length, rest };
 }
 
-function resolveHost(host: string | undefined): ModelHost {
-  if (host === undefined || host === "fake") return new DeterministicFakeModelHost();
-  if (host === "anthropic") return createAnthropicHostFromEnv();
-  if (host === "cursor") return createCursorHostFromEnv();
-  if (host === "claude-ide") return createClaudeIdeHostFromEnv();
-  console.error(`unknown host: ${host} (expected fake, anthropic, cursor, or claude-ide)`);
+/**
+ * Loads the init-scoped configuration written by `lambda init`, plus any
+ * secrets from the environment. Out of the box this resolves to local Ollama.
+ */
+async function loadSettings(): Promise<Settings> {
+  return Settings.load({ cwd: process.cwd(), baseDir: SESSION_BASE_DIR });
+}
+
+/**
+ * `--host` overrides the configured default for a single run; with the flag
+ * omitted, the host chosen at init time is used.
+ */
+function resolveHost(host: string | undefined, settings: Settings): ModelHost {
+  const id = host ?? settings.host();
+  if (id === "ollama") return createOllamaHost(settings);
+  if (id === "fake") return new DeterministicFakeModelHost();
+  if (id === "anthropic") return createAnthropicHost(settings);
+  if (id === "cursor") return createCursorHost(settings);
+  if (id === "claude-ide") return createClaudeIdeHost(settings);
+  console.error(`unknown host: ${id} (expected ${MODEL_HOST_IDS.join(", ")})`);
   process.exit(1);
 }
 
@@ -257,13 +280,14 @@ function runPlan(args: string[]): void {
 
 async function runExecution(args: string[]): Promise<void> {
   const { host, rest } = extractHostFlag(args);
+  const settings = await loadSettings();
   const state = createTaskState(taskFrom(rest, "run"));
   const trace = await runTask({
     state,
     capabilities: ["model", "read", "shell"],
     privacy: "metadata-only",
     policy: TRUSTED_POLICY,
-    modelHost: resolveHost(host),
+    modelHost: resolveHost(host, settings),
     useRouter: true,
   });
   const location = await traceRepository.save(trace);
@@ -297,10 +321,10 @@ async function runReplay(args: string[]): Promise<void> {
 async function runEval(args: string[]): Promise<void> {
   const { host, rest } = extractHostFlag(args);
   if (rest.length !== 0) {
-    console.error("usage: lambda eval [--host fake|anthropic|cursor|claude-ide]");
+    console.error(`usage: lambda eval [--host ${MODEL_HOST_IDS.join("|")}]`);
     process.exit(1);
   }
-  const result = await runCapabilityBenchmark(resolveHost(host));
+  const result = await runCapabilityBenchmark(resolveHost(host, await loadSettings()));
   console.log(JSON.stringify(result, null, 2));
 }
 
@@ -442,7 +466,7 @@ async function main(argv: string[]): Promise<void> {
 
   if (first === "init") {
     const { json, rest: initArgs } = extractJsonFlag(rest);
-    await runInit(initArgs, process.cwd(), json);
+    await runInit(initArgs, process.cwd(), SESSION_BASE_DIR, json);
     return;
   }
 

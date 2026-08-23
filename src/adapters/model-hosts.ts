@@ -36,6 +36,11 @@ abstract class TransportModelHost implements ModelHost {
   }
 }
 
+export class OllamaModelHost extends TransportModelHost {
+  readonly id = "ollama";
+  readonly version = "adapter-stub-1";
+}
+
 export class AnthropicClaudeHost extends TransportModelHost {
   readonly id = "anthropic-claude";
   readonly version = "adapter-stub-1";

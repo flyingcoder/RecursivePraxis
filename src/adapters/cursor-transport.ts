@@ -7,6 +7,7 @@ import type {
 } from "../engine/orchestrator.js";
 import { CursorModelHost, type JsonModelTransport } from "./model-hosts.js";
 import { routingSchema, stepOutputSchema, toPlainJsonSchema } from "./schemas.js";
+import { Settings } from "../config/settings.js";
 
 export interface CursorTransportConfig {
   readonly apiKey: string;
@@ -103,14 +104,13 @@ function parseJsonReply(text: string): unknown {
   }
 }
 
-export function cursorTransportFromEnv(): CursorAgentTransport {
-  const apiKey = process.env.CURSOR_API_KEY;
-  const model = process.env.CURSOR_MODEL;
-  if (!apiKey) throw new Error("CURSOR_API_KEY is not configured");
-  if (!model) throw new Error("CURSOR_MODEL is not configured");
-  return new CursorAgentTransport({ apiKey, model });
+export function createCursorTransport(settings: Settings): CursorAgentTransport {
+  return new CursorAgentTransport({
+    apiKey: settings.require("cursorApiKey"),
+    model: settings.require("cursorModel"),
+  });
 }
 
-export function createCursorHostFromEnv(): ModelHost {
-  return new CursorModelHost(cursorTransportFromEnv());
+export function createCursorHost(settings: Settings): ModelHost {
+  return new CursorModelHost(createCursorTransport(settings));
 }
