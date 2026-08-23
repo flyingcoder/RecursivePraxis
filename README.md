@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="recursive-praxis-cover.png" alt="RecursivePraxis — cognitive runtime for observable AI execution" width="100%" />
+<img src="recursive-praxis-cover.png" alt="RecursivePraxis — agentic cognitive runtime for observable AI execution" width="100%" />
 
 <br />
 
@@ -12,7 +12,7 @@
 </div>
 
 <p align="center">
-  <strong>RecursivePraxis</strong> is an experimental cognitive runtime for governing how an AI agent reasons and acts.
+  <strong>RecursivePraxis</strong> is an experimental agentic cognitive runtime for governing how an AI agent reasons and acts.
   Instead of accepting an opaque chain of model responses, it represents execution as legal sequences of
   named cognitive operators over an explicit abstract state.
 </p>
@@ -33,8 +33,15 @@ It is designed to make agent control flow **coherent**, **bounded**, **auditable
 | 🔁 **Bounded recovery** | The HALIRA Mode-2 program recovers a stalled session with discipline, not retries-until-luck. |
 | 🗃️ **Redacted local traces** | Runs are recorded as hashes/metadata and replayed deterministically, not stored as raw content. |
 
-> This is a runtime for controlling **observable** agent execution. It does **not** claim to expose hidden
-> model chain-of-thought, or empirically prove that the abstract state is a measure of truth.
+> This is a runtime for controlling **observable** agent execution — the model calls an agent makes, the
+> tools it requests, and the evidence it cites. It does **not** claim to expose hidden model
+> chain-of-thought, or empirically prove that the abstract state is a measure of truth.
+
+**Agentic means governed, not autonomous.** RecursivePraxis is a control plane *for* an agent, not an
+agent framework: it ships no planner library, no tool catalog, and no cross-run memory, and it never
+starts work on its own. A host agent — Claude Code, Cursor, or Codex via `lambda init` — or you at the
+CLI drives every step, and the runtime decides which steps are legal, what they may spend, which tools
+they may touch, and whether the session may be bound.
 
 <br />
 
@@ -182,7 +189,7 @@ execution** — not remote model calls, tool side effects, or the truth of unava
 | 💻 [CLI reference](docs/CLI_REFERENCE.md) | Full command and flag reference |
 | 🤝 [Contributing](CONTRIBUTING.md) | Development conventions |
 | 🔒 [Security policy](SECURITY.md) | Reporting a vulnerability |
-| 🗺️ [Exploratory roadmap](specs/explorations/RecursivePraxis_Roadmap.md) | Where this project is headed |
+| 🗺️ [Exploratory roadmap](docs/explorations/RecursivePraxis_Roadmap.md) | Where this project is headed |
 
 <br />
 

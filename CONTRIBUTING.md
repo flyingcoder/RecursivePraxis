@@ -2,7 +2,7 @@
 
 ## Scope and posture
 
-RecursivePraxis is an experimental, safety-oriented runtime. Changes should make control flow more explicit, more deterministic, or more verifiable. Do not represent authored formalism as empirical measurement, and do not convert a deliberately fail-closed surface into a permissive one without a concrete specification and tests.
+RecursivePraxis is an experimental, safety-oriented agentic runtime: it governs an agent's act loop, so both reasoning transitions and outward actions (model calls, tool requests, evidence, spend) are in scope. Changes should make control flow more explicit, more deterministic, or more verifiable. Do not represent authored formalism as empirical measurement, and do not convert a deliberately fail-closed surface into a permissive one without a concrete specification and tests.
 
 The currently reserved verbs—`record`, `validate`, `score`, and `revise`—are intentionally unimplemented. Adding one requires separately defined authority, inputs/outputs, evidence provenance, and failure semantics.
 
@@ -26,8 +26,8 @@ Use `npm run test:watch` while iterating.
 - `src/cli-commands/` and `src/cli-support/`: CLI interfaces and persisted session support.
 - `src/init/`: host-native integration-file generation.
 - `tests/`: behavior and regression tests.
-- `docs/`: current architecture, requirement audit, and CLI documentation.
-- `specs/`: exploratory and historical design material; treat it as context, not automatically as current behavior.
+- `docs/`: current architecture, requirement audit, vocabulary, and CLI documentation.
+- `docs/explorations/`, `docs/inspirations/`, `docs/suggestions/`: exploratory and historical design material; treat it as context, not automatically as current behavior.
 
 ## Change expectations
 
