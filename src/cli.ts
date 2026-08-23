@@ -36,6 +36,7 @@ import { runSense } from "./cli-commands/sense.js";
 import { runStep } from "./cli-commands/step.js";
 import { runStatus } from "./cli-commands/status.js";
 import { runAnalyze } from "./cli-commands/analyze.js";
+import { runCompile } from "./cli-commands/compile.js";
 import { runSolve } from "./cli-commands/solve.js";
 import { runDiagnose, listDiagnoseProblems } from "./cli-commands/diagnose.js";
 import { runHalira } from "./cli-commands/halira.js";
@@ -74,6 +75,7 @@ function printHelp(): void {
     "  lambda sense --d <n> --c <n> | --from <json> [--json]",
     "  lambda step [--op <Op>] [--json]",
     "  lambda analyze <Op[,Op…]> [--json]",
+    "  lambda compile <Op[,Op…]> [--bindings <file>] [--json]",
     "  lambda solve --initial D,C --target D,C [--beam-width N] [--json]",
     "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating>] [--json]",
     "  lambda halira start|next|status [--json]",
@@ -101,6 +103,9 @@ function printHelp(): void {
     "  sense      — set the session's D/C state directly",
     "  step       — apply one operator to the session (auto-picks if --op omitted)",
     "  analyze    — λ_eff / trajectory / warnings for an arbitrary sequence",
+    "  compile    — compile a sequence into a cognitive execution program",
+    "               (capability + budget per step; --bindings attaches the",
+    "               model-authored domain bindings)",
     "  solve      — beam search from --initial to --target D,C",
     "  diagnose   — canned problem templates (run with no argument to list them)",
     "  halira     — Mode-2 escalation step machine (start | next | status)",
@@ -427,6 +432,12 @@ async function main(argv: string[]): Promise<void> {
       process.exit(1);
     }
     runAnalyze(analyzeArgs[0]!, json);
+    return;
+  }
+
+  if (first === "compile") {
+    const { json, rest: compileArgs } = extractJsonFlag(rest);
+    await runCompile(compileArgs, json);
     return;
   }
 
