@@ -1,15 +1,21 @@
 {
   "name": "recursive-praxis",
   "version": "0.0.0",
-  "private": true,
+  "license": "Apache-2.0",
   "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
     "lambda": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
     "test": "npm run build && vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && vitest run"
   },
   "engines": {
     "node": ">=20"

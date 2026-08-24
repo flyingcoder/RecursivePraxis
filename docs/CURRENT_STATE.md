@@ -4,7 +4,18 @@ This document describes the repository as it exists today. It separates implemen
 
 ## Purpose
 
-RecursivePraxis is an experimental cognitive runtime. It turns agent reasoning into named operator transitions over an abstract state instead of treating a model response as an opaque chain of thought. The runtime's job is to determine which transitions are legal, bound execution with budgets and capabilities, preserve a redacted trace, and recover through a prescribed program when normal reasoning fails.
+RecursivePraxis is an experimental agentic cognitive runtime. It turns agent reasoning into named operator transitions over an abstract state instead of treating a model response as an opaque chain of thought. The runtime's job is to determine which transitions are legal, bound execution with budgets and capabilities, preserve a redacted trace, and recover through a prescribed program when normal reasoning fails.
+
+"Agentic" scopes what is governed: a tool-using agent's act loop, not disembodied reasoning. The unit
+of control is one agent session in which a model host is called, tool requests are raised, evidence is
+cited, and resources are consumed. Accordingly, the action-side gates — capability grants, per-operator
+tool allowlists, bounded tool names/arguments/timeouts, and post-call budget reconciliation — are part of
+the runtime's purpose, not incidental hardening.
+
+The term does not imply autonomy. RecursivePraxis initiates nothing, spawns no agents, schedules no work,
+and supplies no planner library, tool catalog, or cross-run memory. It is the governor an existing agent
+runs against: `lambda init` emits host-native integration files so Claude Code, Cursor, and Codex call
+this CLI, and the CLI is equally usable directly by a human operator.
 
 The public CLI command is currently named `lambda` (see `src/cli.ts`).
 
@@ -93,7 +104,7 @@ The repository already fails closed for the following reserved verbs; they are n
 - `score`
 - `revise`
 
-The broader roadmap in `specs/explorations/RecursivePraxis_Roadmap.md` remains partially future-facing. In particular:
+The broader roadmap in `docs/explorations/RecursivePraxis_Roadmap.md` remains partially future-facing. In particular:
 
 - There is no cross-run episodic, semantic, or procedural memory. `session-store.ts` is single-session working state.
 - There is no automatic extraction of learned policy changes from traces; policy promotion is benchmark-gated but starts from a supplied experimental profile.

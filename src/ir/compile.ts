@@ -17,7 +17,8 @@ export interface IRPayload {
   readonly constraint: "do not invent operators outside legalNext";
 }
 
-function bandFor(value: number): LambdaBand {
+/** Authored presentation thresholds for an authored λ value. */
+export function lambdaBandFor(value: number): LambdaBand {
   if (value < 0.4) return "low";
   if (value <= 0.7) return "mid";
   return "high";
@@ -25,7 +26,7 @@ function bandFor(value: number): LambdaBand {
 
 export function compileIR(session: Session): IRPayload {
   const attractor = classifyAttractor(session.state.D, session.state.C);
-  const band = bandFor(lambdaEffective(session.sequence));
+  const band = lambdaBandFor(lambdaEffective(session.sequence));
   const haliraStepName =
     session.mode === 2 && session.haliraStep > 0
       ? HALIRA_STEP_NAMES[session.haliraStep as 1 | 2 | 3 | 4 | 5 | 6 | 7]
