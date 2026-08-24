@@ -38,6 +38,20 @@ export interface SolveOptions {
    * injected table will not be stepped under it.
    */
   readonly effects?: OperatorEffects;
+  /**
+   * The operator set the search is allowed to expand, defaulting to all of
+   * `OPERATORS`. This is the second half of the seam `effects` opens: `effects`
+   * swaps the *physics* the search reasons over, `candidates` swaps the
+   * *alphabet* it reasons with, so a selection mechanism that owes nothing to
+   * the effect vectors — the attractor transition table, say — can be run
+   * against the default and diffed rather than argued about. See
+   * `compareTransitionFilter` in `selectionStudy.ts`.
+   *
+   * Nothing in the engine passes this. An empty array is taken at its word and
+   * expands nothing, which returns the unexpanded start node as a partial
+   * result; pass `undefined`, not `[]`, to mean "no filter".
+   */
+  readonly candidates?: readonly Operator[];
 }
 
 export interface SolveResult {
@@ -89,7 +103,7 @@ function attractorLabelFor(state: DissipationState): AttractorLabel {
  * Ranking the frontier by `g + h` therefore counts distance exactly once.
  * Ranking by `J + h`, as this module previously did, counted it twice and so
  * discarded solutions that J itself scored better — see
- * docs/plans/algebra-vs-dynamics-build-plan.md §0.3 for the measured effect.
+ * docs/ALGEBRA_DYNAMICS_SEAM.md §3 for the measured effect.
  *
  * Dissipation is a whole-path total (`totalDissipationCost` sums n-1
  * transitions), so recomputing `g` per node is correct; no incremental
@@ -137,6 +151,7 @@ export function solve(options: SolveOptions): SolveResult {
   const { initial, target } = options;
   const beamWidth = options.beamWidth ?? DEFAULT_BEAM_WIDTH;
   const effects = options.effects ?? DEFAULT_OPERATOR_EFFECTS;
+  const candidates = options.candidates ?? OPERATORS;
 
   const startNode: SearchNode = {
     state: initial,
@@ -173,7 +188,7 @@ export function solve(options: SolveOptions): SolveResult {
         continue;
       }
 
-      for (const op of OPERATORS) {
+      for (const op of candidates) {
         if (violatesSolverConstraint(node.sequence, op)) continue;
 
         const newState = applyOperator(node.state, op, effects);

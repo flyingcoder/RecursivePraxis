@@ -81,7 +81,7 @@ describe("simulateTrajectory", () => {
 });
 
 /**
- * Phase 4 (C1) of docs/plans/algebra-vs-dynamics-build-plan.md: the effects
+ * The effects seam — docs/ALGEBRA_DYNAMICS_SEAM.md §3: the effects
  * table is injectable. The defect being fixed was not a missing abstraction but
  * a seam nothing could reach — so these tests assert both halves: the default
  * path is byte-for-byte what it was, and an injected table actually changes the
@@ -140,7 +140,7 @@ describe("operator effects injection", () => {
 });
 
 /**
- * Phase 3 (D) of docs/plans/algebra-vs-dynamics-build-plan.md: the table ported
+ * The suggestion table — docs/ALGEBRA_DYNAMICS_SEAM.md §3: the table ported
  * from phase_portrait.py `suggest_transition_operators`, chosen over the inert
  * five-entry table in formalism.json (see src/assets/NOTICE.md item 7).
  */

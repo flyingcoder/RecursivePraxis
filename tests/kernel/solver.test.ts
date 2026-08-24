@@ -48,8 +48,8 @@ describe("solve", () => {
 });
 
 /**
- * CHARACTERIZATION — updated by Phase 1 of
- * docs/plans/algebra-vs-dynamics-build-plan.md.
+ * CHARACTERIZATION — updated when the frontier ranking was corrected; see
+ * docs/ALGEBRA_DYNAMICS_SEAM.md §3.
  *
  * The solver now ranks its frontier by the A* key `g + h`, where `g` is the
  * already-paid cost (dissipation + attractor penalty) and `h` is the remaining

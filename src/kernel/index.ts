@@ -53,6 +53,22 @@ export {
   type SolveResult,
 } from "./solver.js";
 
+export {
+  degeneracyReport,
+  formatDegeneracyReport,
+  DEGENERACY_TIGHT_THRESHOLD,
+  type DegeneracyReport,
+  type OperatorPairDegeneracy,
+} from "./degeneracy.js";
+
+export {
+  compareTransitionFilter,
+  formatTransitionFilterComparison,
+  type TransitionFilterComparison,
+  type TransitionFilterOptions,
+  type TransitionFilterVerdict,
+} from "./selectionStudy.js";
+
 export { HALIRA_STEP_NAMES, haliraCandidateOps } from "./halira.js";
 
 export {

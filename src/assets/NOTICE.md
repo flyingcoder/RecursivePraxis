@@ -44,7 +44,7 @@ The executed values are pinned by a characterization test in
    and "the engine does not enforce idempotence / absorption / `Telo`
    terminality" is therefore not a defect. Three such bugs were filed against
    this gap and all three were withdrawn on that basis — see
-   `docs/suggestions/algebra-vs-dynamics-backlog.md` §1–2 before re-filing.
+   `docs/ALGEBRA_DYNAMICS_SEAM.md` §1–2 before re-filing.
 
 5. **Commutator magnitudes are `{0, 1}` only.** The loader maps `sign != 0 → 1.0`
    and `sign == 0 → 0.0`, so the pairwise interaction term is always exactly
