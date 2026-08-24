@@ -2,9 +2,11 @@ import type { AttractorLabel, DissipationState, Operator } from "./types.js";
 import { OPERATORS } from "./types.js";
 import { totalDissipationCost } from "./dissipation.js";
 import {
+  DEFAULT_OPERATOR_EFFECTS,
   applyOperator,
   attractorPenalty,
   classifyAttractor,
+  type OperatorEffects,
 } from "./phasePortrait.js";
 import { violatesHardConstraint } from "./constraints.js";
 
@@ -18,7 +20,7 @@ const MAX_ITERATIONS = 1000;
 interface SearchNode {
   readonly state: DissipationState;
   readonly sequence: readonly Operator[];
-  readonly costSoFar: number;
+  /** The A* ranking key `g + h` — see `accumulatedCost` / `heuristic`. */
   readonly estimatedTotalCost: number;
 }
 
@@ -26,6 +28,30 @@ export interface SolveOptions {
   readonly initial: DissipationState;
   readonly target: DissipationState;
   readonly beamWidth?: number;
+  /**
+   * An alternative per-operator displacement table. Defaults to
+   * `DEFAULT_OPERATOR_EFFECTS`, whose values are class-generated rather than
+   * measured — see the provenance note in `phasePortrait.ts`. This is the seam
+   * that makes evaluating a replacement table an experiment rather than an
+   * edit to the kernel. It covers the search only: `session.ts` `step` still
+   * advances state with the default table, so a sequence solved here under an
+   * injected table will not be stepped under it.
+   */
+  readonly effects?: OperatorEffects;
+  /**
+   * The operator set the search is allowed to expand, defaulting to all of
+   * `OPERATORS`. This is the second half of the seam `effects` opens: `effects`
+   * swaps the *physics* the search reasons over, `candidates` swaps the
+   * *alphabet* it reasons with, so a selection mechanism that owes nothing to
+   * the effect vectors — the attractor transition table, say — can be run
+   * against the default and diffed rather than argued about. See
+   * `compareTransitionFilter` in `selectionStudy.ts`.
+   *
+   * Nothing in the engine passes this. An empty array is taken at its word and
+   * expands nothing, which returns the unexpanded start node as a partial
+   * result; pass `undefined`, not `[]`, to mean "no filter".
+   */
+  readonly candidates?: readonly Operator[];
 }
 
 export interface SolveResult {
@@ -62,15 +88,38 @@ function attractorLabelFor(state: DissipationState): AttractorLabel {
   return classifyAttractor(state.D, state.C);
 }
 
-function computeCost(
+/**
+ * The A* ranking key and the reported objective are deliberately different
+ * functions, and the seam between them is the point of this module.
+ *
+ * J — the reported objective — is
+ * `distance + SOLVER_BETA * dissipation + SOLVER_GAMMA * penalty`. It is what
+ * `formatSolution` returns as `cost` / `costBreakdown.total`, and what the
+ * Python parity test pins.
+ *
+ * `accumulatedCost` is A*'s `g`: the part of J already *paid* along the path —
+ * dissipation and the attractor penalty. It deliberately omits terminal
+ * distance, because distance is the estimate-to-go `h`, not a sunk cost.
+ * Ranking the frontier by `g + h` therefore counts distance exactly once.
+ * Ranking by `J + h`, as this module previously did, counted it twice and so
+ * discarded solutions that J itself scored better — see
+ * docs/ALGEBRA_DYNAMICS_SEAM.md §3 for the measured effect.
+ *
+ * Dissipation is a whole-path total (`totalDissipationCost` sums n-1
+ * transitions), so recomputing `g` per node is correct; no incremental
+ * accumulator is needed.
+ *
+ * For a node evaluated at its own state the two coincide numerically
+ * (`J = g + h` there), so the node carries only the ranking key and
+ * `formatSolution` re-derives J from its parts.
+ */
+function accumulatedCost(
   sequence: readonly Operator[],
-  finalState: DissipationState,
-  target: DissipationState,
+  state: DissipationState,
 ): number {
-  const terminalDistance = distance(finalState, target);
   const dissipationCost = sequence.length >= 2 ? totalDissipationCost(sequence) : 0;
-  const penalty = attractorPenalty(attractorLabelFor(finalState));
-  return terminalDistance + SOLVER_BETA * dissipationCost + SOLVER_GAMMA * penalty;
+  const penalty = attractorPenalty(attractorLabelFor(state));
+  return SOLVER_BETA * dissipationCost + SOLVER_GAMMA * penalty;
 }
 
 function heuristic(state: DissipationState, target: DissipationState): number {
@@ -81,16 +130,17 @@ function formatSolution(node: SearchNode, target: DissipationState, success: boo
   const terminalDistance = distance(node.state, target);
   const dissipationCost = node.sequence.length >= 2 ? totalDissipationCost(node.sequence) : 0;
   const penalty = attractorPenalty(attractorLabelFor(node.state));
+  const total = terminalDistance + SOLVER_BETA * dissipationCost + SOLVER_GAMMA * penalty;
 
   return {
     sequence: node.sequence,
     finalState: node.state,
-    cost: node.costSoFar,
+    cost: total,
     costBreakdown: {
       terminalDistance,
       dissipationCost,
       attractorPenalty: penalty,
-      total: node.costSoFar,
+      total,
     },
     success,
     length: node.sequence.length,
@@ -100,12 +150,13 @@ function formatSolution(node: SearchNode, target: DissipationState, success: boo
 export function solve(options: SolveOptions): SolveResult {
   const { initial, target } = options;
   const beamWidth = options.beamWidth ?? DEFAULT_BEAM_WIDTH;
+  const effects = options.effects ?? DEFAULT_OPERATOR_EFFECTS;
+  const candidates = options.candidates ?? OPERATORS;
 
   const startNode: SearchNode = {
     state: initial,
     sequence: [],
-    costSoFar: 0,
-    estimatedTotalCost: heuristic(initial, target),
+    estimatedTotalCost: accumulatedCost([], initial) + heuristic(initial, target),
   };
 
   let frontier: SearchNode[] = [startNode];
@@ -137,19 +188,18 @@ export function solve(options: SolveOptions): SolveResult {
         continue;
       }
 
-      for (const op of OPERATORS) {
+      for (const op of candidates) {
         if (violatesSolverConstraint(node.sequence, op)) continue;
 
-        const newState = applyOperator(node.state, op);
+        const newState = applyOperator(node.state, op, effects);
         const newSequence = [...node.sequence, op];
-        const costSoFar = computeCost(newSequence, newState, target);
+        const g = accumulatedCost(newSequence, newState);
         const h = heuristic(newState, target);
 
         frontier.push({
           state: newState,
           sequence: newSequence,
-          costSoFar,
-          estimatedTotalCost: costSoFar + h,
+          estimatedTotalCost: g + h,
         });
       }
     }

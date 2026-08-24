@@ -1,4 +1,4 @@
-import { classifyAttractor, solve } from "../kernel/index.js";
+import { classifyAttractor, solve, suggestTransitionOperators } from "../kernel/index.js";
 
 /** Ported from the quarry's controlled_rupture_cli.py `problem_templates`. */
 const PROBLEM_TEMPLATES = {
@@ -46,16 +46,25 @@ export function runDiagnose(problemArg: string, json: boolean): void {
 
   const initialAttractor = classifyAttractor(problem.initial.D, problem.initial.C);
   const targetAttractor = classifyAttractor(problem.target.D, problem.target.C);
+  const suggested = suggestTransitionOperators(initialAttractor, targetAttractor);
   const solution = solve({ initial: problem.initial, target: problem.target, beamWidth: 10 });
 
   if (json) {
-    console.log(JSON.stringify({ problem, initialAttractor, targetAttractor, solution }, null, 2));
+    console.log(
+      JSON.stringify({ problem, initialAttractor, targetAttractor, suggested, solution }, null, 2),
+    );
     process.exit(0);
   }
 
   console.log(`problem: ${problem.description}`);
   console.log(`diagnosis: ${problem.diagnosis}`);
   console.log(`${initialAttractor} -> ${targetAttractor}`);
+  // Suppressed when empty, matching controlled_rupture_cli.py:108. An empty
+  // list means the pair is unmapped — most often because it is a same-attractor
+  // pair, where there is no transition to suggest.
+  if (suggested.length > 0) {
+    console.log(`Suggested operators: ${suggested.join(", ")}`);
+  }
   console.log("");
   console.log(solution.success ? "SUCCESS" : "PARTIAL");
   console.log(`sequence: ${solution.sequence.join(" ∘ ") || "(empty)"}`);

@@ -429,3 +429,170 @@ test("benchmark spans three domains and promotion requires grounded passes", asy
     /grounded evidence/,
   );
 });
+
+/**
+ * CHARACTERIZATION — updated when the frontier ranking was corrected; see
+ * docs/ALGEBRA_DYNAMICS_SEAM.md §3.
+ *
+ * planTask() feeds every non-HALIRA plan through solve(), so a change to the
+ * solver's frontier ordering changes emitted plans. This pins the plan-level
+ * effect so it shows up as a named failing assertion rather than a silent diff.
+ */
+test("planTask emits a pinned solver-derived sequence for a high-dissipation state", () => {
+  const plan = planTask({
+    state: createTaskState("Fix the parser", { dissipation: { D: 0.7, C: 0.65 } }),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+  });
+  assert.deepEqual(
+    plan.steps.map((step) => step.operator),
+    ["Kata", "Kata", "Kata", "Non"],
+  );
+  assert.match(plan.rationale[1]!, /cost 0\.7000/);
+});
+
+test("planTask emits a pinned solver-derived sequence for the default state", () => {
+  const plan = planTask({
+    state: createTaskState("Fix the parser"),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+  });
+  assert.deepEqual(
+    plan.steps.map((step) => step.operator),
+    ["Telo", "Non"],
+  );
+  assert.match(plan.rationale[1]!, /cost 0\.1639/);
+});
+
+// --- Tool-host evidence validation -------------------------------------------
+//
+// A ToolHost is an untrusted boundary in the same way a ModelHost is: whatever
+// it returns is written into the trace and folded into traceHash. These pin the
+// guard that runs at that boundary.
+
+const TOOL_STATE_DISSIPATION = { D: 0.25, C: 0.05 } as const;
+
+function hex(seed: string): string {
+  return createHash("sha256").update(seed).digest("hex");
+}
+
+/** Plans `Ortho Non`; Ortho is the tool-capable operator that allows "read". */
+function toolRequestingHost(): ModelHost {
+  return {
+    id: "tool-requester",
+    version: "1",
+    async execute(input) {
+      return {
+        summary: input.operator,
+        evidenceRefs: [],
+        artifacts: [],
+        usage: { tokens: 1, costUsd: 0, latencyMs: 1 },
+        validatorPassed: true,
+        uncertainty: 0,
+        ...(input.operator === "Ortho"
+          ? {
+              requestedTools: [
+                { name: "read", capability: "read", args: { path: "safe.txt" }, timeoutMs: 100 },
+              ],
+            }
+          : {}),
+      };
+    },
+  };
+}
+
+function runWithToolResult(result: unknown) {
+  return runTask({
+    state: {
+      ...createTaskState("Investigate the outage"),
+      dissipation: TOOL_STATE_DISSIPATION,
+    },
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+    modelHost: toolRequestingHost(),
+    toolHost: {
+      id: "probe",
+      async call() {
+        return result as never;
+      },
+    },
+  });
+}
+
+test("a well-formed tool result reaches the trace as evidence and an artifact hash", async () => {
+  const evidenceHash = hex("tool-evidence");
+  const artifactHash = hex("tool-artifact");
+  const trace = await runWithToolResult({
+    evidence: { id: "read-1", kind: "tool-result", hash: evidenceHash },
+    artifactHash,
+    durationMs: 5,
+  });
+
+  const ortho = trace.events.find(
+    (event) => event.type === "step-completed" && event.operator === "Ortho",
+  );
+  assert.ok(ortho && ortho.type === "step-completed", "Ortho step was not recorded");
+  assert.deepEqual(ortho.evidenceRefs, [
+    { id: "read-1", kind: "tool-result", hash: evidenceHash },
+  ]);
+  assert.deepEqual(ortho.artifactHashes, [artifactHash]);
+  const replay = verifyReplay(trace);
+  assert.deepEqual(replay.reasons, []);
+  assert.equal(replay.reproducible, true);
+});
+
+test("a tool result with a malformed evidence hash is rejected before it is traced", async () => {
+  await assert.rejects(
+    runWithToolResult({
+      evidence: { id: "read-1", kind: "tool-result", hash: "not-a-sha256" },
+      durationMs: 5,
+    }),
+    /invalid tool result: read/,
+  );
+});
+
+test("a tool host cannot launder its output into a stronger evidence kind", async () => {
+  for (const kind of ["human-acceptance", "test", "validator", "domain-check"]) {
+    await assert.rejects(
+      runWithToolResult({
+        evidence: { id: "read-1", kind, hash: hex(kind) },
+        durationMs: 5,
+      }),
+      /invalid tool result: read/,
+      kind,
+    );
+  }
+});
+
+test("a tool result with a malformed artifact hash is rejected", async () => {
+  await assert.rejects(
+    runWithToolResult({
+      evidence: { id: "read-1", kind: "tool-result", hash: hex("ok") },
+      artifactHash: "../../etc/passwd",
+      durationMs: 5,
+    }),
+    /invalid tool result: read/,
+  );
+});
+
+test("tool result duration is still bounded by the call timeout", async () => {
+  for (const durationMs of [-1, Number.NaN, 101]) {
+    await assert.rejects(
+      runWithToolResult({
+        evidence: { id: "read-1", kind: "tool-result", hash: hex("ok") },
+        durationMs,
+      }),
+      /invalid tool result: read/,
+      String(durationMs),
+    );
+  }
+});
+
+test("a tool result that is not an object at all is rejected", async () => {
+  for (const result of [null, undefined, "ok", 42, []]) {
+    await assert.rejects(runWithToolResult(result), /invalid tool result: read/, String(result));
+  }
+});

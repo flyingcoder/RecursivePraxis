@@ -27,6 +27,7 @@ Use `npm run test:watch` while iterating.
 - `src/init/`: host-native integration-file generation.
 - `tests/`: behavior and regression tests.
 - `docs/`: current architecture, requirement audit, vocabulary, and CLI documentation.
+- `docs/ALGEBRA_DYNAMICS_SEAM.md`: why the operator algebra and the state dynamics are different objects, which apparent bugs that explains away, and what has been measured across the seam. Read it before filing anything about idempotence, absorption, or the effects table.
 - `docs/explorations/`, `docs/inspirations/`, `docs/suggestions/`: exploratory and historical design material; treat it as context, not automatically as current behavior.
 
 ## Change expectations

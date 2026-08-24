@@ -65,7 +65,7 @@ The current runtime validates the following before accepting model or routing re
 - router usage is budgeted before routing starts;
 - model-reported actual usage is checked against remaining budget after the call, so an estimate cannot hide an overrun;
 - requested tool calls require an available tool host, a granted capability, an operator allowlist entry, safe bounded names/arguments, and a timeout of at most 30 seconds;
-- tool duration must be finite, non-negative, and no greater than its requested timeout.
+- tool results are validated with the same strictness as model/router output before anything reaches the trace: the `evidence` object must satisfy the evidence-reference validator, its `kind` must be `tool-result` (a tool host cannot claim `human-acceptance`, `test`, `validator`, or `domain-check` provenance for its own output), any `artifactHash` must be SHA-256-shaped, and the duration must be finite, non-negative, and no greater than its requested timeout.
 
 The trace stores artifact hashes, not artifact contents. It stores an objective hash and abstract dissipation states, not the raw objective. Trace files are atomically written with mode `0600` by `FileTraceRepository`.
 
@@ -91,9 +91,9 @@ This is deterministic semantic verification of the recorded abstract execution. 
 
 ## Verification evidence
 
-The current test suite covers grammar rejection, dissipation and solver behavior, session/HALIRA gates, CLI behavior, initialization, budgeting, typed outputs, model evidence validation, tool allowlisting, redacted trace persistence, tamper detection, semantic replay, and a completed Mode-2 recovery path.
+The current test suite covers grammar rejection, dissipation and solver behavior, operator-effect degeneracy, selection-filter comparison, session/HALIRA gates, CLI behavior, initialization, budgeting, typed outputs, model *and tool-host* evidence validation, tool allowlisting, redacted trace persistence, tamper detection, semantic replay, and a completed Mode-2 recovery path.
 
-At the time this document was written, `npm test` passed with **106 tests in 10 test files**. A manual CLI `run` followed by `replay` also returned `reproducible: true` with no replay reasons.
+At the time this document was last updated, `npm test` passed with **290 tests in 17 test files**. A manual CLI `run` followed by `replay` also returned `reproducible: true` with no replay reasons.
 
 ## Deliberate non-goals and incomplete areas
 
@@ -104,13 +104,18 @@ The repository already fails closed for the following reserved verbs; they are n
 - `score`
 - `revise`
 
+They are reserved for a reason that is worth stating precisely, because it is not "we ran out of time". Each verb has an in-session half that already exists under another name — `run`/`inspect`/`replay` record, `check`/`bind`/`replay` validate, `analyze`/`eval` score, and the Mode-1 replan, HALIRA escalation, and `promote` revise. Building them as CLI verbs would mostly produce aliases. What is actually missing is the other half: a measurement authority that could say whether reasoning was *good*, and a calibration source that could justify revising the authored constants. `docs/ALGEBRA_DYNAMICS_SEAM.md` §4 and §6 describe how far that is from being available. Until it is, a `score` verb would emit numbers the runtime cannot defend.
+
+The CLI dispatches these verbs *through* `src/{record,validate,score,revise}/index.ts` rather than matching a string, so the reserved modules are load-bearing: deleting one breaks the build, and a module that stopped throwing would fail `tests/fail-closed.test.ts`.
+
 The broader roadmap in `docs/explorations/RecursivePraxis_Roadmap.md` remains partially future-facing. In particular:
 
 - There is no cross-run episodic, semantic, or procedural memory. `session-store.ts` is single-session working state.
 - There is no automatic extraction of learned policy changes from traces; policy promotion is benchmark-gated but starts from a supplied experimental profile.
 - The abstract D/C state is authored formalism, not a measured or calibrated model of real-world truth, quality, or contradiction.
+- The per-operator transition effects in `src/kernel/phasePortrait.ts` are generated from operator class — A-Constructive negative ΔD/ΔC, B-Disruptive positive, C-Reflexive small or mixed, D-Structural specialized — with magnitudes chosen by hand within each class. They are a placeholder with the right shape, not a measurement, and are injectable via `SolveOptions.effects` so an alternative table can be evaluated in the solver. The seam stops there: `session.ts` `step` and the `analyze` command still advance state with the default table. The cost of the placeholder is measured, not assumed: 62 of the 190 operator pairs are closer together in `(ΔD, ΔC)` than the distance at which the solver declares it has arrived, so for a third of the alphabet the search cannot tell two operators apart (`degeneracyReport` in `src/kernel/degeneracy.ts`). See `docs/ALGEBRA_DYNAMICS_SEAM.md` for that measurement and for why the attractor transition table was evaluated as a replacement selection rule and not adopted.
 - Replay proves consistency of a redacted, deterministic abstract trace. It cannot prove that a model summary was truthful, that an evidence hash corresponds to content unavailable in the trace, or that an external tool's side effect was reproduced.
-- Tool-host results are currently appended after duration validation, but their `evidence` object and optional `artifactHash` are not runtime-validated with the same strict validator used for model/router evidence. This is a known evidence-ingress gap; no implementation change has been made here.
+- Evidence hashes are validated for *syntax* at every ingress boundary, but nothing re-derives a hash from the content it names. A host that reports a well-formed hash for content it never read produces a trace that validates and replays. Closing that requires content-addressed artifact storage or host attestation, neither of which exists.
 - Plans require the `model` capability at planning time. Non-model capabilities are enforced when a model requests a tool, rather than treated as mandatory requirements for every tool-capable operator.
 - Trace hashes are integrity checks, not signatures. Anyone who can rewrite a trace can recompute its hash; semantic replay still detects incoherent terminal state, but provenance requires a future signing or trusted-storage design.
 

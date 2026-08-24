@@ -44,6 +44,10 @@ import { runHalira } from "./cli-commands/halira.js";
 import { runBind } from "./cli-commands/bind.js";
 import { runIr } from "./cli-commands/ir.js";
 import { runInit } from "./cli-commands/init.js";
+import { record } from "./record/index.js";
+import { validate } from "./validate/index.js";
+import { score } from "./score/index.js";
+import { revise } from "./revise/index.js";
 
 /**
  * Read from package.json so `lambda --version` cannot drift from the
@@ -54,12 +58,29 @@ const { version: VERSION } = createRequire(import.meta.url)("../package.json") a
 };
 const SESSION_BASE_DIR = path.resolve(process.cwd(), ".recursive-praxis");
 
-const RESERVED_VERBS = ["record", "validate", "score", "revise"] as const;
+/**
+ * The reserved verbs dispatch into their reserved modules rather than being
+ * rejected by a string match here. Each module throws; the CLI turns that into
+ * a non-zero exit. This keeps `src/{record,validate,score,revise}/index.ts`
+ * load-bearing — deleting one breaks the fail-closed test — so the reserved
+ * namespace documented in the requirements matrix is enforced rather than
+ * merely claimed.
+ *
+ * They stay unimplemented deliberately: each would need a measurement
+ * authority the runtime does not have. See docs/REQUIREMENTS_MATRIX.md and
+ * docs/ALGEBRA_DYNAMICS_SEAM.md §4/§6.
+ */
+const RESERVED_VERBS = {
+  record,
+  validate,
+  score,
+  revise,
+} as const satisfies Record<string, () => never>;
 
-type ReservedVerb = (typeof RESERVED_VERBS)[number];
+type ReservedVerb = keyof typeof RESERVED_VERBS;
 
 function isReservedVerb(value: string): value is ReservedVerb {
-  return (RESERVED_VERBS as readonly string[]).includes(value);
+  return Object.hasOwn(RESERVED_VERBS, value);
 }
 
 function printHelp(): void {
@@ -143,7 +164,15 @@ function printVersion(): void {
   console.log(VERSION);
 }
 
-function failNotImplemented(verb: string): never {
+function failNotImplemented(verb: ReservedVerb): never {
+  try {
+    RESERVED_VERBS[verb]();
+  } catch (error: unknown) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+  // Unreachable: every reserved module returns `never`. Retained so a module
+  // that stops throwing still fails closed instead of silently succeeding.
   console.error(`${verb} is not implemented`);
   process.exit(1);
 }

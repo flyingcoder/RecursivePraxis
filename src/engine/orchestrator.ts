@@ -165,6 +165,9 @@ function addUsage(current: BudgetUsage, delta: Partial<BudgetUsage>): BudgetUsag
   };
 }
 
+/** SHA-256 hex shape. Syntax only — it does not establish provenance. */
+const HASH_PATTERN = /^[a-f0-9]{64}$/i;
+
 const EVIDENCE_KINDS = new Set([
   "input",
   "validator",
@@ -186,7 +189,7 @@ function isEvidenceRef(value: unknown): value is EvidenceRef {
     typeof value.kind === "string" &&
     EVIDENCE_KINDS.has(value.kind) &&
     typeof value.hash === "string" &&
-    /^[a-f0-9]{64}$/i.test(value.hash)
+    HASH_PATTERN.test(value.hash)
   );
 }
 
@@ -255,6 +258,32 @@ function validateRoutingEvidence(routing: unknown): routing is RoutingEvidence {
     routing.unresolvedClaims.every((claim) => typeof claim === "string") &&
     Array.isArray(routing.evidenceRefs) &&
     routing.evidenceRefs.every(isEvidenceRef)
+  );
+}
+
+/**
+ * A `ToolHost` is an untrusted boundary in exactly the way a `ModelHost` is:
+ * its return value is written into the trace and folded into `traceHash`, so
+ * an unchecked result lets an external process author trace evidence. This is
+ * the tool-side counterpart to `validateStepOutput` / `validateRoutingEvidence`
+ * and runs at the same boundary — before anything reaches the event log.
+ *
+ * `kind` is pinned to "tool-result" rather than merely being a member of
+ * EVIDENCE_KINDS: a tool host that could return "human-acceptance" or "test"
+ * would be able to launder its own output into the strongest evidence kinds in
+ * the vocabulary. Tool provenance is the only claim a tool host may make.
+ */
+function validateToolResult(result: unknown, call: ToolCall): result is ToolResult {
+  return (
+    isRecord(result) &&
+    isEvidenceRef(result.evidence) &&
+    result.evidence.kind === "tool-result" &&
+    (result.artifactHash === undefined ||
+      (typeof result.artifactHash === "string" && HASH_PATTERN.test(result.artifactHash))) &&
+    typeof result.durationMs === "number" &&
+    Number.isFinite(result.durationMs) &&
+    result.durationMs >= 0 &&
+    result.durationMs <= call.timeoutMs
   );
 }
 
@@ -377,9 +406,9 @@ export async function runTask(request: RunRequest): Promise<TaskTrace> {
       })) {
         throw new Error(`tool budget denied: ${toolCall.name}`);
       }
-      const result = await request.toolHost!.call(toolCall);
-      if (!Number.isFinite(result.durationMs) || result.durationMs < 0 || result.durationMs > toolCall.timeoutMs) {
-        throw new Error(`invalid tool result duration: ${toolCall.name}`);
+      const result: unknown = await request.toolHost!.call(toolCall);
+      if (!validateToolResult(result, toolCall)) {
+        throw new Error(`invalid tool result: ${toolCall.name}`);
       }
       usage = addUsage(usage, { toolCalls: 1, latencyMs: result.durationMs });
       toolEvidence.push(result.evidence);
