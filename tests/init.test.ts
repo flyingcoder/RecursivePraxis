@@ -5,11 +5,8 @@ import path from "node:path";
 import os from "node:os";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from "node:fs";
 import { describe, it } from "vitest";
-import { parseToolsValue } from "../src/init/tools-flag.js";
-import { TOOL_IDS } from "../src/init/targets.js";
-import { buildPlan } from "../src/init/plan.js";
 import { WORKFLOW_IDS } from "../src/init/workflows.js";
-import { MARKER_END, MARKER_START, hasManagedMarkers, mergeManaged, renderManagedHead } from "../src/init/managed-block.js";
+import { hasManagedMarkers } from "../src/render/managed-block.js";
 
 const cliPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist/cli.js");
 
@@ -21,143 +18,15 @@ function tmpProject(): string {
   return mkdtempSync(path.join(os.tmpdir(), "praxis-init-"));
 }
 
-// --- tool parsing and validation -------------------------------------------------
-
-describe("parseToolsValue", () => {
-  it("parses a comma-separated list in canonical order", () => {
-    const result = parseToolsValue("codex,claude");
-    assert.deepEqual(result, { ok: true, tools: ["claude", "codex"] });
-  });
-
-  it("dedupes repeated tools", () => {
-    const result = parseToolsValue("claude,claude,cursor");
-    assert.deepEqual(result, { ok: true, tools: ["claude", "cursor"] });
-  });
-
-  it("expands 'all' to every tool id", () => {
-    const result = parseToolsValue("all");
-    assert.deepEqual(result, { ok: true, tools: TOOL_IDS });
-  });
-
-  it("resolves 'none' to an empty list", () => {
-    const result = parseToolsValue("none");
-    assert.deepEqual(result, { ok: true, tools: [] });
-  });
-
-  it("rejects an unknown tool with a clear error", () => {
-    const result = parseToolsValue("claude,bogus");
-    assert.equal(result.ok, false);
-    if (!result.ok) assert.match(result.error, /unknown tool.*bogus/i);
-  });
-
-  it("rejects 'all' combined with a named tool", () => {
-    const result = parseToolsValue("all,claude");
-    assert.equal(result.ok, false);
-    if (!result.ok) assert.match(result.error, /cannot be combined/i);
-  });
-
-  it("rejects 'none' combined with a named tool", () => {
-    const result = parseToolsValue("none,cursor");
-    assert.equal(result.ok, false);
-    if (!result.ok) assert.match(result.error, /cannot be combined/i);
-  });
-
-  it("rejects an empty value", () => {
-    const result = parseToolsValue("   ");
-    assert.equal(result.ok, false);
-  });
-});
-
-// --- managed markers ---------------------------------------------------------------
-
-describe("managed markers", () => {
-  it("detects both markers present", () => {
-    const head = renderManagedHead("---\nname: x\n---", "body text");
-    assert.ok(hasManagedMarkers(head));
-    assert.ok(head.includes(MARKER_START));
-    assert.ok(head.includes(MARKER_END));
-  });
-
-  it("does not treat an arbitrary file as managed", () => {
-    assert.equal(hasManagedMarkers("# just a regular file\n"), false);
-  });
-
-  it("merging an unchanged file reports changed=false and round-trips byte-for-byte", () => {
-    const head = renderManagedHead("---\nname: x\n---", "body text");
-    const merged = mergeManaged(head, head);
-    assert.equal(merged.changed, false);
-    assert.equal(merged.content, head);
-  });
-
-  it("merging with a new head reports changed=true and preserves trailing user content", () => {
-    const oldHead = renderManagedHead("---\nname: x\n---", "old body");
-    const existing = `${oldHead}\n## user notes\nkeep me\n`;
-    const newHead = renderManagedHead("---\nname: x\n---", "new body");
-
-    const merged = mergeManaged(existing, newHead);
-    assert.equal(merged.changed, true);
-    assert.match(merged.content, /new body/);
-    assert.doesNotMatch(merged.content, /old body/);
-    assert.match(merged.content, /## user notes\nkeep me/);
-  });
-
-  it("re-merging a merged result is stable (no blank-line growth)", () => {
-    const head = renderManagedHead("---\nname: x\n---", "body text");
-    const existing = `${head}\n\nappendix\n`;
-    const first = mergeManaged(existing, head);
-    const second = mergeManaged(first.content, head);
-    assert.equal(second.content, first.content);
-    assert.equal(second.changed, false);
-  });
-});
-
-// --- plan: every target path and invocation form ------------------------------------
-
-describe("buildPlan", () => {
-  it("produces skill + command files for claude, skill + command for cursor, skill-only for codex", () => {
-    const plan = buildPlan(["claude", "cursor", "codex"]);
-
-    for (const workflowId of WORKFLOW_IDS) {
-      const claudeSkill = plan.files.find((f) => f.toolId === "claude" && f.kind === "skill" && f.workflowId === workflowId);
-      assert.ok(claudeSkill);
-      assert.equal(claudeSkill!.relPath, `.claude/skills/recursive-praxis-${workflowId}/SKILL.md`);
-
-      const claudeCommand = plan.files.find((f) => f.toolId === "claude" && f.kind === "command" && f.workflowId === workflowId);
-      assert.ok(claudeCommand);
-      assert.equal(claudeCommand!.relPath, `.claude/commands/praxis/${workflowId}.md`);
-
-      const cursorSkill = plan.files.find((f) => f.toolId === "cursor" && f.kind === "skill" && f.workflowId === workflowId);
-      assert.equal(cursorSkill!.relPath, `.cursor/skills/recursive-praxis-${workflowId}/SKILL.md`);
-
-      const cursorCommand = plan.files.find((f) => f.toolId === "cursor" && f.kind === "command" && f.workflowId === workflowId);
-      assert.equal(cursorCommand!.relPath, `.cursor/commands/praxis-${workflowId}.md`);
-
-      const codexSkill = plan.files.find((f) => f.toolId === "codex" && f.kind === "skill" && f.workflowId === workflowId);
-      assert.equal(codexSkill!.relPath, `.agents/skills/recursive-praxis-${workflowId}/SKILL.md`);
-
-      const codexCommand = plan.files.find((f) => f.toolId === "codex" && f.kind === "command" && f.workflowId === workflowId);
-      assert.equal(codexCommand, undefined);
-    }
-  });
-
-  it("emits the documented invocation syntax per host", () => {
-    const plan = buildPlan(["claude", "cursor", "codex"]);
-    const byTool = Object.fromEntries(plan.hosts.map((h) => [h.toolId, h.invocations]));
-
-    assert.equal(byTool.claude!.find((i) => i.workflowId === "status")!.invocation, "/praxis:status");
-    assert.equal(byTool.claude!.find((i) => i.workflowId === "analyze")!.invocation, "/praxis:analyze");
-    assert.equal(byTool.cursor!.find((i) => i.workflowId === "status")!.invocation, "/praxis-status");
-    assert.equal(byTool.cursor!.find((i) => i.workflowId === "analyze")!.invocation, "/praxis-analyze");
-    assert.equal(byTool.codex!.find((i) => i.workflowId === "status")!.invocation, "$recursive-praxis-status");
-    assert.equal(byTool.codex!.find((i) => i.workflowId === "analyze")!.invocation, "$recursive-praxis-analyze");
-  });
-
-  it("produces no files when given an empty tool list", () => {
-    const plan = buildPlan([]);
-    assert.equal(plan.files.length, 0);
-    assert.equal(plan.hosts.length, 0);
-  });
-});
+/**
+ * CLI-level behaviour of `lambda init`. The units behind it are covered
+ * elsewhere: host layouts and `--tools` parsing in tests/hosts.test.ts,
+ * rendering and managed markers in tests/render.test.ts, detection in
+ * tests/detect.test.ts, and the four steps in tests/wizard.test.ts.
+ *
+ * These tests spawn the real binary, so the child has no TTY — which is
+ * exactly the non-interactive contract being asserted here.
+ */
 
 // --- generated managed markers (via the real CLI) ------------------------------------
 
@@ -342,7 +211,7 @@ describe("lambda --help mentions init", () => {
     try {
       const result = runLambda(["--help"], cwd);
       assert.equal(result.status, 0);
-      assert.match(result.stdout, /lambda init --tools/);
+      assert.match(result.stdout, /lambda init \[--tools/);
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }

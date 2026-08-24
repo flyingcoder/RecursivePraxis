@@ -1,8 +1,15 @@
 /**
- * Host-neutral workflow content for `lambda init`. Each definition's `body`
- * is rendered verbatim into every selected host's skill file and (where the
- * host has one) command file — see targets.ts. Do not fork this prose per
- * host; host differences belong in targets.ts frontmatter renderers only.
+ * Host-neutral workflow content for `lambda init`. Each definition's `body` is
+ * rendered into every selected host's skill file and (where the host has one)
+ * command file. Do not fork this prose per host — host differences belong in
+ * `src/hosts/` and in the render pipeline, never in a second copy of a body.
+ *
+ * Write `{{invoke:<workflow-id>}}` to reference another workflow. It is
+ * replaced with the invocation syntax of whichever host and scope the file is
+ * being generated for — `/praxis:status`, `/praxis-status`,
+ * `$recursive-praxis-status`, `/recursive-praxis:status`. Before the render
+ * pipeline existed, a body could not name an invocation at all, and every
+ * cross-reference here was phrased around that gap.
  */
 
 export interface WorkflowDefinition {
@@ -30,7 +37,7 @@ const RAW_WORKFLOWS: readonly WorkflowDefinition[] = [
     body: `
 # RecursivePraxis: status
 
-Inspect the current RecursivePraxis session — attractor, V, D/C, λ_eff, mode, and the legal next operators — without changing anything.
+Inspect the current RecursivePraxis session — attractor, V, D/C, \`λ_eff\`, mode, and the legal next operators — without changing anything.
 
 ## Command
 
@@ -44,7 +51,7 @@ Run this first, before proposing any operator or making claims about "where the 
 
 - \`attractor\`, \`V\`, \`state.D\`, \`state.C\` — the current dissipation-state reading.
 - \`lambdaEffective\` / \`lambdaBand\` — computed from the session's operator sequence so far.
-- \`mode\` — \`1\` (normal) or \`2\` (HALIRA escalation); see the \`session\` skill if \`mode\` is \`2\`.
+- \`mode\` — \`1\` (normal) or \`2\` (HALIRA escalation); see {{invoke:session}} if \`mode\` is \`2\`.
 - \`legalNext\` — the operators the kernel will currently accept via \`lambda step\`. This is a constraint, not a suggestion — do not propose an operator outside this list.
 
 Without \`--json\`, \`lambda status\` prints the same information as short human-readable lines.
@@ -57,7 +64,7 @@ Without \`--json\`, \`lambda status\` prints the same information as short human
     body: `
 # RecursivePraxis: analyze
 
-Evaluate a proposed operator sequence — λ_eff, simulated trajectory, and grammar warnings — without touching the live session.
+Evaluate a proposed operator sequence — \`λ_eff\`, simulated trajectory, and grammar warnings — without touching the live session.
 
 ## Command
 
@@ -72,7 +79,7 @@ Use this to test a candidate sequence before committing to it with \`lambda step
 ## Reading the output
 
 - \`lambdaEffective\` — computed mean pairwise λ across the sequence.
-- \`trajectory\` — simulated D/C path and attractor per step, starting from S* (D=0.5, C=0.5).
+- \`trajectory\` — simulated D/C path and attractor per step, starting from \`S*\` (D=0.5, C=0.5).
 - \`warnings\` — deterministic grammar checks (forbidden transitions, Meta collapse risk, void entry). These are hard constraint checks, not opinions — do not override or reinterpret a warning in prose.
 `,
   },
@@ -101,7 +108,7 @@ Use this when you know both an explicit starting D,C and an explicit target D,C 
 - \`sequence\` — the operator chain found.
 - \`finalState\` / \`cost\` — where the sequence actually lands and its total λ cost.
 
-To apply a found sequence to the live session, replay it with \`lambda step --op <Op>\` calls (see the \`session\` skill), or \`lambda sense\` to jump directly to a state you already trust.
+To apply a found sequence to the live session, replay it with \`lambda step --op <Op>\` calls (see {{invoke:session}}), or \`lambda sense\` to jump directly to a state you already trust.
 `,
   },
   {
@@ -175,7 +182,7 @@ If you are not confident in a key, say so and stop. Abstaining keeps the human i
 
 \`problem.initial\` and \`problem.target\` come from the authored template; \`solution.sequence\` comes from the kernel's beam search. Neither is yours to adjust.
 
-If the classification was \`none\`, do not fall back to guessing a D,C pair. Ask the human for the reading, or take the current one from \`lambda status --json\`, and supply an explicit target — see the \`solve\` skill.
+If the classification was \`none\`, do not fall back to guessing a D,C pair. Ask the human for the reading, or take the current one from \`lambda status --json\`, and supply an explicit target — see {{invoke:solve}}.
 
 ## Step 4 — verify the sequence survived the trip
 

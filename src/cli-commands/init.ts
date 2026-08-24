@@ -1,11 +1,23 @@
-import { buildPlan, type InitPlan } from "../init/plan.js";
-import { parseToolsValue, TOOLS_FLAG_USAGE } from "../init/tools-flag.js";
+import { parseToolsValue, TOOLS_FLAG_USAGE } from "../hosts/tools-flag.js";
 import { CONFIG_FLAG_USAGE, parseConfigFlags } from "../init/config-flags.js";
-import { writePlannedFile, type FileAction, type FileWriteResult } from "../init/write.js";
-import type { ToolId } from "../init/targets.js";
+import { InitWizard } from "../init/InitWizard.js";
+import {
+  FlagWizardIO,
+  NeedsFlagError,
+  PreAnsweredWizardIO,
+  TtyWizardIO,
+  type FlagAnswers,
+  type WizardIO,
+} from "../init/WizardIO.js";
+import type { InitReport } from "../init/steps/GenerateStep.js";
+import { WORKFLOWS } from "../init/workflows.js";
+import { HostRegistry } from "../hosts/HostRegistry.js";
+import { createHostContext } from "../detect/context.js";
+import { isScope, SCOPES } from "../hosts/types.js";
+import type { FileAction, FileWriteResult } from "../init/write.js";
 import { INIT_SETTING_KEYS, Settings } from "../config/settings.js";
 
-const VALUE_FLAGS = ["--tools", "--host", "--model", "--ollama-url"] as const;
+const VALUE_FLAGS = ["--tools", "--scope", "--host", "--model", "--ollama-url"] as const;
 
 type ValueFlag = (typeof VALUE_FLAGS)[number];
 
@@ -62,23 +74,20 @@ function summarizeConfig(settings: Settings, configPath: string, written: boolea
   return { settings: values, sources, path: configPath, written };
 }
 
-function printSummary(
-  tools: readonly ToolId[],
-  plan: InitPlan,
-  results: readonly FileWriteResult[],
-  config: ConfigSummary,
-  json: boolean,
-): void {
+function printSummary(report: InitReport, config: ConfigSummary, json: boolean): void {
   if (json) {
     console.log(
       JSON.stringify(
         {
-          tools,
+          tools: report.hosts.map((host) => host.hostId),
+          scope: report.scope,
           config,
-          files: results,
-          hosts: plan.hosts.map((host) => ({
-            toolId: host.toolId,
-            toolLabel: host.toolLabel,
+          manifest: report.manifestPath,
+          files: report.files,
+          hosts: report.hosts.map((host) => ({
+            toolId: host.hostId,
+            toolLabel: host.hostLabel,
+            root: host.root,
             invocations: host.invocations,
           })),
         },
@@ -89,9 +98,7 @@ function printSummary(
     return;
   }
 
-  console.log("RecursivePraxis agent integrations");
   console.log("");
-
   console.log(`Runtime configuration (${config.path}):`);
   for (const [key, value] of Object.entries(config.settings)) {
     console.log(`  ${key} = ${value}${config.sources[key] === "default" ? "  (default)" : ""}`);
@@ -103,35 +110,55 @@ function printSummary(
   );
   console.log("");
 
-  if (tools.length === 0) {
-    console.log("no tools selected (--tools none) — nothing written.");
+  if (report.hosts.length === 0) {
+    console.log("no host agents selected — nothing written.");
     return;
   }
 
   for (const action of ACTION_ORDER) {
-    const inBucket = results.filter((result) => result.action === action);
+    const inBucket = report.files.filter((result: FileWriteResult) => result.action === action);
     if (inBucket.length === 0) continue;
     console.log(`${ACTION_LABEL[action]}:`);
     for (const result of inBucket) {
-      console.log(`  ${result.relPath}`);
+      console.log(`  ${result.displayPath}`);
     }
     console.log("");
   }
 
-  console.log("Invocation:");
-  for (const host of plan.hosts) {
-    console.log(`  ${host.toolLabel}:`);
+  console.log("Invoke with:");
+  for (const host of report.hosts) {
+    console.log(`  ${host.hostLabel}:`);
     for (const entry of host.invocations) {
       console.log(`    ${entry.invocation}`);
     }
   }
+
+  if (report.manifestPath !== undefined) {
+    console.log("");
+    console.log(
+      `Recorded in ${report.manifestPath} — \`lambda doctor\` verifies, \`lambda sync\` refreshes, \`lambda uninstall\` removes.`,
+    );
+  }
+  console.log("");
+  console.log(`Same result without prompts:  ${report.equivalentFlags}`);
 }
 
+/**
+ * `lambda init` — install: pick host agents, pick a scope, generate.
+ *
+ * The `--tools` requirement is not removed, only made conditional on there
+ * being nobody to ask. With a TTY the wizard runs and flags pre-answer their
+ * step; without one, a missing `--tools` still exits non-zero naming the flag,
+ * which is the same fail-closed posture as `Settings.require`. The wizard has
+ * no private capability — anything it can do, a flag line can do, and it
+ * prints that flag line on completion.
+ */
 export async function runInit(
   rest: string[],
   projectRoot: string,
   baseDir: string,
   json: boolean,
+  version: string,
 ): Promise<void> {
   const { values, rest: remaining } = extractValueFlags(rest);
 
@@ -140,18 +167,26 @@ export async function runInit(
     process.exit(1);
   }
 
+  const answers: Record<string, readonly string[] | undefined> = {};
+
   const toolsValue = values["--tools"];
-  if (toolsValue === undefined) {
-    console.error(
-      `lambda init requires --tools — this CLI has no interactive tool selection. ${TOOLS_FLAG_USAGE}`,
-    );
-    process.exit(1);
+  if (toolsValue !== undefined) {
+    const parsed = parseToolsValue(toolsValue);
+    if (!parsed.ok) {
+      console.error(parsed.error);
+      process.exit(1);
+    }
+    answers["--tools"] = parsed.tools;
   }
 
-  const parsed = parseToolsValue(toolsValue);
-  if (!parsed.ok) {
-    console.error(parsed.error);
-    process.exit(1);
+  const scopeValue = values["--scope"];
+  if (scopeValue !== undefined) {
+    const scope = scopeValue.trim();
+    if (!isScope(scope)) {
+      console.error(`unknown scope: ${scopeValue} (expected ${SCOPES.join(" or ")})`);
+      process.exit(1);
+    }
+    answers["--scope"] = [scope];
   }
 
   // Config flags are resolved against the settings already on disk, so a
@@ -169,18 +204,33 @@ export async function runInit(
   const settings = current.with(configFlags.patch);
   const configPath = configFlags.changed ? await settings.save() : settings.configFilePath();
 
-  const plan = buildPlan(parsed.tools);
-  const results: FileWriteResult[] = [];
-  for (const file of plan.files) {
-    results.push(await writePlannedFile(projectRoot, file));
-  }
+  // `--json` implies a machine reader, so it never prompts even on a TTY:
+  // interleaving a wizard with a JSON document would corrupt both.
+  const interactive = !json && process.stdin.isTTY === true && process.stdout.isTTY === true;
+  const flagAnswers = answers as FlagAnswers;
+  const io: WizardIO = interactive
+    ? new PreAnsweredWizardIO(flagAnswers, new TtyWizardIO())
+    : json
+      ? new FlagWizardIO(flagAnswers)
+      : new FlagWizardIO(flagAnswers, process.stdout);
 
-  printSummary(
-    parsed.tools,
-    plan,
-    results,
-    summarizeConfig(settings, configPath, configFlags.changed),
-    json,
-  );
-  process.exit(0);
+  const ctx = createHostContext({ projectRoot });
+
+  try {
+    const report = await new InitWizard(
+      HostRegistry.default(),
+      ctx,
+      io,
+      WORKFLOWS,
+      version,
+    ).run();
+    printSummary(report, summarizeConfig(settings, configPath, configFlags.changed), json);
+    process.exit(0);
+  } catch (error) {
+    if (error instanceof NeedsFlagError) {
+      console.error(`${error.message} ${TOOLS_FLAG_USAGE}`);
+      process.exit(1);
+    }
+    throw error;
+  }
 }

@@ -44,6 +44,9 @@ import { runHalira } from "./cli-commands/halira.js";
 import { runBind } from "./cli-commands/bind.js";
 import { runIr } from "./cli-commands/ir.js";
 import { runInit } from "./cli-commands/init.js";
+import { runDoctor } from "./cli-commands/doctor.js";
+import { runSync } from "./cli-commands/sync.js";
+import { runUninstall } from "./cli-commands/uninstall.js";
 import { record } from "./record/index.js";
 import { validate } from "./validate/index.js";
 import { score } from "./score/index.js";
@@ -109,9 +112,13 @@ function printHelp(): void {
     "  lambda halira start|next|status [--json]",
     "  lambda bind [--json]",
     "  lambda ir [--json]",
-    "  lambda init --tools claude,cursor,codex | all | none",
+    "  lambda init [--tools claude,cursor,codex,opencode | all | none]",
+    "              [--scope project|global]",
     "              [--host ollama|fake|anthropic|cursor|claude-ide]",
     "              [--model <name>] [--ollama-url <url>] [--json]",
+    "  lambda doctor [--scope project|global] [--json]",
+    "  lambda sync [--scope project|global] [--check] [--json]",
+    "  lambda uninstall [--scope project|global] [--tools <ids>] [--prune] [--json]",
     "  lambda <verb>",
     "",
     "Vocabulary:",
@@ -141,12 +148,22 @@ function printHelp(): void {
     "  ir         — print the current turn's instruction surface (legalNext only)",
     "",
     "Agent integrations:",
-    "  init       — install: generate host-native Claude Code / Cursor / Codex",
-    "               skill and command files that teach agents to call this CLI",
-    "               (cognition only — no OpenSpec, no delivery workflow, no new",
-    "               runtime), and record the model host / model settings in",
+    "  init       — install: detect host agents, ask which to configure and at",
+    "               which scope, then generate host-native Claude Code / Cursor /",
+    "               Codex / opencode skill and command files that teach agents to",
+    "               call this CLI (cognition only — no OpenSpec, no delivery",
+    "               workflow, no new runtime). Four questions on a terminal;",
+    "               --tools/--scope pre-answer them and it prompts for nothing.",
+    "               Also records the model host / model settings in",
     "               .recursive-praxis/config.json. These settings are chosen",
     "               here and nowhere else; API keys stay in the environment.",
+    "  doctor     — verify an install: drift, orphans, a manifest older than the",
+    "               CLI, and hosts that have since disappeared. Exits non-zero on",
+    "               any of them, so it works as a CI check.",
+    "  sync       — regenerate every managed file from the install manifest.",
+    "               (alias: update — note it refreshes generated FILES, not the",
+    "               `lambda` binary; upgrade that with npm i -g or install.sh)",
+    "  uninstall  — remove what init wrote. Keeps any file you appended to.",
     "",
     "Reserved verbs (not implemented):",
     "  record    — not implemented",
@@ -513,7 +530,29 @@ async function main(argv: string[]): Promise<void> {
 
   if (first === "init") {
     const { json, rest: initArgs } = extractJsonFlag(rest);
-    await runInit(initArgs, process.cwd(), SESSION_BASE_DIR, json);
+    await runInit(initArgs, process.cwd(), SESSION_BASE_DIR, json, VERSION);
+    return;
+  }
+
+  if (first === "doctor") {
+    const { json, rest: doctorArgs } = extractJsonFlag(rest);
+    await runDoctor(doctorArgs, process.cwd(), SESSION_BASE_DIR, json, VERSION);
+    return;
+  }
+
+  // `update` is an alias, never a self-update: upgrading the binary is
+  // `npm i -g recursive-praxis` or a re-run of install.sh. A CLI that
+  // rewrites its own executable is a much larger security surface than one
+  // that only regenerates the files it already declared.
+  if (first === "sync" || first === "update") {
+    const { json, rest: syncArgs } = extractJsonFlag(rest);
+    await runSync(syncArgs, process.cwd(), json, VERSION);
+    return;
+  }
+
+  if (first === "uninstall") {
+    const { json, rest: uninstallArgs } = extractJsonFlag(rest);
+    await runUninstall(uninstallArgs, process.cwd(), json, VERSION);
     return;
   }
 
