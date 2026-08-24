@@ -58,3 +58,26 @@ test("lambda analyze is a trusted first-party kernel surface, never proxying the
   assert.doesNotMatch(out, /InverseSolver/i);
   assert.doesNotMatch(out, /controlled_rupture/i);
 });
+
+// The CLI dispatches reserved verbs *through* these modules rather than
+// matching a string, so the reserved namespace cited in the requirements
+// matrix is enforced rather than merely documented. Deleting any of them
+// breaks the build, and stopping one from throwing fails these assertions.
+test("each reserved module is load-bearing and throws its own refusal", async () => {
+  const modules = {
+    record: await import("../dist/record/index.js"),
+    validate: await import("../dist/validate/index.js"),
+    score: await import("../dist/score/index.js"),
+    revise: await import("../dist/revise/index.js"),
+  } as const;
+
+  for (const [verb, module] of Object.entries(modules)) {
+    const reserved = (module as Record<string, unknown>)[verb];
+    assert.equal(typeof reserved, "function", verb);
+    assert.throws(
+      () => (reserved as () => never)(),
+      new RegExp(`${verb} is not implemented`, "i"),
+      verb,
+    );
+  }
+});
