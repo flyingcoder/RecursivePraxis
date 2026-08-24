@@ -14,7 +14,7 @@ the runtime's purpose, not incidental hardening.
 
 The term does not imply autonomy. RecursivePraxis initiates nothing, spawns no agents, schedules no work,
 and supplies no planner library, tool catalog, or cross-run memory. It is the governor an existing agent
-runs against: `lambda init` emits host-native integration files so Claude Code, Cursor, and Codex call
+runs against: `lambda init` emits host-native integration files so Claude Code, Cursor, Codex, and opencode call
 this CLI, and the CLI is equally usable directly by a human operator.
 
 The public CLI command is currently named `lambda` (see `src/cli.ts`).
@@ -87,11 +87,18 @@ This is deterministic semantic verification of the recorded abstract execution. 
 - `lambda inspect <task-id>` / `lambda replay <task-id>`: inspect or verify redacted traces.
 - `lambda status`, `sense`, `step`, `analyze`, `solve`, `diagnose`, `halira`, `bind`, `ir`: direct kernel/session inspection and control.
 - `lambda eval` / `lambda promote`: run the three-domain capability benchmark and promote a policy only with grounded passing evidence.
-- `lambda init`: emit host-native integration files for Claude Code, Cursor, and Codex.
+- `lambda init`: detect host agents, confirm which to configure and at which scope, then emit host-native
+  integration files for Claude Code, Cursor, Codex CLI, and opencode. Four questions on a terminal;
+  `--tools` / `--scope` pre-answer them and it prompts for nothing. Installing the CLI touches no host
+  agent — only `init` does.
+- `lambda doctor`: verify an install against its manifest — drift, orphans, a stale manifest, a vanished
+  host — exiting non-zero on any of them.
+- `lambda sync` (alias `update`): regenerate managed files from the manifest; `--check` is a CI gate.
+- `lambda uninstall`: remove what `init` recorded, keeping any file the user appended to.
 
 ## Verification evidence
 
-The current test suite covers grammar rejection, dissipation and solver behavior, operator-effect degeneracy, selection-filter comparison, session/HALIRA gates, CLI behavior, initialization, budgeting, typed outputs, model *and tool-host* evidence validation, tool allowlisting, redacted trace persistence, tamper detection, semantic replay, and a completed Mode-2 recovery path.
+The current test suite covers grammar rejection, dissipation and solver behavior, operator-effect degeneracy, selection-filter comparison, session/HALIRA gates, CLI behavior, initialization (host detection, per-scope layouts, render fixed-point and escaping, the install manifest, and the four wizard steps), budgeting, typed outputs, model *and tool-host* evidence validation, tool allowlisting, redacted trace persistence, tamper detection, semantic replay, and a completed Mode-2 recovery path.
 
 At the time this document was last updated, `npm test` passed with **290 tests in 17 test files**. A manual CLI `run` followed by `replay` also returned `reproducible: true` with no replay reasons.
 

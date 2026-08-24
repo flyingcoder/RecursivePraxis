@@ -104,13 +104,105 @@ pre-existing key changed shape when it was added.
 
 ## Agent integrations
 
+Installing the CLI and configuring host agents are two separate steps. Installing
+`lambda` touches no host agent; nothing reaches one until `lambda init` runs.
+
+### `init`
+
 ```sh
-lambda init --tools claude,cursor,codex
-lambda init --tools all
+lambda init                                        # four questions on a terminal
+lambda init --tools claude,cursor --scope global   # no prompts, fully scripted
+lambda init --tools all --scope project --json     # CI
 lambda init --tools none
 ```
 
-`init` writes host-native skill and command files that teach an agent to use the cognition CLI. It does not invoke model execution as part of initialization.
+The four steps are: detect host agents, confirm which to configure, choose
+project or global scope, generate. Any flag pre-answers its step and skips it;
+the wizard prints the equivalent flag line on completion, and has no capability
+a flag line does not.
+
+Detection sets the default checkbox state only. Every host stays selectable,
+including undetected ones — installing ahead of a host is legitimate. Scope is
+never inferred: writing under `~` is a different act from writing in the
+repository you are standing in, so it is always an explicit answer or an
+explicit `--scope global`. Without a flag, scope is `project`.
+
+Without a TTY, a missing `--tools` exits non-zero naming the flag rather than
+defaulting silently.
+
+| Host | Project scope | Global scope | Invocation |
+|---|---|---|---|
+| Claude Code | `.claude/skills/recursive-praxis-<id>/SKILL.md` + `.claude/commands/praxis/<id>.md` | `~/.claude/skills/recursive-praxis/` as a skills-directory plugin (`.claude-plugin/plugin.json` + `skills/<id>/SKILL.md`) | `/praxis:<id>` (project) · `/recursive-praxis:<id>` (global) |
+| Cursor | `.cursor/skills/recursive-praxis-<id>/SKILL.md` + `.cursor/commands/praxis-<id>.md` | `~/.cursor/…` (same shape) | `/praxis-<id>` |
+| Codex CLI | `.agents/skills/recursive-praxis-<id>/SKILL.md` | `~/.agents/skills/…` (**not** `~/.codex/skills/`) | `$recursive-praxis-<id>` |
+| opencode | `.opencode/commands/praxis-<id>.md` | `~/.config/opencode/commands/praxis-<id>.md` | `/praxis-<id>` |
+
+Writes cannot clobber: a file carrying the managed markers has only that region
+replaced, anything appended after the END marker survives, and a file without
+the markers is reported `skipped` and left untouched. `init` does not invoke
+model execution as part of initialization.
+
+What `init` wrote is recorded in an install manifest —
+`.recursive-praxis/install.json` at project scope, `~/.recursive-praxis-cli/install.json`
+at global scope — which is what makes the three commands below trustworthy
+rather than guesses re-derived from a host table that drifts between releases.
+
+Recorded hashes cover exactly what a re-run would overwrite: frontmatter through
+the END marker. Content you append after the END marker is excluded, so keeping
+the promise `init` made you never reads as drift.
+
+**Committing the project-scope manifest.** It contains only project-relative
+paths and content hashes — nothing machine-specific — so it is safe to commit,
+and committing it is what lets `lambda doctor` and `lambda sync --check` run in
+CI. `.recursive-praxis/` is otherwise machine-local session state, so un-ignore
+just this file:
+
+```gitignore
+.recursive-praxis/
+!.recursive-praxis/install.json
+```
+
+The global manifest is per-machine and is never committed.
+
+### `doctor`
+
+```sh
+lambda doctor [--scope project|global] [--json]
+```
+
+Reports four things nothing else catches: a managed region edited by hand,
+orphans left by a previous version, a manifest older than the CLI, and a host
+whose files remain after the host itself has disappeared. Exits non-zero on any
+of them, so it works as a CI check. It is also where detection evidence lands
+in scriptable form — there is no separate `lambda detect`.
+
+### `sync` (alias `update`)
+
+```sh
+lambda sync [--scope project|global] [--check] [--json]
+```
+
+Re-runs generation with the manifest's recorded hosts and scope, asking nothing.
+`--check` exits non-zero if anything would change and writes nothing.
+
+`update` is only an alias. It refreshes generated **files**, not the `lambda`
+binary — upgrade that with `npm i -g recursive-praxis` or by re-running
+`install.sh`.
+
+### `uninstall`
+
+```sh
+lambda uninstall [--scope project|global] [--tools <ids>] [--prune] [--json]
+```
+
+Removes what the manifest records. A file is deleted only if it is in the
+manifest, still carries both markers, and has nothing after the END marker —
+anything appended means the file is yours now, and it is kept and reported as
+kept. `--prune` removes only orphans, leaving the current install in place.
+Directories emptied by the removal are pruned; ones we did not create are not.
+
+The `lambda` binary itself is not removed: that is `install.sh --uninstall`,
+`install.ps1 -Uninstall`, or `npm uninstall -g recursive-praxis`.
 
 ## Reserved commands
 

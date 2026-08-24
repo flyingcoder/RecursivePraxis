@@ -56,9 +56,74 @@ Read [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) for an architecture overview
 
 <br />
 
-## Quick start
+## Install
+
+Installation happens in two steps, and the first one is deliberately inert.
+Installing the CLI puts the `lambda` executable on your machine and touches no
+host agent — no `.claude/`, no `.cursor/`, no `.agents/`, no `.opencode/`.
+Nothing reaches a host agent until you run `lambda init` and answer four
+questions.
 
 Requires **Node.js 20+**.
+
+**Step 1 — install the CLI**
+
+```sh
+npm install -g recursive-praxis     # then: lambda init
+npx recursive-praxis init           # or, without a global install
+```
+
+macOS and Linux, without npm. Read the script first — the pipe form is the
+shorter alternative, not the recommended one:
+
+```sh
+curl -fsSLO https://raw.githubusercontent.com/flyingcoder/RecursivePraxis/main/install.sh
+less install.sh && sh install.sh
+```
+
+Windows (PowerShell 5.1+, never elevated):
+
+```powershell
+Invoke-WebRequest https://raw.githubusercontent.com/flyingcoder/RecursivePraxis/main/install.ps1 -OutFile install.ps1
+Get-Content install.ps1 | more
+.\install.ps1
+```
+
+Both scripts verify the download against the published `SHA256SUMS` and fail
+closed on a mismatch. Pin a version in CI with `LAMBDA_VERSION=v0.2.0`, and
+override locations with `LAMBDA_INSTALL_DIR` (default `~/.recursive-praxis-cli`)
+and `LAMBDA_BIN_DIR` (default `~/.local/bin`). Neither script uses `sudo`.
+
+**Step 2 — configure host agents**
+
+```sh
+lambda init
+```
+
+Four questions: which host agents were detected, which to configure, project or
+global scope, then generate. Flags pre-answer any step and skip it, so the same
+run is fully scriptable:
+
+```sh
+lambda init --tools claude,cursor --scope global
+lambda init --tools all --scope project --json      # CI
+```
+
+Without a terminal to prompt, a missing `--tools` exits non-zero naming the
+flag rather than guessing.
+
+**Uninstalling** — there were two installs, so there are two removals:
+
+```sh
+lambda uninstall                      # the generated host-agent files
+sh install.sh --uninstall             # the CLI itself (or: npm uninstall -g recursive-praxis)
+```
+
+<br />
+
+## Quick start
+
+From a checkout:
 
 ```sh
 npm install
@@ -138,7 +203,10 @@ recorded by `lambda init` is used — out of the box, a local Ollama server.
 
 | Command | Purpose |
 |---|---|
-| `lambda init --tools claude,cursor,codex \| all \| none [--host <id>] [--model <name>] [--ollama-url <url>] [--json]` | Generate host-native skill and command files that teach agents to call this CLI, and record the model host settings in `.recursive-praxis/config.json`. |
+| `lambda init [--tools claude,cursor,codex,opencode \| all \| none] [--scope project\|global] [--host <id>] [--model <name>] [--ollama-url <url>] [--json]` | Detect host agents, ask which to configure and at which scope, then generate host-native skill and command files that teach agents to call this CLI. Also records the model host settings in `.recursive-praxis/config.json`. Four questions on a terminal; the flags pre-answer them. |
+| `lambda doctor [--scope project\|global] [--json]` | Verify an install: drift, orphans left by an earlier version, a manifest older than the CLI, and hosts that have since disappeared. Exits non-zero on any of them, so it works as a CI check. |
+| `lambda sync [--scope project\|global] [--check] [--json]` | Regenerate every managed file from the install manifest. `--check` exits non-zero if anything would change, without writing. Alias: `lambda update` — note it refreshes generated **files**, not the `lambda` binary. |
+| `lambda uninstall [--scope project\|global] [--tools <ids>] [--prune] [--json]` | Remove what `init` wrote. A file you appended to after the END marker is kept, and reported as kept. |
 
 **Reserved (fail-closed)**
 
