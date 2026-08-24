@@ -3,3 +3,4 @@ dist/
 .recursive-praxis/
 coverage/
 .DS_Store
+release/

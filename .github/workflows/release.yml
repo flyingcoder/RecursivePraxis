@@ -1,0 +1,84 @@
+name: release
+
+# Publishes the `lambda` CLI: a tarball per target plus the SHA256SUMS that
+# install.sh and install.ps1 verify against. The installers fail closed on a
+# mismatch, so SHA256SUMS is a required artifact, not a convenience.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build (e.g. v0.2.0)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+
+      - name: Check the tag matches package.json
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          pkg="v$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "tag $tag does not match package.json $pkg" >&2
+            exit 1
+          fi
+
+      - name: Build release artifacts
+        run: node scripts/build-release-artifact.mjs
+
+      - name: Write SHA256SUMS
+        working-directory: release
+        run: sha256sum lambda-*.tar.gz > SHA256SUMS
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          gh release create "$tag" release/* \
+            --title "$tag" \
+            --generate-notes \
+            --verify-tag
+
+  npm:
+    needs: release
+    runs-on: ubuntu-latest
+    # Publishing to npm requires NPM_TOKEN in repository secrets. Without it
+    # this job is skipped rather than failing the release: the tarballs and
+    # SHA256SUMS above are what the shell installers need.
+    if: ${{ vars.PUBLISH_TO_NPM == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+      - run: npm ci
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
