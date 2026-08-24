@@ -7,6 +7,7 @@ import {
 } from "./vocab/operators.js";
 import { checkForbiddenSequence } from "./vocab/grammar.js";
 import { readFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
 import {
   TRUSTED_POLICY,
@@ -44,7 +45,13 @@ import { runBind } from "./cli-commands/bind.js";
 import { runIr } from "./cli-commands/ir.js";
 import { runInit } from "./cli-commands/init.js";
 
-const VERSION = "0.0.0";
+/**
+ * Read from package.json so `lambda --version` cannot drift from the
+ * published package version. Resolves to the package root from `dist/cli.js`.
+ */
+const { version: VERSION } = createRequire(import.meta.url)("../package.json") as {
+  version: string;
+};
 const SESSION_BASE_DIR = path.resolve(process.cwd(), ".recursive-praxis");
 
 const RESERVED_VERBS = ["record", "validate", "score", "revise"] as const;
