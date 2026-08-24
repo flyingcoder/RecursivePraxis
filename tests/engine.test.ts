@@ -429,3 +429,39 @@ test("benchmark spans three domains and promotion requires grounded passes", asy
     /grounded evidence/,
   );
 });
+
+/**
+ * CHARACTERIZATION — expected to change in Phase 1 of
+ * docs/plans/algebra-vs-dynamics-build-plan.md.
+ *
+ * planTask() feeds every non-HALIRA plan through solve(), so a change to the
+ * solver's frontier ordering changes emitted plans. This pins the plan-level
+ * effect so it shows up as a named failing assertion rather than a silent diff.
+ */
+test("planTask emits a pinned solver-derived sequence for a high-dissipation state", () => {
+  const plan = planTask({
+    state: createTaskState("Fix the parser", { dissipation: { D: 0.7, C: 0.65 } }),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+  });
+  assert.deepEqual(
+    plan.steps.map((step) => step.operator),
+    ["Kata", "Kata", "Kata", "Non"],
+  );
+  assert.match(plan.rationale[1]!, /cost 0\.7000/);
+});
+
+test("planTask emits a pinned solver-derived sequence for the default state", () => {
+  const plan = planTask({
+    state: createTaskState("Fix the parser"),
+    capabilities: ["model", "read", "shell"],
+    privacy: "metadata-only",
+    policy: TRUSTED_POLICY,
+  });
+  assert.deepEqual(
+    plan.steps.map((step) => step.operator),
+    ["Telo", "Non"],
+  );
+  assert.match(plan.rationale[1]!, /cost 0\.1639/);
+});

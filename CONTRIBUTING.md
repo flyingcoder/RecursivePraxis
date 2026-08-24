@@ -28,6 +28,7 @@ Use `npm run test:watch` while iterating.
 - `tests/`: behavior and regression tests.
 - `docs/`: current architecture, requirement audit, vocabulary, and CLI documentation.
 - `docs/explorations/`, `docs/inspirations/`, `docs/suggestions/`: exploratory and historical design material; treat it as context, not automatically as current behavior.
+- `docs/plans/`: sequenced build plans for work that is intended but not yet implemented; a plan describes future behavior, never current behavior.
 
 ## Change expectations
 

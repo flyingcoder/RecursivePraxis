@@ -37,8 +37,36 @@ The executed values are pinned by a characterization test in
    Fields that *are* read: `index`, `class`, `lambda_intrinsic`, `meaning`,
    `symbol`, and `dissipation_rules`.
 
+   These fields are a **parallel descriptive model over function composition** —
+   not a specification this engine has failed to implement. The engine models
+   operators as *displacements in D/C space*; `algebra_relations` models them as
+   *composable functions*. Both are coherent, they are simply different objects,
+   and "the engine does not enforce idempotence / absorption / `Telo`
+   terminality" is therefore not a defect. Three such bugs were filed against
+   this gap and all three were withdrawn on that basis — see
+   `docs/suggestions/algebra-vs-dynamics-backlog.md` §1–2 before re-filing.
+
 5. **Commutator magnitudes are `{0, 1}` only.** The loader maps `sign != 0 → 1.0`
    and `sign == 0 → 0.0`, so the pairwise interaction term is always exactly
    `0.15` for a non-commuting pair — never `c · 0.4 = 0.06`. An "enhanced"
    skeleton with empirically-derived magnitudes exists upstream but is not used
    here.
+
+6. **`metadata.status` asserts its own normativity.** The file declares
+   `"status": "GROUND TRUTH - COGNITIVE BOOTLOADER SPECIFICATION"` and
+   `"architecture_role": "This is the mechanical interpreter for the cognitive
+   bootloader. Not metaphorical."` Those strings are part of the copied asset
+   and are not read by anything. They describe the upstream document's
+   ambition, not this engine's contract: what this engine executes is the
+   subset listed in item 4, and where the data disagrees with itself (items 1–3)
+   the loader's behaviour — not the `status` line — is authoritative.
+
+7. **`phase_portrait.transitions` is inert and superseded.** The JSON's
+   five-entry, two-operator-per-entry table (`S_star_to_J0`, `J0_to_S_star`,
+   `S_star_to_void`, `void_to_S_star`, `void_to_J0`) is **not read** by this
+   engine. The engine's suggested-operator table is ported from
+   `phase_portrait.py` `suggest_transition_operators` instead — six entries of
+   three to four operators, a strict superset, and the one that actually
+   produced the upstream CLI's output. See `src/kernel/phasePortrait.ts`
+   `TRANSITION_SUGGESTIONS`. The JSON table is superseded, not authoritative;
+   it is left verbatim for the same reason as everything else here.

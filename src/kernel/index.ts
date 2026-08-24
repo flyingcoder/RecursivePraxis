@@ -28,6 +28,9 @@ export {
   operatorEffect,
   attractorPenalty,
   simulateTrajectory,
+  suggestTransitionOperators,
+  DEFAULT_OPERATOR_EFFECTS,
+  type OperatorEffects,
   type TrajectoryStep,
 } from "./phasePortrait.js";
 

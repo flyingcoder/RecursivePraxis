@@ -61,6 +61,47 @@ lambda step --op Kata
 lambda bind
 ```
 
+### `diagnose` output
+
+With a template name, `diagnose` prints the problem, its authored diagnosis, the
+initial and target attractors, a suggested-operator line, and the solved
+sequence:
+
+```
+problem: Stuck in infinite loop / analysis paralysis
+diagnosis: Meta ∘ Meta loop (infinite reflection)
+∅ -> S*
+Suggested operators: Pro, Ortho, Weave, Seed
+
+SUCCESS
+sequence: Axis ∘ Telo ∘ Telo
+```
+
+`Suggested operators` lists the operators associated with that attractor
+transition. It is **omitted entirely** when the pair has no mapping — most often
+because the initial and target attractors are the same, as in
+`procrastinating` (`S* -> S*`), where there is no transition to suggest.
+
+These are a suggestion surface only. The solver does not consult them, and the
+sequence it returns will often name none of them: they describe the transition,
+while the sequence is fitted to the target coordinate.
+
+Under `--json` the same list appears as `suggested`, a string array between
+`targetAttractor` and `solution`:
+
+```json
+{
+  "problem": { "description": "...", "initial": { "D": 0.85, "C": 0.75 }, "target": { "D": 0.3, "C": 0.35 }, "diagnosis": "..." },
+  "initialAttractor": "∅",
+  "targetAttractor": "S*",
+  "suggested": ["Pro", "Ortho", "Weave", "Seed"],
+  "solution": { "sequence": ["Axis", "Telo", "Telo"], "finalState": { "D": 0.33, "C": 0.43 }, "cost": 0.7654, "costBreakdown": { "...": 0 }, "success": true, "length": 3 }
+}
+```
+
+`suggested` is `[]` rather than absent when there is no mapping, and no
+pre-existing key changed shape when it was added.
+
 ## Agent integrations
 
 ```sh

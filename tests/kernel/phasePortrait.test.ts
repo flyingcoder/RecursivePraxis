@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_OPERATOR_EFFECTS,
   applyOperator,
   attractorPenalty,
   classifyAttractor,
   lyapunov,
   operatorEffect,
   simulateTrajectory,
+  suggestTransitionOperators,
+  type OperatorEffects,
 } from "../../src/kernel/phasePortrait.js";
+import { OPERATORS, type AttractorLabel } from "../../src/kernel/types.js";
+import { solve } from "../../src/kernel/solver.js";
 
 describe("lyapunov", () => {
   it("computes V = D + 0.4*C", () => {
@@ -72,5 +77,119 @@ describe("simulateTrajectory", () => {
     expect(traj[0]!.operator).toBeNull();
     expect(traj[0]!.D).toBeCloseTo(0.5, 10);
     expect(traj[1]!.operator).toBe("Kata");
+  });
+});
+
+/**
+ * Phase 4 (C1) of docs/plans/algebra-vs-dynamics-build-plan.md: the effects
+ * table is injectable. The defect being fixed was not a missing abstraction but
+ * a seam nothing could reach — so these tests assert both halves: the default
+ * path is byte-for-byte what it was, and an injected table actually changes the
+ * trajectory and the solver's answer.
+ */
+describe("operator effects injection", () => {
+  const flat: OperatorEffects = Object.freeze(
+    Object.fromEntries(OPERATORS.map((op) => [op, [0, 0] as const])),
+  ) as OperatorEffects;
+
+  it("DEFAULT_OPERATOR_EFFECTS covers every operator exactly once", () => {
+    expect(Object.keys(DEFAULT_OPERATOR_EFFECTS).sort()).toEqual([...OPERATORS].sort());
+  });
+
+  it("operatorEffect defaults to the built-in table and honours an injected one", () => {
+    expect(operatorEffect("Kata")).toEqual([-0.2, -0.15]);
+    expect(operatorEffect("Kata", DEFAULT_OPERATOR_EFFECTS)).toEqual([-0.2, -0.15]);
+    expect(operatorEffect("Kata", flat)).toEqual([0, 0]);
+  });
+
+  it("applyOperator defaults to the built-in table and honours an injected one", () => {
+    const state = { D: 0.5, C: 0.5 };
+    expect(applyOperator(state, "Kata")).toEqual(applyOperator(state, "Kata", DEFAULT_OPERATOR_EFFECTS));
+    expect(applyOperator(state, "Kata").D).toBeCloseTo(0.3, 10);
+    expect(applyOperator(state, "Kata", flat)).toEqual(state);
+  });
+
+  it("simulateTrajectory with an injected table changes the path but not its shape", () => {
+    const sequence = ["Kata", "Telo", "Non"] as const;
+    const initial = { D: 0.6, C: 0.6 };
+    const withDefault = simulateTrajectory(initial, sequence);
+    const withFlat = simulateTrajectory(initial, sequence, flat);
+
+    expect(withFlat).toHaveLength(withDefault.length);
+    expect(withFlat.map((s) => s.operator)).toEqual(withDefault.map((s) => s.operator));
+    // A zero table makes every step a fixed point at the initial state.
+    expect(withFlat.every((s) => s.D === initial.D && s.C === initial.C)).toBe(true);
+    expect(withDefault.some((s) => s.D !== initial.D)).toBe(true);
+  });
+
+  it("solve threads the table end to end: a zero table can never reach a distant target", () => {
+    const options = { initial: { D: 0.9, C: 0.9 }, target: { D: 0.1, C: 0.1 }, beamWidth: 5 } as const;
+    const normal = solve(options);
+    const stalled = solve({ ...options, effects: flat });
+
+    expect(normal.success).toBe(true);
+    // Every operator is a no-op, so no sequence can close the distance.
+    expect(stalled.success).toBe(false);
+    expect(stalled.finalState).toEqual(options.initial);
+  });
+
+  it("passing DEFAULT_OPERATOR_EFFECTS explicitly is identical to passing nothing", () => {
+    const options = { initial: { D: 0.85, C: 0.75 }, target: { D: 0.3, C: 0.35 }, beamWidth: 10 } as const;
+    expect(solve({ ...options, effects: DEFAULT_OPERATOR_EFFECTS })).toEqual(solve(options));
+  });
+});
+
+/**
+ * Phase 3 (D) of docs/plans/algebra-vs-dynamics-build-plan.md: the table ported
+ * from phase_portrait.py `suggest_transition_operators`, chosen over the inert
+ * five-entry table in formalism.json (see src/assets/NOTICE.md item 7).
+ */
+describe("suggestTransitionOperators", () => {
+  const expected: ReadonlyArray<readonly [AttractorLabel, AttractorLabel, readonly string[]]> = [
+    ["S*", "J=0", ["Kata", "Telo", "Seed", "Latch"]],
+    ["∅", "J=0", ["Telo", "Kata", "Axis", "Bind"]],
+    ["J=0", "S*", ["Para", "Ana", "Crux", "Echo"]],
+    ["∅", "S*", ["Pro", "Ortho", "Weave", "Seed"]],
+    ["S*", "∅", ["Non", "Meta", "Vale", "Fold"]],
+    ["J=0", "∅", ["Non", "Vale", "Flux"]],
+  ];
+
+  for (const [from, to, ops] of expected) {
+    it(`maps ${from} -> ${to} to the ported operator list`, () => {
+      expect(suggestTransitionOperators(from, to)).toEqual(ops);
+    });
+  }
+
+  it("covers six pairs — one more than the superseded formalism.json table", () => {
+    expect(expected).toHaveLength(6);
+  });
+
+  const labels: readonly AttractorLabel[] = ["J=0", "S*", "∅"];
+
+  it("returns an empty list for every same-attractor pair", () => {
+    for (const label of labels) {
+      expect(suggestTransitionOperators(label, label)).toEqual([]);
+    }
+  });
+
+  it("maps exactly the six cross-attractor pairs and nothing else", () => {
+    const mapped = labels.flatMap((from) =>
+      labels
+        .filter((to) => suggestTransitionOperators(from, to).length > 0)
+        .map((to) => `${from}->${to}`),
+    );
+    expect(mapped.sort()).toEqual(
+      ["J=0->S*", "J=0->∅", "S*->J=0", "S*->∅", "∅->J=0", "∅->S*"].sort(),
+    );
+  });
+
+  it("only ever suggests real operators", () => {
+    for (const from of labels) {
+      for (const to of labels) {
+        for (const op of suggestTransitionOperators(from, to)) {
+          expect(OPERATORS).toContain(op);
+        }
+      }
+    }
   });
 });
