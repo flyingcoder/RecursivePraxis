@@ -91,9 +91,9 @@ This is deterministic semantic verification of the recorded abstract execution. 
 
 ## Verification evidence
 
-The current test suite covers grammar rejection, dissipation and solver behavior, session/HALIRA gates, CLI behavior, initialization, budgeting, typed outputs, model evidence validation, tool allowlisting, redacted trace persistence, tamper detection, semantic replay, and a completed Mode-2 recovery path.
+The current test suite covers grammar rejection, dissipation and solver behavior, operator-effect degeneracy, selection-filter comparison, session/HALIRA gates, CLI behavior, initialization, budgeting, typed outputs, model *and tool-host* evidence validation, tool allowlisting, redacted trace persistence, tamper detection, semantic replay, and a completed Mode-2 recovery path.
 
-At the time this document was written, `npm test` passed with **106 tests in 10 test files**. A manual CLI `run` followed by `replay` also returned `reproducible: true` with no replay reasons.
+At the time this document was last updated, `npm test` passed with **290 tests in 17 test files**. A manual CLI `run` followed by `replay` also returned `reproducible: true` with no replay reasons.
 
 ## Deliberate non-goals and incomplete areas
 
