@@ -61,12 +61,10 @@ The executed values are pinned by a characterization test in
    subset listed in item 4, and where the data disagrees with itself (items 1–3)
    the loader's behaviour — not the `status` line — is authoritative.
 
-7. **`phase_portrait.transitions` is inert and superseded.** The JSON's
-   five-entry, two-operator-per-entry table (`S_star_to_J0`, `J0_to_S_star`,
-   `S_star_to_void`, `void_to_S_star`, `void_to_J0`) is **not read** by this
-   engine. The engine's suggested-operator table is ported from
-   `phase_portrait.py` `suggest_transition_operators` instead — six entries of
-   three to four operators, a strict superset, and the one that actually
-   produced the upstream CLI's output. See `src/kernel/phasePortrait.ts`
-   `TRANSITION_SUGGESTIONS`. The JSON table is superseded, not authoritative;
-   it is left verbatim for the same reason as everything else here.
+7. **Phase-portrait tables have distinct contracts.** The JSON's five-entry,
+   two-operator-per-entry table (`S_star_to_J0`, `J0_to_S_star`,
+   `S_star_to_void`, `void_to_S_star`, `void_to_J0`) is read by
+   `canTransition`: every listed operator must be present for its formalism
+   transition to hold. The richer six-entry Python table is separately retained
+   for `suggestTransitionOperators`, because it produced the upstream CLI's
+   advisory output. A suggestion is not a formalism transition requirement.

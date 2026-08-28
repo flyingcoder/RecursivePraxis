@@ -6,6 +6,10 @@ export {
   operatorMeaning,
   operatorSymbol,
   allOperators,
+  PHASE_PORTRAIT_ALPHA,
+  PHASE_PORTRAIT_STABILITY_THRESHOLD,
+  formalismAttractorPenalty,
+  formalismTransitionOperators,
 } from "./formalism.js";
 export { commutatorMagnitude, commutatorPairCount } from "./commutator.js";
 
@@ -27,11 +31,14 @@ export {
   applyOperator,
   operatorEffect,
   attractorPenalty,
+  canTransition,
+  analyzeBasinStructure,
   simulateTrajectory,
   suggestTransitionOperators,
   DEFAULT_OPERATOR_EFFECTS,
   type OperatorEffects,
   type TrajectoryStep,
+  type BasinStructure,
 } from "./phasePortrait.js";
 
 export {

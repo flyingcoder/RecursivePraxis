@@ -1,26 +1,27 @@
 import type { AttractorLabel, DissipationState, Operator } from "./types.js";
+import {
+  PHASE_PORTRAIT_ALPHA,
+  PHASE_PORTRAIT_STABILITY_THRESHOLD,
+  formalismAttractorPenalty,
+  formalismTransitionOperators,
+} from "./formalism.js";
 
-export const LYAPUNOV_ALPHA = 0.4;
-export const STABILITY_THRESHOLD = 0.3;
+/** Loaded from formalism.json, matching PhasePortrait.__init__ upstream. */
+export const LYAPUNOV_ALPHA = PHASE_PORTRAIT_ALPHA;
+export const STABILITY_THRESHOLD = PHASE_PORTRAIT_STABILITY_THRESHOLD;
 export const VOID_D_THRESHOLD = 0.8;
 export const VOID_C_THRESHOLD = 0.9;
-
-const ATTRACTOR_PENALTIES: Record<AttractorLabel, number> = {
-  "J=0": 0.1,
-  "S*": 0.3,
-  "∅": 1.0,
-};
 
 /**
  * A complete per-operator displacement table. Supplying one lets an alternative
  * physics be evaluated without editing the kernel; the built-in table is
  * `DEFAULT_OPERATOR_EFFECTS`.
  *
- * The seam reaches `operatorEffect`, `applyOperator`, `simulateTrajectory` and
- * `solve` (via `SolveOptions.effects`) — not further. `session.ts` `step` and
- * the `analyze` command still call `applyOperator` with the default table, so a
- * sequence solved under an injected table will be *stepped* under the default
- * one. Widening the seam to those call sites is unbuilt work.
+ * The seam reaches `operatorEffect`, `applyOperator`, `simulateTrajectory`,
+ * `solve` (via `SolveOptions.effects`), and persisted sessions: pass effects to
+ * `createInitialSession` and every `step` uses that same table. The CLI analyze
+ * command intentionally remains a reproducible report of the default physics;
+ * it has no alternate-physics input.
  */
 export type OperatorEffects = Readonly<Record<Operator, readonly [number, number]>>;
 
@@ -102,7 +103,21 @@ export function applyOperator(
 }
 
 export function attractorPenalty(attractor: AttractorLabel): number {
-  return ATTRACTOR_PENALTIES[attractor];
+  return formalismAttractorPenalty(attractor);
+}
+
+/**
+ * The upstream `can_transition` contract: all formalism-required operators
+ * must occur somewhere in the sequence. It is not the richer advisory list
+ * returned by `suggestTransitionOperators`.
+ */
+export function canTransition(
+  from: AttractorLabel,
+  to: AttractorLabel,
+  sequence: readonly Operator[],
+): boolean {
+  const required = formalismTransitionOperators(from, to);
+  return required.length > 0 && required.every((operator) => sequence.includes(operator));
 }
 
 export interface TrajectoryStep {
@@ -144,6 +159,51 @@ export function simulateTrajectory(
   });
 
   return trajectory;
+}
+
+export interface BasinStructure {
+  readonly basinSizes: Readonly<Record<AttractorLabel, number>>;
+  readonly transitionCounts: Readonly<Record<string, number>>;
+  readonly numSamples: number;
+}
+
+/**
+ * Port of `analyze_basin_structure`. Inject `random` when repeatability is
+ * needed; its default matches the upstream's random sampling behaviour.
+ */
+export function analyzeBasinStructure(
+  numSamples: number = 1000,
+  sequence?: readonly Operator[],
+  random: () => number = Math.random,
+): BasinStructure {
+  if (!Number.isInteger(numSamples) || numSamples <= 0) {
+    throw new RangeError("numSamples must be a positive integer");
+  }
+
+  const basinCounts: Record<AttractorLabel, number> = { "J=0": 0, "S*": 0, "∅": 0 };
+  const transitionCounts: Record<string, number> = {};
+  for (let index = 0; index < numSamples; index += 1) {
+    const initial = { D: random(), C: random() };
+    const from = classifyAttractor(initial.D, initial.C);
+    const final = sequence === undefined
+      ? from
+      : simulateTrajectory(initial, sequence).at(-1)!.attractor;
+    basinCounts[final] += 1;
+    if (from !== final) {
+      const key = `${from}→${final}`;
+      transitionCounts[key] = (transitionCounts[key] ?? 0) + 1;
+    }
+  }
+
+  return {
+    basinSizes: {
+      "J=0": basinCounts["J=0"] / numSamples,
+      "S*": basinCounts["S*"] / numSamples,
+      "∅": basinCounts["∅"] / numSamples,
+    },
+    transitionCounts,
+    numSamples,
+  };
 }
 
 /**

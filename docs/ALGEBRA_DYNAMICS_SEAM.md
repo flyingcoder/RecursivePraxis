@@ -11,10 +11,11 @@ carried here.
 ## 0. The finding in one line
 
 The formalism is an **algebra over operators** (composition, absorption,
-idempotence). The engine is a **dynamical system over states** (additive
-`(ΔD, ΔC)` displacement, summed transition costs). Neither is wrong. What was
-missing was a specified relationship between them — and three things that
-looked like bugs were that seam showing through.
+idempotence) and the source of the phase portrait's α, stability threshold,
+attractor penalties, and required transition operators. The engine is a
+**dynamical system over states** (additive `(ΔD, ΔC)` displacement, summed
+transition costs). What remains unspecified is a relationship from algebraic
+composition to displacement effects.
 
 ## 1. Two decisions that ground everything below
 
@@ -67,10 +68,10 @@ Pinned by `tests/kernel/solver.test.ts`.
 ### The suggestion table (`src/kernel/phasePortrait.ts`)
 
 `suggestTransitionOperators` is ported from `phase_portrait.py`, restoring the
-`Suggested operators:` line to `lambda diagnose`. Two upstream tables disagreed;
-the Python one is a strict superset and the one the upstream CLI actually read,
-so `formalism.json` → `phase_portrait.transitions` is labelled superseded rather
-than authoritative (`src/assets/NOTICE.md` item 7).
+`Suggested operators:` line to `lambda diagnose`. It remains separate from
+`canTransition`: the formalism's five transition lists define operators that
+must all be present, while the richer Python six-list table defines advisory
+suggestions (`src/assets/NOTICE.md` item 7).
 
 ### The injection seams (`SolveOptions`)
 
@@ -79,11 +80,10 @@ operator alphabet the search expands. Both default to today's behaviour and
 nothing in the engine passes either. They exist so a replacement physics or a
 replacement selection rule is an experiment rather than an edit to the kernel.
 
-The `effects` seam reaches the search only. `session.ts` `step` and the
-`analyze` command still advance state with the default table, so a sequence
-solved under an injected table will not be *stepped* under it. Widening it to
-those call sites is unbuilt: a session whose physics can be swapped per call is
-a different design question.
+The `effects` seam reaches the search and sessions. Pass a table to
+`createInitialSession`; its persisted session context ensures every later
+`step` uses the same physics. The `analyze` command remains a report of default
+physics because it accepts no alternative-effects input.
 
 ## 4. Degeneracy — what the effects table can distinguish
 
