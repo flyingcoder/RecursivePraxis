@@ -255,6 +255,7 @@ execution** — not remote model calls, tool side effects, or the truth of unava
 | 🔤 [Vocabulary](docs/VOCABULARY.md) | How specification terms map to code identifiers |
 | ✅ [Requirements matrix](docs/REQUIREMENTS_MATRIX.md) | Verified coverage and remaining boundaries |
 | 💻 [CLI reference](docs/CLI_REFERENCE.md) | Full command and flag reference |
+| 📦 [Installation architecture](docs/INSTALL_ARCHITECTURE.md) | Why install and `lambda init` are separate, and how hosts are detected |
 | 🤝 [Contributing](CONTRIBUTING.md) | Development conventions |
 | 🔒 [Security policy](SECURITY.md) | Reporting a vulnerability |
 | 🗺️ [Exploratory roadmap](docs/explorations/RecursivePraxis_Roadmap.md) | Where this project is headed |
