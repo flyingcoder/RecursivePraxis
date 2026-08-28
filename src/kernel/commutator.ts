@@ -1,7 +1,10 @@
 import commutatorData from "../assets/commutator_skeleton.json" with { type: "json" };
 import type { Operator } from "./types.js";
 
-type CommutatorEntry = readonly [number, number];
+/** The vendored skeleton is `v2.1.0`, whose entries carry a third element:
+ * an extraction-derived magnitude. It is deliberately not read — see
+ * `src/assets/NOTICE.md` item 5. */
+type CommutatorEntry = readonly [number, number, number];
 
 interface CommutatorSkeleton {
   readonly commutator_matrix: Record<Operator, Record<Operator, CommutatorEntry>>;
@@ -12,8 +15,9 @@ const skeleton = commutatorData as unknown as CommutatorSkeleton;
 /**
  * Ported from dissipation_calculator.py `load_commutators_from_skeleton`:
  * sign != 0 -> magnitude 1.0, sign == 0 -> magnitude 0.0. The skeleton's
- * sign is ground truth; extraction-refined magnitudes are out of scope
- * for this engine (see src/assets/NOTICE.md).
+ * sign is ground truth; the extraction magnitude it also carries is ignored,
+ * because adopting it would change every computed λ (see src/assets/NOTICE.md
+ * item 5).
  */
 export function commutatorMagnitude(opI: Operator, opJ: Operator): number {
   const [sign] = skeleton.commutator_matrix[opI][opJ];

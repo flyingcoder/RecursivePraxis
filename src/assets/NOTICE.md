@@ -46,11 +46,20 @@ The executed values are pinned by a characterization test in
    this gap and all three were withdrawn on that basis — see
    `docs/ALGEBRA_DYNAMICS_SEAM.md` §1–2 before re-filing.
 
-5. **Commutator magnitudes are `{0, 1}` only.** The loader maps `sign != 0 → 1.0`
-   and `sign == 0 → 0.0`, so the pairwise interaction term is always exactly
-   `0.15` for a non-commuting pair — never `c · 0.4 = 0.06`. An "enhanced"
-   skeleton with empirically-derived magnitudes exists upstream but is not used
-   here.
+5. **The skeleton carries extraction magnitudes the loader ignores.** The
+   vendored file is the "enhanced" upstream skeleton (`skeleton_version`
+   `v2.1.0`), whose entries are `[sign, resultant, magnitude]` rather than
+   `[sign, resultant]`. The loader reads the sign only, mapping `sign != 0 →
+   1.0` and `sign == 0 → 0.0`, so the pairwise interaction term is always
+   exactly `0.15` for a non-commuting pair — never `c · 0.335 ≈ 0.05`.
+
+   Sixteen of the 400 pairs — the `evidence_based_pairs` count the metadata
+   declares — carry a magnitude that contradicts their own sign, and reading
+   the sign only is what makes all sixteen inert. Twelve have a non-zero sign
+   with a fractional magnitude (`Non→Meta = [-1, 3, 0.47]`, `Telo→Meta =
+   [1, 3, 0.582]`, and ten more). Four have `sign == 0` — declared commuting —
+   yet a non-zero magnitude, most starkly `Meta→Meta = [0, 0, 1]`, a
+   self-commutator that is simultaneously zero and maximal.
 
 6. **`metadata.status` asserts its own normativity.** The file declares
    `"status": "GROUND TRUTH - COGNITIVE BOOTLOADER SPECIFICATION"` and
