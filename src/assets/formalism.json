@@ -111,8 +111,7 @@
       "effect_vector": [0.05, 0.02],
       "effect": "neutral advancement",
       "idempotent": "semi",
-      "idempotence_rule": "Pro² = 0.5·Pro",
-      "identity": "Pro = I (identity element)"
+      "idempotence_rule": "Pro² = 0.5·Pro"
     },
     "Echo": {
       "index": 10,
@@ -301,9 +300,7 @@
 
     "neutral_commutations": [
       "[Telo, Para] = 0",
-      "[Pro, Kata] = 0",
-      "[Bind, Weave] = 0",
-      "[Seed, Crux] = 0"
+      "[Pro, Kata] = 0"
     ],
 
     "anti_symmetry_exceptions": [
@@ -320,7 +317,6 @@
     ],
 
     "identity_and_null": {
-      "identity": "Pro = I",
       "null": "Non ∘ Non = 0",
       "projections": {
         "J=0": "Telo = proj_{J=0}",

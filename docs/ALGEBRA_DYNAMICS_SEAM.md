@@ -129,15 +129,24 @@ initial→target pair — and scores both by the unchanged J.
 
 | Case | Full | Restricted | Verdict |
 |---|---|---|---|
+| rigid | `Non Crux` | `Para Para` | worse, +11.2% |
 | nearly done | `Weave` | `Latch` | worse, +10.3% |
 | collapsed | `Kata Weave Latch` | `Weave ×3` | worse, +8.1% |
-| rigid | `Non Crux` | `Para Para` | worse, +7.0% |
 | stuck | `Axis Telo Telo` | `Seed ×3` | worse, +4.9% |
 | typical polish | `Weave Latch` | `Latch Latch` | worse, +3.7% |
 | rough draft | `Weave Latch Latch` | `Latch ×3` | worse, +2.3% |
 | python parity | `Kata Kata` | `Kata Kata` | identical |
 | overwhelmed | `Axis Telo ×6 Flux` | `Kata Latch ×3` | **never arrives** |
 | procrastinating | `Kata Kata` | — | unmapped (S\* → S\*) |
+
+`rigid`'s penalty moved from +7.0% to +11.2% when `commutatorMagnitude` switched
+from a binary sign read to the skeleton's extraction magnitude (NOTICE.md
+item 5): the restricted path's `Para Para` step reads the `Para,Para`
+self-commutator, one of the pairs where a sign of `0` (architecturally
+"commuting") carries a nonzero measured magnitude (`0.335`), so that step now
+costs something it used to cost nothing. The other rows were untouched — their
+sequences don't pass through any of the 16 pairs where sign and magnitude
+disagree.
 
 **Decision: the table is not wired into selection.** It never wins. Two things
 make that more than a scoreboard:

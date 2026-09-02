@@ -19,35 +19,44 @@ describe("formalism/commutator ground truth", () => {
 });
 
 /**
- * Characterization tests for contradictions inherited from the vendored assets
- * (see src/assets/NOTICE.md). These pin what the loader currently reads, so
- * that changing the JSON — whether to match its own declarative
- * algebra_relations block or for any other reason — trips a test instead of
- * silently shifting every computed λ. Update these alongside any deliberate
- * change to this behaviour; they are not meant to block one.
+ * Characterization tests for the vendored commutator skeleton (see
+ * src/assets/NOTICE.md item 5). `commutatorMagnitude` reads the skeleton's
+ * extraction-derived `|η_ij|` directly; for 384 of 400 pairs that magnitude
+ * already equals what the old sign-only binary mapping produced, so most
+ * pairs are unaffected. These pin the 16 where it does not.
  */
-describe("vendored asset inconsistencies (currently pinned)", () => {
-  it("treats Bind/Weave as non-commuting despite neutral_commutations claiming [Bind, Weave] = 0", () => {
+describe("commutator skeleton: extraction magnitude", () => {
+  it("Bind/Weave and Seed/Crux are non-commuting at full magnitude", () => {
+    // formalism.json's neutral_commutations used to (incorrectly) claim both
+    // pairs were 0; that claim was removed as it contradicted the skeleton.
     expect(commutatorMagnitude("Bind", "Weave")).toBe(1.0);
     expect(commutatorMagnitude("Weave", "Bind")).toBe(1.0);
-  });
-
-  it("treats Seed/Crux as non-commuting despite neutral_commutations claiming [Seed, Crux] = 0", () => {
     expect(commutatorMagnitude("Seed", "Crux")).toBe(1.0);
     expect(commutatorMagnitude("Crux", "Seed")).toBe(1.0);
   });
 
   it("keeps the genuinely commuting pairs at magnitude 0 in both directions", () => {
-    expect(commutatorMagnitude("Telo", "Para")).toBe(0.0);
     expect(commutatorMagnitude("Para", "Telo")).toBe(0.0);
     expect(commutatorMagnitude("Pro", "Kata")).toBe(0.0);
     expect(commutatorMagnitude("Kata", "Pro")).toBe(0.0);
   });
 
-  it("yields an interaction term of exactly 0.15 for any non-commuting pair", () => {
-    // Magnitudes are {0, 1} only, so the term is c*1.0 = 0.15 — never c*0.4.
+  it("trusts extraction evidence over an architecturally-zero sign: Telo->Para", () => {
+    // The skeleton's sign for Telo->Para is 0 ("commuting"), but its own
+    // extraction magnitude is 0.335 — evidence of an interaction the sign
+    // alone didn't predict. Only this direction carries it: Para->Telo is a
+    // clean 0. Both are read as authored, not reconciled into agreement.
+    expect(commutatorMagnitude("Telo", "Para")).toBeCloseTo(0.335, 10);
+  });
+
+  it("yields an interaction term of c*1.0 = 0.15 for a full-magnitude non-commuting pair", () => {
     expect(lambdaPairwise("Ana", "Kata") - 0.35).toBeCloseTo(0.15, 10);
-    expect(lambdaPairwise("Meta", "Non") - 0.9).toBeCloseTo(0.15, 10);
+  });
+
+  it("yields a reduced interaction term when extraction magnitude is below 1.0: Meta->Non", () => {
+    // Meta->Non: sign +1 (non-commuting) but measured magnitude 0.335, so the
+    // term is c*0.335 = 0.05025, not the 0.15 the sign alone would imply.
+    expect(lambdaPairwise("Meta", "Non") - 0.9).toBeCloseTo(0.05025, 10);
   });
 });
 
