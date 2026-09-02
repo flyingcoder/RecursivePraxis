@@ -19,12 +19,14 @@ describe("formalism/commutator ground truth", () => {
 });
 
 /**
- * Characterization tests for contradictions inherited from the upstream assets
- * (see src/assets/NOTICE.md). These pin what the loader ACTUALLY reads, so that
- * "tidying" the JSON to match its own declarative algebra_relations block trips
- * a test instead of silently shifting every computed λ.
+ * Characterization tests for contradictions inherited from the vendored assets
+ * (see src/assets/NOTICE.md). These pin what the loader currently reads, so
+ * that changing the JSON — whether to match its own declarative
+ * algebra_relations block or for any other reason — trips a test instead of
+ * silently shifting every computed λ. Update these alongside any deliberate
+ * change to this behaviour; they are not meant to block one.
  */
-describe("upstream asset inconsistencies (pinned, not corrected)", () => {
+describe("vendored asset inconsistencies (currently pinned)", () => {
   it("treats Bind/Weave as non-commuting despite neutral_commutations claiming [Bind, Weave] = 0", () => {
     expect(commutatorMagnitude("Bind", "Weave")).toBe(1.0);
     expect(commutatorMagnitude("Weave", "Bind")).toBe(1.0);

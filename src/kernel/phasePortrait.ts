@@ -1,9 +1,11 @@
 import type { AttractorLabel, DissipationState, Operator } from "./types.js";
+import { OPERATORS } from "./types.js";
 import {
   PHASE_PORTRAIT_ALPHA,
   PHASE_PORTRAIT_STABILITY_THRESHOLD,
   formalismAttractorPenalty,
   formalismTransitionOperators,
+  operatorEffectVector,
 } from "./formalism.js";
 
 /** Loaded from formalism.json, matching PhasePortrait.__init__ upstream. */
@@ -40,30 +42,15 @@ export type OperatorEffects = Readonly<Record<Operator, readonly [number, number
  * evidence about one.
  *
  * They are a placeholder with the right *shape*. Replacing them is the point of
- * this table being injectable — see `OperatorEffects`.
+ * this table being injectable — see `OperatorEffects`. The numbers themselves
+ * live in `formalism.json`'s `effect_vector` field (NOTICE.md item 8) so this
+ * default and any future report of "what does the kernel actually ship" read
+ * the same place `lambda_intrinsic` does; folding them into that file did not
+ * make them upstream ground truth.
  */
-export const DEFAULT_OPERATOR_EFFECTS: OperatorEffects = {
-  Ana: [0.15, 0.1],
-  Kata: [-0.2, -0.15],
-  Meta: [0.1, 0.05],
-  Para: [0.12, 0.18],
-  Non: [0.25, 0.2],
-  Telo: [-0.18, -0.1],
-  Retro: [-0.05, 0.0],
-  Ortho: [-0.15, -0.12],
-  Pro: [0.05, 0.02],
-  Echo: [0.08, 0.06],
-  Braid: [0.1, 0.12],
-  Fold: [0.18, 0.14],
-  Seed: [-0.17, -0.11],
-  Crux: [0.07, 0.09],
-  Weave: [-0.16, -0.13],
-  Bind: [-0.14, -0.1],
-  Axis: [-0.16, -0.12],
-  Vale: [0.22, 0.18],
-  Flux: [0.14, 0.11],
-  Latch: [-0.17, -0.12],
-};
+export const DEFAULT_OPERATOR_EFFECTS: OperatorEffects = Object.fromEntries(
+  OPERATORS.map((op) => [op, operatorEffectVector(op)]),
+) as OperatorEffects;
 
 export function operatorEffect(
   op: Operator,

@@ -181,5 +181,8 @@ Pinned by `tests/kernel/selectionStudy.test.ts`.
 - **Sequence length is not in the objective**, deliberately. `overwhelmed` gets
   *longer* under the corrected ranking (7 → 8 operators) while scoring better.
 - **`algebra_relations` is not enforced** and should not be — see §2.
-- **The upstream inconsistencies in `src/assets/NOTICE.md` are not corrected.**
-  They are pinned by characterization test on purpose.
+- **The upstream inconsistencies in `src/assets/NOTICE.md` are not yet
+  corrected**, but as of 2026-09-02 that is no longer policy — see the "upstream
+  is inspiration, not a constraint" note there. They remain pinned by a
+  characterization test only until someone changes the behaviour, not on
+  principle.

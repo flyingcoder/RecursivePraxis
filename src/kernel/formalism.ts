@@ -6,6 +6,7 @@ interface FormalismOperatorEntry {
   readonly index: number;
   readonly class: OperatorClass;
   readonly lambda_intrinsic: number;
+  readonly effect_vector: readonly [number, number];
   readonly meaning: string;
   readonly symbol: string;
 }
@@ -85,6 +86,16 @@ export function formalismTransitionOperators(
 
 export function lambdaIntrinsic(op: Operator): number {
   return formalism.operators[op].lambda_intrinsic;
+}
+
+/**
+ * `[ΔD, ΔC]` for the operator, as authored in `formalism.json`. Unlike
+ * `lambda_intrinsic`, this value did not come from the upstream spec — it is
+ * this repo's own class-generated placeholder, folded into the JSON for a
+ * single source of truth. See NOTICE.md item 8.
+ */
+export function operatorEffectVector(op: Operator): readonly [number, number] {
+  return formalism.operators[op].effect_vector;
 }
 
 export function operatorClass(op: Operator): OperatorClass {

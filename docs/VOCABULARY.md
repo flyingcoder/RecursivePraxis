@@ -77,5 +77,7 @@ in favour of terms this repository actually defines:
 ## Upstream inconsistencies
 
 The copied JSON assets contain internal contradictions inherited from upstream.
-They are documented — not silently corrected — in
-[src/assets/NOTICE.md](../src/assets/NOTICE.md).
+They are documented, not silently patched over, in
+[src/assets/NOTICE.md](../src/assets/NOTICE.md) — which also records this
+project's current policy: upstream is a starting point, not a constraint, so
+these are open to being fixed in the kernel, not permanently pinned.

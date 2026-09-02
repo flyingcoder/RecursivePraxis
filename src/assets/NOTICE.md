@@ -1,19 +1,34 @@
 # Asset Origin
 
 These JSON files are copied, versioned assets — not runtime imports from another
-repository. They are the ground-truth algebra specification for this engine.
+repository. They were the starting algebra specification this engine's kernel
+was ported from.
 
 Copied: 2026-08-20. Source formalism version: `2.0.0` (see `formalism.json` → `metadata.version`).
 
+## Policy: upstream is inspiration, not a constraint
+
+As of 2026-09-02, this repository does not treat the vendored copy as
+unmodifiable ground truth. Earlier revisions of this file argued that "fixing"
+the data would be wrong because it would silently change every computed λ, and
+closed several bug reports on that basis (see item 4). That argument is
+retracted as a *blanket* rule: it correctly describes what happens today if
+nothing else changes, but it is not a reason to leave an inconsistency alone
+forever. The ported TypeScript kernel is free to diverge from the vendored
+JSON — including resolving any of the inconsistencies below — whenever doing
+so serves this engine; "upstream says X" is not by itself a reason to decline
+a change here.
+
 ## Known upstream inconsistencies
 
-These files are copied verbatim and are **not** corrected here — the engine's
-behaviour is defined by what the loader actually reads, and "fixing" the data
-would silently change every computed λ. They are recorded so the contradictions
-are not mistaken for porting defects.
+The list below records contradictions inherited from the vendored files, kept
+for diagnostic value — so a reader doesn't mistake them for porting defects,
+and so anyone changing this behaviour knows what they're changing away from.
+It is a log, not a restriction.
 
-The executed values are pinned by a characterization test in
-`tests/kernel/dissipation.test.ts`.
+The values below describe what the loader currently reads. That is presently
+pinned by a characterization test in `tests/kernel/dissipation.test.ts`; update
+that test alongside any change to this behaviour.
 
 1. **`algebra_relations.neutral_commutations` contradicts the skeleton.**
    It declares `[Bind, Weave] = 0` and `[Seed, Crux] = 0`, but
@@ -34,17 +49,19 @@ The executed values are pinned by a characterization test in
    `idempotent` / `idempotence_rule` / `absorption` / `effect` fields are **never
    read** by this engine. Composition strings such as `Ortho ∘ Ana = Kata` are
    documentation: the kernel never reduces one operator sequence to another.
-   Fields that *are* read: `index`, `class`, `lambda_intrinsic`, `meaning`,
-   `symbol`, and `dissipation_rules`.
+   Fields that *are* read: `index`, `class`, `lambda_intrinsic`, `effect_vector`,
+   `meaning`, `symbol`, and `dissipation_rules`.
 
    These fields are a **parallel descriptive model over function composition** —
    not a specification this engine has failed to implement. The engine models
    operators as *displacements in D/C space*; `algebra_relations` models them as
    *composable functions*. Both are coherent, they are simply different objects,
    and "the engine does not enforce idempotence / absorption / `Telo`
-   terminality" is therefore not a defect. Three such bugs were filed against
-   this gap and all three were withdrawn on that basis — see
-   `docs/ALGEBRA_DYNAMICS_SEAM.md` §1–2 before re-filing.
+   terminality" is therefore not, by itself, a defect — see the reasoning in
+   `docs/ALGEBRA_DYNAMICS_SEAM.md` §1–2 (three earlier bug reports on this gap
+   were closed on that argument). That reasoning is about which model governs
+   runtime behaviour, not about upstream authority, and stands independently
+   of the policy change above.
 
 5. **The skeleton carries extraction magnitudes the loader ignores.** The
    vendored file is the "enhanced" upstream skeleton (`skeleton_version`
@@ -77,3 +94,20 @@ The executed values are pinned by a characterization test in
    transition to hold. The richer six-entry Python table is separately retained
    for `suggestTransitionOperators`, because it produced the upstream CLI's
    advisory output. A suggestion is not a formalism transition requirement.
+
+8. **`effect_vector` is this repo's addition, not part of the upstream copy.**
+   Every other field under `operators.<Op>` came from the vendored source
+   described above. `effect_vector: [ΔD, ΔC]` did not — it is the same
+   class-generated placeholder previously kept only as `DEFAULT_OPERATOR_EFFECTS`
+   in `src/kernel/phasePortrait.ts` (see that constant's doc comment for
+   provenance: generated from operator class, not measured, no calibration
+   against an observed agent outcome). It was folded into this file so the
+   per-operator numbers live in one place, not because it became upstream
+   ground truth. `lambdaIntrinsic` and `effect_vector` remain two different
+   kinds of number reached through the same loader — see
+   [docs/VOCABULARY.md](../../docs/VOCABULARY.md) and the "Where they overlap"
+   note in `phasePortrait.ts`. The seam that lets a caller override these
+   values (`OperatorEffects`, `SolveOptions.effects`, `createInitialSession`)
+   is unaffected: `DEFAULT_OPERATOR_EFFECTS` now reads this field instead of
+   declaring the numbers twice, but any caller can still substitute a whole
+   different table.
