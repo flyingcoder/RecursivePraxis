@@ -5,7 +5,7 @@ import path from "node:path";
 import os from "node:os";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from "node:fs";
 import { describe, it } from "vitest";
-import { WORKFLOW_IDS } from "../src/init/workflows.js";
+import { ASSETS } from "../src/init/registry.js";
 import { hasManagedMarkers } from "../src/render/managed-block.js";
 
 const cliPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist/cli.js");
@@ -195,7 +195,7 @@ describe("lambda init: no delivery-system or OpenSpec artifacts", () => {
     const cwd = tmpProject();
     try {
       runLambda(["init", "--tools", "all"], cwd);
-      for (const workflowId of WORKFLOW_IDS) {
+      for (const workflowId of ASSETS.invocableSlugs()) {
         const content = readFileSync(path.join(cwd, `.claude/skills/recursive-praxis-${workflowId}/SKILL.md`), "utf8");
         assert.doesNotMatch(content, /^\s*lambda run\b/m);
       }

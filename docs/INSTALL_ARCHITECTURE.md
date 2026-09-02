@@ -184,7 +184,7 @@ because these paths drift.
 
 | Host | Project scope | Global scope | Invocation |
 | --- | --- | --- | --- |
-| **Claude Code** | `.claude/skills/recursive-praxis-<id>/SKILL.md` + `.claude/commands/praxis/<id>.md` | `~/.claude/skills/recursive-praxis/` as a **skills-directory plugin**: `.claude-plugin/plugin.json` + `skills/<id>/SKILL.md` | `/praxis:<id>` · `/recursive-praxis:<id>` (global) |
+| **Claude Code** | `.claude/skills/recursive-praxis-<slug>/SKILL.md` + `.claude/commands/praxis/<id>.md` | `~/.claude/skills/recursive-praxis/` as a **skills-directory plugin**: `.claude-plugin/plugin.json` + `skills/<id>/SKILL.md` | `/praxis:<id>` · `/recursive-praxis:<id>` (global) |
 | **Cursor** | `.cursor/skills/recursive-praxis-<id>/SKILL.md` + `.cursor/commands/praxis-<id>.md` | `~/.cursor/…` (same shape) | `/praxis-<id>` |
 | **Codex CLI** | `.agents/skills/recursive-praxis-<id>/SKILL.md` | **`~/.agents/skills/…`** — *not* `~/.codex/skills/` | `$recursive-praxis-<id>` |
 | **opencode** | `.opencode/commands/praxis-<id>.md` | `~/.config/opencode/commands/praxis-<id>.md` | `/praxis-<id>` |
@@ -286,18 +286,40 @@ differently.
 ```
 src/hosts/        HostAdapter, HostRegistry, four adapters, layouts, tools-flag, types
 src/detect/       HostSignal, the confidence ladder, HostContext
-src/init/         InitWizard, steps/, WizardIO implementations, workflows, write
+src/init/         assets/ (the Asset hierarchy), one directory per asset kind,
+                  registry, InitWizard, steps/, WizardIO implementations, write
 src/render/       DocumentPipeline, managed-block, remark plugins
 src/manifest/     InstallManifest, inspect
 src/cli-commands/ init, doctor, sync, uninstall — thin
 ```
 
-**Layouts are a hierarchy, not flags.** `StandaloneLayout`, `PluginLayout`, and
-`CommandsOnlyLayout` ([layouts.ts](../src/hosts/layouts.ts)) exist because "a
-plugin directory with a manifest", "loose files under a dot-directory", and
-"markdown commands with no manifest at all" are genuinely different structures;
-collapsing them into one class with three optional fields would push the
-difference back into the caller.
+**Content is a hierarchy too.** The predecessor of `src/init/assets/` was a
+single `WorkflowDefinition` record (`src/init/workflows.ts`) whose meaning was
+decided entirely by the layout that consumed it: one body was written out as
+both a skill and a command, and nothing could be authored that was not both.
+That shape cannot express a hook, an MCP server, or a rule — all of which a
+marketplace plugin carries — so a record grew into `Asset`, with `ProseAsset`
+(Markdown: `Skill`, `Command`, `Agent`, `Rule`) and `DataAsset` (JSON: `Hook`,
+`McpServer`) below it. An asset now knows what it *is*; where it lands is still
+the host's decision and how it renders is still the pipeline's. See
+[src/init/README.md](../src/init/README.md) for the authoring surface.
+
+**Layouts are a hierarchy, not flags — but placement is a table.**
+`StandaloneLayout`, `PluginLayout`, and `CommandsOnlyLayout`
+([layouts.ts](../src/hosts/layouts.ts)) stay separate classes because "a plugin
+directory with a manifest", "loose files under a dot-directory", and "markdown
+commands with no manifest at all" are genuinely different structures. What each
+*holds* is a `Placement` table naming the kinds that host takes and the path
+each lands at, because that is exactly the part which drifts between vendor
+releases — it belongs beside the adapter's `verifiedAgainst` string, filled in
+by whoever checked the vendor's documentation. A kind absent from a host's table
+is a kind that host does not receive, which is how a kind can exist before every
+host supports it.
+
+Layouts are handed the whole `AssetRegistry` rather than one asset at a time,
+because the JSON kinds aggregate: every `Hook` collapses into one `hooks.json`
+and every `McpServer` into one `.mcp.json`, which a per-asset call could not
+produce.
 
 **The wizard is four objects, so the four steps are four lines.**
 `InitWizard.run` ([InitWizard.ts](../src/init/InitWizard.ts)) composes
@@ -321,11 +343,11 @@ callers.
 
 ## 7. Text generation with `unified`
 
-Workflow bodies were previously written verbatim to every host, with per-host
+Asset bodies were previously written verbatim to every host, with per-host
 variation confined to a frontmatter line built by `JSON.stringify`. That had one
-specific cost: **a workflow body could not tell the reader how to invoke it**,
-because the invocation is the one thing that differs per host and scope. Every
-workflow worked around this by never mentioning it.
+specific cost: **a body could not tell the reader how to invoke it**, because
+the invocation is the one thing that differs per host and scope. Every body
+worked around this by never mentioning it.
 
 `DocumentPipeline` ([DocumentPipeline.ts](../src/render/DocumentPipeline.ts))
 makes that a transform instead of a taboo:
@@ -422,7 +444,11 @@ surface for a runtime whose premise is bounded execution.
 
 ## 10. Verification
 
-122 tests across seven files cover this surface, within a suite of 378:
+128 tests across seven files cover this surface, within a suite of 384. The
+asset refactor is verified by output equality rather than by new assertions:
+all 78 files generated across four hosts x two scopes are byte-identical to
+what the `WorkflowDefinition` model produced, so every existing test below
+still constrains the same bytes.
 
 | File | Tests | Covers |
 | --- | --- | --- |

@@ -1,12 +1,13 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { hasManagedMarkers } from "../render/managed-block.js";
+import { isManagedMarkdown } from "../hosts/types.js";
 import { contentHash, type InstallManifest, type ManifestFileEntry } from "./InstallManifest.js";
 import type { HostRegistry } from "../hosts/HostRegistry.js";
 import type { HostContext } from "../detect/context.js";
 import type { PlannedFile } from "../hosts/HostAdapter.js";
 import type { HostId } from "../hosts/types.js";
-import type { WorkflowDefinition } from "../init/workflows.js";
+import type { AssetRegistry } from "../init/assets/AssetRegistry.js";
 import type { Confidence } from "../detect/signals.js";
 
 /**
@@ -77,7 +78,7 @@ export async function inspectInstall(
   manifest: InstallManifest,
   registry: HostRegistry,
   ctx: HostContext,
-  workflows: readonly WorkflowDefinition[],
+  assets: AssetRegistry,
   currentVersion: string,
 ): Promise<InstallInspection> {
   const scope = manifest.data.scope;
@@ -89,9 +90,9 @@ export async function inspectInstall(
     const adapter = registry.get(recorded.id);
     if (adapter === undefined) continue;
 
-    planned.push(...adapter.plan(workflows, ctx, scope, { version: currentVersion }));
+    planned.push(...adapter.plan(assets, ctx, scope, { version: currentVersion }));
 
-    const detection = adapter.detect(ctx, workflows);
+    const detection = adapter.detect(ctx, assets);
     hosts.push({
       hostId: adapter.id,
       label: adapter.label,
@@ -113,7 +114,7 @@ export async function inspectInstall(
     const status = ((): FileStatus => {
       if (existing === undefined) return "missing";
       if (!plannedPaths.has(absPath)) return "orphaned";
-      if (entry.kind !== "manifest" && !hasManagedMarkers(existing)) return "foreign";
+      if (isManagedMarkdown(entry.kind) && !hasManagedMarkers(existing)) return "foreign";
       return contentHash(existing) === entry.sha256 ? "managed" : "drifted";
     })();
 

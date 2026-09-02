@@ -4,7 +4,7 @@ import type { HostRegistry } from "../../hosts/HostRegistry.js";
 import type { HostDetection } from "../../hosts/HostAdapter.js";
 import type { HostContext } from "../../detect/context.js";
 import { CONFIDENCE_LABEL } from "../../detect/signals.js";
-import type { WorkflowDefinition } from "../workflows.js";
+import type { AssetRegistry } from "../assets/AssetRegistry.js";
 
 export interface DetectionReport {
   readonly detections: readonly HostDetection[];
@@ -25,14 +25,14 @@ export class DetectHostsStep extends InitStep<void, DetectionReport> {
   constructor(
     private readonly registry: HostRegistry,
     private readonly ctx: HostContext,
-    private readonly workflows: readonly WorkflowDefinition[],
+    private readonly assets: AssetRegistry,
   ) {
     super();
   }
 
   override async run(_input: void, io: WizardIO): Promise<DetectionReport> {
     this.announce(io);
-    const detections = this.registry.detectAll(this.ctx, this.workflows);
+    const detections = this.registry.detectAll(this.ctx, this.assets);
 
     io.table(
       detections.map((detection) => ({

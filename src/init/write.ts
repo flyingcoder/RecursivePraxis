@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { hasManagedMarkers, mergeManaged } from "../render/managed-block.js";
 import type { PlannedFile } from "../hosts/HostAdapter.js";
+import { isManagedMarkdown } from "../hosts/types.js";
 
 export type FileAction = "created" | "refreshed" | "preserved" | "skipped";
 
@@ -30,8 +31,8 @@ async function readIfExists(absPath: string): Promise<string | null> {
  * last case is why `lambda init` needs no preview or confirmation step — the
  * destructive outcome a dry-run would protect against does not exist.
  *
- * Manifests (`plugin.json`) carry no markers, so they are matched on content
- * instead: identical is `preserved`, different is `refreshed`.
+ * Files that are not Markdown carry no markers, so they are matched on
+ * content instead: identical is `preserved`, different is `refreshed`.
  */
 export class FileWriter {
   async write(file: PlannedFile): Promise<FileWriteResult> {
@@ -50,7 +51,10 @@ export class FileWriter {
       return at("created");
     }
 
-    if (file.kind === "manifest") {
+    // JSON configuration — a plugin manifest, `hooks.json`, `.mcp.json` — has
+    // nowhere to carry the managed markers, so it is matched on content
+    // instead: identical is `preserved`, different is `refreshed`.
+    if (!isManagedMarkdown(file.kind)) {
       if (existing === file.content) return at("preserved");
       await writeFile(file.absPath, file.content, "utf8");
       return at("refreshed");

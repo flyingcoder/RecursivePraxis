@@ -1,6 +1,6 @@
 import path from "node:path";
 import { HostAdapter } from "./HostAdapter.js";
-import { HostLayout, StandaloneLayout } from "./layouts.js";
+import { HostLayout, praxisPrefixed, StandaloneLayout } from "./layouts.js";
 import type { HostId, Scope } from "./types.js";
 import type { HostContext } from "../detect/context.js";
 import {
@@ -60,11 +60,13 @@ export class CodexAdapter extends HostAdapter {
    */
   override layout(ctx: HostContext, scope: Scope): HostLayout {
     const root = scope === "global" ? ctx.home : ctx.projectRoot;
-    return new StandaloneLayout(root, ".agents", undefined);
+    return new StandaloneLayout(root, ".agents", {
+      skill: { at: (slug) => path.join("skills", praxisPrefixed(slug), "SKILL.md"), nameAs: praxisPrefixed },
+    });
   }
 
-  override invocation(workflowId: string, _scope: Scope): string {
-    return `$recursive-praxis-${workflowId}`;
+  override invocation(slug: string, _scope: Scope): string {
+    return `$recursive-praxis-${slug}`;
   }
 
   override pipeline(scope: Scope): DocumentPipeline {

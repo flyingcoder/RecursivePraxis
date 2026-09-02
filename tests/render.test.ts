@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { HostRegistry } from "../src/hosts/HostRegistry.js";
 import { SCOPES, type Scope } from "../src/hosts/types.js";
-import { WORKFLOWS } from "../src/init/workflows.js";
+import { ASSETS } from "../src/init/registry.js";
+import { Skill } from "../src/init/assets/ProseAsset.js";
 import { DocumentPipeline } from "../src/render/DocumentPipeline.js";
 import {
   MARKER_END,
@@ -21,7 +22,7 @@ function everyRenderedFile(): { label: string; content: string }[] {
   const out: { label: string; content: string }[] = [];
   for (const scope of SCOPES) {
     for (const host of registry.all()) {
-      for (const file of host.plan(WORKFLOWS, ctx, scope, { version: "9.9.9" })) {
+      for (const file of host.plan(ASSETS, ctx, scope, { version: "9.9.9" })) {
         if (file.kind === "manifest") continue;
         out.push({ label: `${host.id}/${scope}/${file.relPath}`, content: file.content });
       }
@@ -33,19 +34,19 @@ function everyRenderedFile(): { label: string; content: string }[] {
 // --- the property that keeps `init` idempotent -----------------------------------
 
 describe("render fixed point", () => {
-  it("render(w) === restringify(render(w)) for every workflow x host x scope", () => {
+  it("render(a) === restringify(render(a)) for every asset x host x scope", () => {
     for (const scope of SCOPES) {
       for (const host of registry.all()) {
         const pipeline = host.pipeline(scope);
-        for (const workflow of WORKFLOWS) {
-          const rendered = pipeline.render(workflow, {
+        for (const asset of ASSETS.allProse()) {
+          const rendered = pipeline.render(asset, {
             kind: "skill",
-            name: `recursive-praxis-${workflow.id}`,
+            name: `recursive-praxis-${asset.slug}`,
           });
           assert.equal(
             pipeline.restringify(rendered),
             rendered,
-            `not a fixed point: ${host.id}/${scope}/${workflow.id}`,
+            `not a fixed point: ${host.id}/${scope}/${asset.kind}:${asset.slug}`,
           );
         }
       }
@@ -55,8 +56,8 @@ describe("render fixed point", () => {
   it("renders byte-identically when called twice", () => {
     const host = registry.require("claude");
     const target = { kind: "skill" as const, name: "recursive-praxis-status" };
-    const first = host.pipeline("project").render(WORKFLOWS[0]!, target);
-    const second = host.pipeline("project").render(WORKFLOWS[0]!, target);
+    const first = host.pipeline("project").render(ASSETS.skills()[0]!, target);
+    const second = host.pipeline("project").render(ASSETS.skills()[0]!, target);
     assert.equal(second, first);
   });
 });
@@ -68,13 +69,13 @@ describe("escaping", () => {
     const rendered = registry
       .require("codex")
       .pipeline("project")
-      .render(WORKFLOWS.find((w) => w.id === "status")!, { kind: "skill", name: "x" });
+      .render(ASSETS.skills().find((s) => s.slug === "status")!, { kind: "skill", name: "x" });
     assert.match(rendered, /`\$recursive-praxis-session`/);
     assert.doesNotMatch(rendered, /\\\$/);
   });
 
   it("emits each host's own invocation form for the same source text", () => {
-    const status = WORKFLOWS.find((w) => w.id === "status")!;
+    const status = ASSETS.skills().find((s) => s.slug === "status")!;
     const expected: Record<string, RegExp> = {
       "claude/project": /`\/praxis:session`/,
       "claude/global": /`\/recursive-praxis:session`/,
@@ -102,18 +103,17 @@ describe("escaping", () => {
     }
   });
 
-  it("rejects an invoke placeholder naming no workflow, rather than emitting it", () => {
+  it("rejects an invoke placeholder naming no asset, rather than emitting it", () => {
     const pipeline = DocumentPipeline.for(registry.require("claude"), "project", {
       frontmatter: ["description"],
     });
-    assert.throws(
-      () =>
-        pipeline.render(
-          { id: "x", title: "x", summary: "x", body: "See {{invoke:nonexistent}}." },
-          { kind: "skill", name: "x" },
-        ),
-      /names no workflow/,
-    );
+    const dangling = new Skill({
+      slug: "x",
+      title: "x",
+      description: "x",
+      body: "See {{invoke:nonexistent}}.",
+    });
+    assert.throws(() => pipeline.render(dangling, { kind: "skill", name: "x" }), /names no invocable asset/);
   });
 });
 
@@ -128,7 +128,7 @@ describe("frontmatter", () => {
   });
 
   it("gives opencode commands a description and no name", () => {
-    const file = registry.require("opencode").plan(WORKFLOWS, ctx, "project", { version: "1" })[0]!;
+    const file = registry.require("opencode").plan(ASSETS, ctx, "project", { version: "1" })[0]!;
     assert.match(file.content, /^---\ndescription: /);
     assert.doesNotMatch(file.content.slice(0, 200), /\nname:/);
   });
@@ -203,7 +203,7 @@ describe("managed markers", () => {
 
   it("parses the managed region into a tree for structural drift reporting", () => {
     const host = registry.require("claude");
-    const content = host.plan(WORKFLOWS, ctx, "project", { version: "1" })[0]!.content;
+    const content = host.plan(ASSETS, ctx, "project", { version: "1" })[0]!.content;
     const tree = host.pipeline("project").parseManaged(content);
     assert.ok(tree);
     assert.ok(tree!.children.some((node) => node.type === "heading"));

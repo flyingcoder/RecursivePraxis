@@ -1,16 +1,15 @@
-import type { WorkflowDefinition } from "../../init/workflows.js";
+import type { ProseAsset } from "../../init/assets/ProseAsset.js";
 import type { RenderTarget } from "../../hosts/types.js";
 
 /**
  * Per-file data carried on the VFile through the pipeline.
  *
  * The host and scope are fixed when the pipeline is built, but the file being
- * produced is not — one pipeline renders both a host's skill files and its
- * command files — so the varying half travels with the file rather than as
+ * produced is not — one pipeline renders every prose kind a host takes — so the varying half travels with the file rather than as
  * plugin options.
  */
 export interface PraxisFileData {
-  readonly workflow: WorkflowDefinition;
+  readonly asset: ProseAsset;
   readonly target: RenderTarget;
 }
 

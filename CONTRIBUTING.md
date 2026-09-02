@@ -47,7 +47,7 @@ and copying would put macOS binaries inside the Linux tarball.
 - `src/detect/`: detection signals, the single confidence ladder that ranks them, and `HostContext` (the injected view of env, home, filesystem, and PATH that makes detection testable against a synthetic machine).
 - `src/render/`: the `unified`/remark pipeline that turns a host-neutral workflow into one host's file, and the managed-marker merge that makes writes non-clobbering.
 - `src/manifest/`: `install.json` — what was written, by which version, at which scope — and the inspection `doctor`, `sync`, and `uninstall` share.
-- `src/init/`: the four-step `init` wizard, its steps, the `WizardIO` implementations (TTY, flags, scripted), and the file writer.
+- `src/init/`: the assets installed into host agents (one directory per kind — see [src/init/README.md](src/init/README.md)), plus the four-step `init` wizard, its steps, the `WizardIO` implementations (TTY, flags, scripted), and the file writer.
 - `tests/`: behavior and regression tests.
 - `docs/`: current architecture, requirement audit, vocabulary, and CLI documentation.
 - `docs/ALGEBRA_DYNAMICS_SEAM.md`: why the operator algebra and the state dynamics are different objects, which apparent bugs that explains away, and what has been measured across the seam. Read it before filing anything about idempotence, absorption, or the effects table.
@@ -62,7 +62,7 @@ and copying would put macOS binaries inside the Linux tarball.
 5. Keep replay semantics in sync with every execution-state transition.
 6. Update `docs/CURRENT_STATE.md`, `docs/REQUIREMENTS_MATRIX.md`, and `docs/CLI_REFERENCE.md` when a public behavior or stated boundary changes.
 7. Generated host files must stay a fixed point of the render pipeline: `render(w) === restringify(render(w))` for every workflow, host, and scope. Without it an idempotent `init` silently becomes a churning one, and `doctor` reports permanent, meaningless drift. `tests/render.test.ts` asserts this.
-8. Workflow prose lives in `src/init/workflows.ts` only. Reference another workflow with `{{invoke:<id>}}` rather than naming a host's invocation syntax literally — the placeholder is rewritten per host and scope, and a literal would be correct on at most one host.
+8. Asset prose lives in `src/init/<kind>s/<slug>.ts` only, one asset per file, listed in that directory's `index.ts`. Reference another asset with `{{invoke:<slug>}}` rather than naming a host's invocation syntax literally — the placeholder is rewritten per host and scope, and a literal would be correct on at most one host.
 9. Detection contributes evidence; it never authorizes a write. Env markers are heuristic and must be labelled as such, and a host adapter must not count this tool's own generated files as evidence of the host.
 
 ## Validation checklist

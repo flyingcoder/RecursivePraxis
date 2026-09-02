@@ -2,7 +2,7 @@ import { InstallManifest } from "../manifest/InstallManifest.js";
 import { inspectInstall } from "../manifest/inspect.js";
 import { HostRegistry } from "../hosts/HostRegistry.js";
 import { createHostContext } from "../detect/context.js";
-import { WORKFLOWS } from "../init/workflows.js";
+import { ASSETS } from "../init/registry.js";
 import { FileWriter, type FileWriteResult } from "../init/write.js";
 import { parseScope } from "./doctor.js";
 import type { HostId } from "../hosts/types.js";
@@ -43,7 +43,7 @@ export async function runSync(
     process.exit(1);
   }
 
-  const inspection = await inspectInstall(manifest, registry, ctx, WORKFLOWS, version);
+  const inspection = await inspectInstall(manifest, registry, ctx, ASSETS, version);
   const writer = new FileWriter();
 
   if (checkOnly) {

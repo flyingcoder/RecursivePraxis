@@ -1,6 +1,6 @@
 import path from "node:path";
 import { HostAdapter } from "./HostAdapter.js";
-import { HostLayout, PluginLayout, StandaloneLayout } from "./layouts.js";
+import { HostLayout, PluginLayout, praxisPrefixed, StandaloneLayout } from "./layouts.js";
 import type { HostId, Scope } from "./types.js";
 import type { HostContext } from "../detect/context.js";
 import { binarySignal, configSignal, envSignal, isPresent, projectSignal } from "../detect/signals.js";
@@ -22,20 +22,41 @@ export class ClaudeCodeAdapter extends HostAdapter {
     ].filter(isPresent);
   }
 
+  /**
+   * Project scope is loose files under `.claude/`; global scope is a plugin
+   * directory — the same directory a marketplace entry points at, so the two
+   * distribution routes share one layout.
+   *
+   * The plugin deliberately places skills only. Adding `command`, `agent`,
+   * `hooks`, or `mcp` here is one line each and is where the marketplace build
+   * grows; each one changes what a global install writes, so it is a decision
+   * rather than a default.
+   */
   override layout(ctx: HostContext, scope: Scope): HostLayout {
-    return scope === "global"
-      ? new PluginLayout(
-          path.join(ctx.home, ".claude", "skills", "recursive-praxis"),
-          "recursive-praxis",
-          "Deterministic RecursivePraxis kernel workflows driven through the `lambda` CLI.",
-        )
-      : new StandaloneLayout(ctx.projectRoot, ".claude", (id) => path.join("commands", "praxis", `${id}.md`));
+    if (scope === "global") {
+      return new PluginLayout(
+        path.join(ctx.home, ".claude", "skills", "recursive-praxis"),
+        "recursive-praxis",
+        "Deterministic RecursivePraxis kernel workflows driven through the `lambda` CLI.",
+        {
+          // Inside a plugin, Claude Code matches a skill's frontmatter `name`
+          // against the directory it was loaded from — `skills/<slug>/` — so
+          // the name is the bare slug here and prefixed everywhere else.
+          skill: { at: (slug) => path.join("skills", slug, "SKILL.md"), nameAs: (slug) => slug },
+        },
+      );
+    }
+
+    return new StandaloneLayout(ctx.projectRoot, ".claude", {
+      skill: { at: (slug) => path.join("skills", praxisPrefixed(slug), "SKILL.md"), nameAs: praxisPrefixed },
+      command: { at: (slug) => path.join("commands", "praxis", `${slug}.md`) },
+    });
   }
 
-  override invocation(workflowId: string, scope: Scope): string {
+  override invocation(slug: string, scope: Scope): string {
     // Global scope is a plugin, and Claude Code namespaces a plugin's skills
     // by plugin name. Project scope keeps the standalone `/praxis:` prefix.
-    return scope === "global" ? `/recursive-praxis:${workflowId}` : `/praxis:${workflowId}`;
+    return scope === "global" ? `/recursive-praxis:${slug}` : `/praxis:${slug}`;
   }
 
   override pipeline(scope: Scope): DocumentPipeline {

@@ -5,7 +5,7 @@ import { OpencodeAdapter } from "./OpencodeAdapter.js";
 import type { HostAdapter, HostDetection } from "./HostAdapter.js";
 import { HOST_IDS, type HostId } from "./types.js";
 import type { HostContext } from "../detect/context.js";
-import type { WorkflowDefinition } from "../init/workflows.js";
+import type { AssetRegistry } from "../init/assets/AssetRegistry.js";
 
 /**
  * The set of host agents this build knows about.
@@ -49,7 +49,7 @@ export class HostRegistry {
     return adapter;
   }
 
-  detectAll(ctx: HostContext, workflows: readonly WorkflowDefinition[]): readonly HostDetection[] {
-    return this.all().map((adapter) => adapter.detect(ctx, workflows));
+  detectAll(ctx: HostContext, assets: AssetRegistry): readonly HostDetection[] {
+    return this.all().map((adapter) => adapter.detect(ctx, assets));
   }
 }

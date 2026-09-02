@@ -13,7 +13,7 @@ import {
 } from "../src/init/WizardIO.js";
 import { HostRegistry } from "../src/hosts/HostRegistry.js";
 import { createHostContext } from "../src/detect/context.js";
-import { WORKFLOWS } from "../src/init/workflows.js";
+import { ASSETS } from "../src/init/registry.js";
 
 function sandbox(): { home: string; projectRoot: string; dispose: () => void } {
   const root = mkdtempSync(path.join(os.tmpdir(), "praxis-wizard-"));
@@ -26,7 +26,7 @@ function sandbox(): { home: string; projectRoot: string; dispose: () => void } {
 
 function wizard(io: WizardIO, home: string, projectRoot: string): InitWizard {
   const ctx = createHostContext({ env: {}, home, projectRoot });
-  return new InitWizard(HostRegistry.default(), ctx, io, WORKFLOWS, "9.9.9");
+  return new InitWizard(HostRegistry.default(), ctx, io, ASSETS, "9.9.9");
 }
 
 describe("InitWizard", () => {
@@ -102,7 +102,8 @@ describe("InitWizard", () => {
       assert.equal(manifest.lambdaVersion, "9.9.9");
       assert.equal(manifest.scope, "project");
       assert.deepEqual(manifest.hosts.map((h) => h.id), ["codex"]);
-      assert.equal(manifest.hosts[0]!.files.length, WORKFLOWS.length);
+      // Codex takes the skill surface only, so its file count is the skill count.
+      assert.equal(manifest.hosts[0]!.files.length, ASSETS.skills().length);
       assert.ok(manifest.hosts[0]!.files.every((file) => /^[0-9a-f]{64}$/.test(file.sha256)));
     } finally {
       box.dispose();
@@ -145,7 +146,7 @@ describe("FlagWizardIO", () => {
   it("names the exact missing flag rather than defaulting silently", async () => {
     const io = new FlagWizardIO({}, undefined);
     await assert.rejects(
-      () => new InitWizard(HostRegistry.default(), ctx(), io, WORKFLOWS, "9.9.9").run(),
+      () => new InitWizard(HostRegistry.default(), ctx(), io, ASSETS, "9.9.9").run(),
       (error: unknown) => {
         assert.ok(error instanceof NeedsFlagError);
         assert.equal(error.flag, "--tools");
@@ -160,7 +161,7 @@ describe("FlagWizardIO", () => {
     try {
       const io = new FlagWizardIO({ "--tools": ["cursor"] }, undefined);
       const ctxReal = createHostContext({ env: {}, home: box.home, projectRoot: box.projectRoot });
-      const report = await new InitWizard(HostRegistry.default(), ctxReal, io, WORKFLOWS, "9.9.9").run();
+      const report = await new InitWizard(HostRegistry.default(), ctxReal, io, ASSETS, "9.9.9").run();
       assert.equal(report.scope, "project");
       assert.ok(!existsSync(path.join(box.home, ".cursor")));
     } finally {

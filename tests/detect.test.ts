@@ -6,7 +6,7 @@ import { describe, it } from "vitest";
 import { autoSelects, rankConfidence, type HostSignal } from "../src/detect/signals.js";
 import { createHostContext } from "../src/detect/context.js";
 import { HostRegistry } from "../src/hosts/HostRegistry.js";
-import { WORKFLOWS } from "../src/init/workflows.js";
+import { ASSETS } from "../src/init/registry.js";
 import { fakeContext, FAKE_HOME, FAKE_PROJECT } from "./support/fake-host-context.js";
 
 const signal = (kind: HostSignal["kind"]): HostSignal => ({ kind, detail: kind, heuristic: kind === "env" });
@@ -55,7 +55,7 @@ describe("detection traps", () => {
 
   it("does not treat AGENTS.md as evidence of Codex", () => {
     const ctx = fakeContext({ paths: [path.join(FAKE_PROJECT, "AGENTS.md")] });
-    const codex = registry.require("codex").detect(ctx, WORKFLOWS);
+    const codex = registry.require("codex").detect(ctx, ASSETS);
     assert.equal(codex.confidence, "absent");
   });
 
@@ -64,7 +64,7 @@ describe("detection traps", () => {
     const ctx = fakeContext({
       dirs: { [skills]: ["recursive-praxis-status", "recursive-praxis-ir"] },
     });
-    const codex = registry.require("codex").detect(ctx, WORKFLOWS);
+    const codex = registry.require("codex").detect(ctx, ASSETS);
     assert.equal(codex.confidence, "absent");
   });
 
@@ -73,7 +73,7 @@ describe("detection traps", () => {
     const ctx = fakeContext({
       dirs: { [skills]: ["recursive-praxis-status", "some-other-teams-skill"] },
     });
-    const codex = registry.require("codex").detect(ctx, WORKFLOWS);
+    const codex = registry.require("codex").detect(ctx, ASSETS);
     assert.equal(codex.confidence, "configured");
   });
 
@@ -82,14 +82,14 @@ describe("detection traps", () => {
       dirs: { [path.join(FAKE_PROJECT, ".agents", "skills")]: ["recursive-praxis-status"] },
       paths: [path.join(FAKE_PROJECT, ".agents", "skills", "recursive-praxis-status", "SKILL.md")],
     });
-    const codex = registry.require("codex").detect(ctx, WORKFLOWS);
+    const codex = registry.require("codex").detect(ctx, ASSETS);
     assert.equal(codex.alreadyInitialized, true);
     assert.equal(codex.confidence, "absent");
   });
 
   it("labels env markers as heuristic so Step 1 can say so", () => {
     const ctx = fakeContext({ env: { CLAUDECODE: "1" } });
-    const claude = registry.require("claude").detect(ctx, WORKFLOWS);
+    const claude = registry.require("claude").detect(ctx, ASSETS);
     assert.equal(claude.confidence, "running-here");
     assert.ok(claude.signals.every((s) => s.kind !== "env" || s.heuristic));
     assert.match(claude.signals.find((s) => s.kind === "env")!.detail, /heuristic/);
@@ -104,23 +104,23 @@ describe("per-host probes", () => {
       binaries: { claude: "/usr/local/bin/claude" },
       paths: [path.join(FAKE_HOME, ".claude")],
     });
-    const detection = registry.require("claude").detect(ctx, WORKFLOWS);
+    const detection = registry.require("claude").detect(ctx, ASSETS);
     assert.equal(detection.confidence, "installed");
     assert.equal(detection.defaultSelected, true);
   });
 
   it("finds Cursor via cursor-agent as well as cursor", () => {
     const ctx = fakeContext({ binaries: { "cursor-agent": "/usr/local/bin/cursor-agent" } });
-    assert.equal(registry.require("cursor").detect(ctx, WORKFLOWS).confidence, "installed");
+    assert.equal(registry.require("cursor").detect(ctx, ASSETS).confidence, "installed");
   });
 
   it("finds opencode by its project config file", () => {
     const ctx = fakeContext({ paths: [path.join(FAKE_PROJECT, "opencode.jsonc")] });
-    assert.equal(registry.require("opencode").detect(ctx, WORKFLOWS).confidence, "active-here");
+    assert.equal(registry.require("opencode").detect(ctx, ASSETS).confidence, "active-here");
   });
 
   it("reports every host absent on an empty machine", () => {
-    const detections = registry.detectAll(fakeContext(), WORKFLOWS);
+    const detections = registry.detectAll(fakeContext(), ASSETS);
     assert.equal(detections.length, 4);
     assert.ok(detections.every((d) => d.confidence === "absent" && !d.defaultSelected));
   });

@@ -4,7 +4,7 @@ import { inspectInstall, STATUS_NOTE, type FileStatus } from "../manifest/inspec
 import { HostRegistry } from "../hosts/HostRegistry.js";
 import { createHostContext } from "../detect/context.js";
 import { CONFIDENCE_LABEL } from "../detect/signals.js";
-import { WORKFLOWS } from "../init/workflows.js";
+import { ASSETS } from "../init/registry.js";
 import { isScope, SCOPES, type Scope } from "../hosts/types.js";
 import { Settings, INIT_SETTING_KEYS } from "../config/settings.js";
 
@@ -42,7 +42,7 @@ export async function runDoctor(
   const settings = await Settings.load({ cwd: projectRoot, baseDir });
 
   if (manifest === undefined) {
-    const detections = registry.detectAll(ctx, WORKFLOWS);
+    const detections = registry.detectAll(ctx, ASSETS);
     if (json) {
       console.log(
         JSON.stringify(
@@ -68,7 +68,7 @@ export async function runDoctor(
     process.exit(1);
   }
 
-  const inspection = await inspectInstall(manifest, registry, ctx, WORKFLOWS, version);
+  const inspection = await inspectInstall(manifest, registry, ctx, ASSETS, version);
 
   if (json) {
     console.log(

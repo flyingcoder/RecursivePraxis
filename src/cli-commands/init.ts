@@ -10,7 +10,7 @@ import {
   type WizardIO,
 } from "../init/WizardIO.js";
 import type { InitReport } from "../init/steps/GenerateStep.js";
-import { WORKFLOWS } from "../init/workflows.js";
+import { ASSETS } from "../init/registry.js";
 import { HostRegistry } from "../hosts/HostRegistry.js";
 import { createHostContext } from "../detect/context.js";
 import { isScope, SCOPES } from "../hosts/types.js";
@@ -221,7 +221,7 @@ export async function runInit(
       HostRegistry.default(),
       ctx,
       io,
-      WORKFLOWS,
+      ASSETS,
       version,
     ).run();
     printSummary(report, summarizeConfig(settings, configPath, configFlags.changed), json);

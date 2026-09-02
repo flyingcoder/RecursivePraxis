@@ -12,7 +12,7 @@ import {
 import { inspectInstall } from "../src/manifest/inspect.js";
 import { HostRegistry } from "../src/hosts/HostRegistry.js";
 import { createHostContext } from "../src/detect/context.js";
-import { WORKFLOWS } from "../src/init/workflows.js";
+import { ASSETS } from "../src/init/registry.js";
 import { renderManagedHead } from "../src/render/managed-block.js";
 
 describe("contentHash", () => {
@@ -99,7 +99,7 @@ describe("inspectInstall", () => {
     const registry = HostRegistry.default();
     const claude = registry.require("claude");
 
-    const planned = claude.plan(WORKFLOWS, ctx, "project", { version: "1.0.0" });
+    const planned = claude.plan(ASSETS, ctx, "project", { version: "1.0.0" });
     const { FileWriter } = await import("../src/init/write.js");
     const writer = new FileWriter();
     for (const file of planned) await writer.write(file);
@@ -118,7 +118,7 @@ describe("inspectInstall", () => {
       root,
       inspect: async (version = "1.0.0") => {
         const loaded = (await InstallManifest.load("project", { home, projectRoot }))!;
-        return inspectInstall(loaded, registry, ctx, WORKFLOWS, version);
+        return inspectInstall(loaded, registry, ctx, ASSETS, version);
       },
     };
   }
@@ -202,7 +202,7 @@ describe("drift boundary", () => {
       const ctx = createHostContext({ env: {}, home, projectRoot });
       const registry = HostRegistry.default();
       const claude = registry.require("claude");
-      const planned = claude.plan(WORKFLOWS, ctx, "project", { version: "1.0.0" });
+      const planned = claude.plan(ASSETS, ctx, "project", { version: "1.0.0" });
       const { FileWriter } = await import("../src/init/write.js");
       const writer = new FileWriter();
       for (const file of planned) await writer.write(file);
@@ -220,7 +220,7 @@ describe("drift boundary", () => {
       writeFileSync(target, readFileSync(target, "utf8").replace("description:", "description: EDITED"), "utf8");
 
       const loaded = (await InstallManifest.load("project", { home, projectRoot }))!;
-      const result = await inspectInstall(loaded, registry, ctx, WORKFLOWS, "1.0.0");
+      const result = await inspectInstall(loaded, registry, ctx, ASSETS, "1.0.0");
       assert.equal(result.counts.drifted, 1);
     } finally {
       rmSync(root, { recursive: true, force: true });

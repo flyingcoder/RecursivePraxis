@@ -1,6 +1,6 @@
 import path from "node:path";
 import { HostAdapter } from "./HostAdapter.js";
-import { HostLayout, StandaloneLayout } from "./layouts.js";
+import { HostLayout, praxisPrefixed, StandaloneLayout } from "./layouts.js";
 import type { HostId, Scope } from "./types.js";
 import type { HostContext } from "../detect/context.js";
 import { binarySignal, configSignal, envSignal, isPresent, projectSignal } from "../detect/signals.js";
@@ -28,13 +28,22 @@ export class CursorAdapter extends HostAdapter {
     ].filter(isPresent);
   }
 
+  /**
+   * Same shape at both scopes. `rule` and `mcp` are absent deliberately: Cursor
+   * has both surfaces, but their paths have drifted across releases and
+   * `verifiedAgainst` above does not yet cover them. Add them here once
+   * checked, rather than writing into a directory Cursor may ignore.
+   */
   override layout(ctx: HostContext, scope: Scope): HostLayout {
     const root = scope === "global" ? ctx.home : ctx.projectRoot;
-    return new StandaloneLayout(root, ".cursor", (id) => path.join("commands", `praxis-${id}.md`));
+    return new StandaloneLayout(root, ".cursor", {
+      skill: { at: (slug) => path.join("skills", praxisPrefixed(slug), "SKILL.md"), nameAs: praxisPrefixed },
+      command: { at: (slug) => path.join("commands", `praxis-${slug}.md`) },
+    });
   }
 
-  override invocation(workflowId: string, _scope: Scope): string {
-    return `/praxis-${workflowId}`;
+  override invocation(slug: string, _scope: Scope): string {
+    return `/praxis-${slug}`;
   }
 
   override pipeline(scope: Scope): DocumentPipeline {

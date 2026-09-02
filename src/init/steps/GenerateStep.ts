@@ -4,7 +4,7 @@ import { FileWriter, type FileWriteResult } from "../write.js";
 import type { HostAdapter, PlannedFile } from "../../hosts/HostAdapter.js";
 import type { HostContext } from "../../detect/context.js";
 import type { HostId, Scope } from "../../hosts/types.js";
-import type { WorkflowDefinition } from "../workflows.js";
+import type { AssetRegistry } from "../assets/AssetRegistry.js";
 import type { Confidence } from "../../detect/signals.js";
 import { InstallManifest } from "../../manifest/InstallManifest.js";
 import { abbreviate } from "../../manifest/InstallManifest.js";
@@ -14,6 +14,21 @@ export interface Selection {
   readonly hosts: readonly HostAdapter[];
   readonly scope: Scope;
   readonly detection: DetectionReport;
+}
+
+/**
+ * The slugs a human can actually type on this host, taken from what was
+ * planned rather than from the full asset list — a host that places no
+ * commands should not be told it has command invocations.
+ */
+function invocableSlugs(files: readonly PlannedFile[]): readonly string[] {
+  const slugs: string[] = [];
+  for (const file of files) {
+    if (file.invocable && file.assetSlug !== undefined && !slugs.includes(file.assetSlug)) {
+      slugs.push(file.assetSlug);
+    }
+  }
+  return slugs;
 }
 
 export interface HostReport {
@@ -48,7 +63,7 @@ export class GenerateStep extends InitStep<Selection, InitReport> {
 
   constructor(
     private readonly ctx: HostContext,
-    private readonly workflows: readonly WorkflowDefinition[],
+    private readonly assets: AssetRegistry,
     private readonly version: string,
     private readonly writer: FileWriter = new FileWriter(),
   ) {
@@ -66,7 +81,7 @@ export class GenerateStep extends InitStep<Selection, InitReport> {
     );
 
     const hostReports: HostReport[] = hosts.map((host) => {
-      const files = host.plan(this.workflows, this.ctx, scope, { version: this.version });
+      const files = host.plan(this.assets, this.ctx, scope, { version: this.version });
       planned.push(...files);
       const root = host.layout(this.ctx, scope).root;
       hostRoots.set(host.id, root);
@@ -74,9 +89,11 @@ export class GenerateStep extends InitStep<Selection, InitReport> {
         hostId: host.id,
         hostLabel: host.label,
         root: scope === "global" ? abbreviate(this.ctx.home, root) : root,
-        invocations: this.workflows.map((workflow) => ({
-          workflowId: workflow.id,
-          invocation: host.invocation(workflow.id, scope),
+        invocations: invocableSlugs(files).map((slug) => ({
+          // `workflowId` predates the asset model and is part of the `--json`
+          // contract; the value is the asset slug it always was.
+          workflowId: slug,
+          invocation: host.invocation(slug, scope),
         })),
       };
     });

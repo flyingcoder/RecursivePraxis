@@ -40,8 +40,8 @@ export class OpencodeAdapter extends HostAdapter {
     );
   }
 
-  override invocation(workflowId: string, _scope: Scope): string {
-    return `/praxis-${workflowId}`;
+  override invocation(slug: string, _scope: Scope): string {
+    return `/praxis-${slug}`;
   }
 
   override pipeline(scope: Scope): DocumentPipeline {

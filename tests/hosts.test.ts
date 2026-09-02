@@ -4,14 +4,16 @@ import { describe, it } from "vitest";
 import { HostRegistry } from "../src/hosts/HostRegistry.js";
 import { HOST_IDS } from "../src/hosts/types.js";
 import { parseToolsValue } from "../src/hosts/tools-flag.js";
-import { WORKFLOWS, WORKFLOW_IDS } from "../src/init/workflows.js";
+import { ASSETS } from "../src/init/registry.js";
+
+const SLUGS = ASSETS.invocableSlugs();
 import { fakeContext, FAKE_HOME, FAKE_PROJECT } from "./support/fake-host-context.js";
 
 const registry = HostRegistry.default();
 const ctx = fakeContext();
 
 function planFor(hostId: (typeof HOST_IDS)[number], scope: "project" | "global") {
-  return registry.require(hostId).plan(WORKFLOWS, ctx, scope, { version: "9.9.9" });
+  return registry.require(hostId).plan(ASSETS, ctx, scope, { version: "9.9.9" });
 }
 
 function relPaths(hostId: (typeof HOST_IDS)[number], scope: "project" | "global"): string[] {
@@ -21,17 +23,17 @@ function relPaths(hostId: (typeof HOST_IDS)[number], scope: "project" | "global"
 // --- project scope: unchanged from what init has always written ------------------
 
 describe("project-scope layouts", () => {
-  it("gives Claude Code a skill and a command per workflow", () => {
+  it("gives Claude Code a skill and a command per slug", () => {
     const paths = relPaths("claude", "project");
-    for (const id of WORKFLOW_IDS) {
+    for (const id of SLUGS) {
       assert.ok(paths.includes(`.claude/skills/recursive-praxis-${id}/SKILL.md`));
       assert.ok(paths.includes(`.claude/commands/praxis/${id}.md`));
     }
   });
 
-  it("gives Cursor a skill and a flat command per workflow", () => {
+  it("gives Cursor a skill and a flat command per slug", () => {
     const paths = relPaths("cursor", "project");
-    for (const id of WORKFLOW_IDS) {
+    for (const id of SLUGS) {
       assert.ok(paths.includes(`.cursor/skills/recursive-praxis-${id}/SKILL.md`));
       assert.ok(paths.includes(`.cursor/commands/praxis-${id}.md`));
     }
@@ -40,7 +42,7 @@ describe("project-scope layouts", () => {
   it("gives Codex the skill surface only", () => {
     const files = planFor("codex", "project");
     assert.ok(files.every((file) => file.kind === "skill"));
-    for (const id of WORKFLOW_IDS) {
+    for (const id of SLUGS) {
       assert.ok(files.some((f) => f.relPath === `.agents/skills/recursive-praxis-${id}/SKILL.md`));
     }
   });
@@ -48,7 +50,7 @@ describe("project-scope layouts", () => {
   it("gives opencode the command surface only — it has no skills", () => {
     const files = planFor("opencode", "project");
     assert.ok(files.every((file) => file.kind === "command"));
-    for (const id of WORKFLOW_IDS) {
+    for (const id of SLUGS) {
       assert.ok(files.some((f) => f.relPath === `.opencode/commands/praxis-${id}.md`));
     }
   });
@@ -68,7 +70,7 @@ describe("global-scope layouts", () => {
       version: "9.9.9",
     });
 
-    for (const id of WORKFLOW_IDS) {
+    for (const id of SLUGS) {
       assert.ok(
         files.some((f) => f.relPath === `.claude/skills/recursive-praxis/skills/${id}/SKILL.md`),
         `missing plugin skill for ${id}`,
@@ -84,7 +86,7 @@ describe("global-scope layouts", () => {
 
   it("puts user-level Codex skills at ~/.agents/skills, not ~/.codex/skills", () => {
     const paths = relPaths("codex", "global");
-    for (const id of WORKFLOW_IDS) {
+    for (const id of SLUGS) {
       assert.ok(paths.includes(`.agents/skills/recursive-praxis-${id}/SKILL.md`));
     }
     assert.ok(paths.every((p) => !p.startsWith(".codex/")));

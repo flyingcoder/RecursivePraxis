@@ -20,12 +20,12 @@ export interface FrontmatterOptions {
 
 export function remarkPraxisFrontmatter(options: FrontmatterOptions) {
   return (tree: Root, file: VFile): void => {
-    const { workflow, target } = readPraxisData(file.data as Record<string, unknown>);
+    const { asset, target } = readPraxisData(file.data as Record<string, unknown>);
 
     const values: Record<string, string> = {};
     for (const field of options.fields) {
       if (field === "description") {
-        values.description = workflow.summary;
+        values.description = asset.description;
         continue;
       }
       // A skill's `name` must match the directory the host loads it from, so

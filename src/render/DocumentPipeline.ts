@@ -6,15 +6,15 @@ import remarkGfm from "remark-gfm";
 import { VFile } from "vfile";
 import type { Root } from "mdast";
 import type { InvocationResolver, RenderTarget, Scope } from "../hosts/types.js";
-import type { WorkflowDefinition } from "../init/workflows.js";
-import { WORKFLOW_IDS } from "../init/workflows.js";
+import type { ProseAsset } from "../init/assets/ProseAsset.js";
+import { ASSETS } from "../init/registry.js";
 import { remarkPraxisInvocation } from "./plugins/remark-praxis-invocation.js";
 import { remarkPraxisFrontmatter, type FrontmatterField } from "./plugins/remark-praxis-frontmatter.js";
 import { remarkPraxisManagedBlock } from "./plugins/remark-praxis-managed-block.js";
 import { PRAXIS_DATA_KEY, type PraxisFileData } from "./plugins/praxis-data.js";
 
 /**
- * Turns a host-neutral workflow into one host's file.
+ * Turns a host-neutral asset body into one host's file.
  *
  * Generation used to be string concatenation, which forced a specific
  * limitation: because bodies were copied verbatim to every host, a body could
@@ -72,7 +72,7 @@ export class DocumentPipeline {
       .use(remarkParse)
       .use(remarkGfm)
       .use(remarkFrontmatter, ["yaml"])
-      .use(remarkPraxisInvocation, { host, scope, knownIds: WORKFLOW_IDS })
+      .use(remarkPraxisInvocation, { host, scope, knownIds: ASSETS.invocableSlugs() })
       .use(remarkPraxisFrontmatter, { fields: options.frontmatter })
       .use(remarkPraxisManagedBlock)
       .use(remarkStringify, STRINGIFY_OPTIONS)
@@ -81,10 +81,10 @@ export class DocumentPipeline {
     return new DocumentPipeline(processor, baseProcessor());
   }
 
-  /** The complete on-disk content for one workflow on one host, frontmatter and markers included. */
-  render(workflow: WorkflowDefinition, target: RenderTarget): string {
-    const file = new VFile({ value: workflow.body });
-    const data: PraxisFileData = { workflow, target };
+  /** The complete on-disk content for one asset on one host, frontmatter and markers included. */
+  render(asset: ProseAsset, target: RenderTarget): string {
+    const file = new VFile({ value: asset.body });
+    const data: PraxisFileData = { asset, target };
     (file.data as Record<string, unknown>)[PRAXIS_DATA_KEY] = data;
     return String(this.processor.processSync(file));
   }
