@@ -43,6 +43,7 @@ import { runDiagnose, listDiagnoseProblems } from "./cli-commands/diagnose.js";
 import { runHalira } from "./cli-commands/halira.js";
 import { runBind } from "./cli-commands/bind.js";
 import { runIr } from "./cli-commands/ir.js";
+import { runMcp } from "./cli-commands/mcp.js";
 import { runInit } from "./cli-commands/init.js";
 import { runDoctor } from "./cli-commands/doctor.js";
 import { runSync } from "./cli-commands/sync.js";
@@ -112,6 +113,7 @@ function printHelp(): void {
     "  lambda halira start|next|status [--json]",
     "  lambda bind [--json]",
     "  lambda ir [--json]",
+    "  lambda mcp",
     "  lambda init [--tools claude,cursor,codex,opencode | all | none]",
     "              [--scope project|global]",
     "              [--host ollama|fake|anthropic|cursor|claude-ide]",
@@ -146,6 +148,13 @@ function printHelp(): void {
     "  halira     — Mode-2 escalation step machine (start | next | status)",
     "  bind       — finalize the session; fails closed without an anomaly artifact",
     "  ir         — print the current turn's instruction surface (legalNext only)",
+    "",
+    "MCP server:",
+    "  mcp        — speak MCP over stdio, exposing the intent-derivation tools",
+    "               (derive_initial_state, plan_arc, numbers_for_label,",
+    "               verify_arc) and the composer (compose_prompt_policy).",
+    "               Installed into host agents by `lambda init`; not normally",
+    "               run by hand.",
     "",
     "Agent integrations:",
     "  init       — install: detect host agents, ask which to configure and at",
@@ -525,6 +534,13 @@ async function main(argv: string[]): Promise<void> {
   if (first === "ir") {
     const { json } = extractJsonFlag(rest);
     await runIr(SESSION_BASE_DIR, json);
+    return;
+  }
+
+  // No --json flag: this command's entire stdout is the MCP protocol, and it
+  // does not return until the client disconnects.
+  if (first === "mcp") {
+    await runMcp(VERSION);
     return;
   }
 
