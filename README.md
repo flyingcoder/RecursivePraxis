@@ -166,7 +166,7 @@ The binary is `lambda` (`node dist/cli.js` in a checkout). Full flags and exampl
 | Command | Purpose |
 |---|---|
 | `lambda operators list` | List the 20 operator names with their symbols. |
-| `lambda operators show <Op>` | Show one operator's symbol, class, and authored λ. |
+| `lambda operators show <Op> [<Op>…]` | Print name, class, meaning, and effect for one or more operators, as JSON. |
 | `lambda check <Op> [<Op>…]` | Hard-reject forbidden operator sequences. |
 
 **Planning and execution** — model-facing task runtime

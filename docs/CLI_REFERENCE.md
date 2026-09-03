@@ -33,7 +33,7 @@ lambda replay <task-id>
 | Command | Purpose |
 | --- | --- |
 | `lambda operators list` | List the 20 operator names. |
-| `lambda operators show <Op>` | Show authored metadata for one operator. |
+| `lambda operators show <Op> [<Op>…]` | Print name, class, meaning, and effect for one or more operators, as JSON. |
 | `lambda check <Op> [<Op>…]` | Validate an operator sequence against hard grammar constraints. |
 
 ## Session and kernel controls

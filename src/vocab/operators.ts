@@ -13,6 +13,7 @@ import {
   operatorEffectNote,
   operatorIdempotence,
   operatorIndex,
+  operatorMeaning,
   operatorName,
   operatorSymbol,
   type Idempotence,
@@ -33,6 +34,8 @@ export type AuthoredOperator = {
   readonly lambdaKind: "authored";
   /** Display-only Unicode glyph from the formalism spec; the name is the identifier. */
   readonly symbol: string;
+  /** The move itself, in the formalism's words (e.g. Ana = "Break apart, raise conceptual level"). */
+  readonly meaning: string;
   /** What applying the operator does, in the formalism's words. */
   readonly effect: string;
   readonly idempotent: Idempotence;
@@ -50,6 +53,7 @@ export const ALL_OPERATORS: readonly AuthoredOperator[] = OPERATORS.map((name) =
     lambda: lambdaIntrinsic(name),
     lambdaKind: "authored",
     symbol: operatorSymbol(name),
+    meaning: operatorMeaning(name),
     effect: operatorEffectNote(name),
     idempotent: idempotence.idempotent,
     ...(idempotence.rule === undefined ? {} : { idempotenceRule: idempotence.rule }),
@@ -66,8 +70,4 @@ export function allOperatorNames(): string[] {
 
 export function lookupOperator(raw: string): AuthoredOperator | undefined {
   return INDEX[raw.toLowerCase()];
-}
-
-export function formatAuthoredLambda(op: AuthoredOperator): string {
-  return `λ=${op.lambda} (authored)`;
 }

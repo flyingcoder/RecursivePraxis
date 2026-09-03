@@ -74,9 +74,9 @@ Draw only on the operators in \`suggested\`. A diagnosis naming an operator irre
 
 ## Step 6 — render the sequence as instructions
 
-    lambda operators show <Op>
+    lambda operators show <Op> [<Op>…]
 
-One section per operator, in the order \`verify_arc\` returned them. The operator supplies the structure; you supply the human's subject matter. Never reorder, append to, or drop an operator from the returned sequence — that is a defect, not an adaptation.
+Call this once with the full sequence, in the order \`verify_arc\` returned them; each operator's \`meaning\` and \`effect\` come back in that same order. One section per operator. The operator supplies the structure; you supply the human's subject matter. Never reorder, append to, or drop an operator from the returned sequence — that is a defect, not an adaptation.
 
 ## When to use this instead of a template
 

@@ -341,6 +341,7 @@
         "description": "Low-dissipation, stable, coherent - but sterile",
         "basin": "narrow, stable (10.6% of phase space)",
         "reached_by": ["Kata", "Ortho", "Telo", "Latch"],
+        "characteristics": "low dissipation, sterile stability",
         "lyapunov_threshold": 0.3,
         "phase_state_label": "coherent_stable"
       },
@@ -357,6 +358,7 @@
         "description": "Deep collapse, system failure, absorbing",
         "basin": "deep, absorbing (28.8% of phase space)",
         "reached_by": ["repeated Meta", "repeated Non", "Vale"],
+        "characteristics": "deep collapse, absorbing failure state",
         "escape_requires": ["Telo", "Ortho", "Pro"],
         "phase_state_label": "collapse_void"
       }

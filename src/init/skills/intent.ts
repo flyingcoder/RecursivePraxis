@@ -62,9 +62,9 @@ Then read \`solution.success\`. A \`PARTIAL\` result means the search did not re
 
 ## Step 5 — render the sequence as instructions
 
-    lambda operators show <Op>
+    lambda operators show <Op> [<Op>…]
 
-Do this for each operator, in sequence order, and use the returned meanings as the skeleton of your output: one section per operator, ordered as the CLI ordered them. Fill each section with the human's actual subject matter. The operator supplies the structure; you supply the vocabulary.
+Call this once with the full sequence, in order. It returns JSON — one object per operator, each with \`meaning\` and \`effect\`, in the order you passed them. Use those fields as the skeleton of your output: one section per operator, ordered as returned. Fill each section with the human's actual subject matter. The operator supplies the structure; you supply the vocabulary.
 
 Do not explain the operator alphabet to the human unless asked, and do not cite operator names as justification for advice you had already decided on.
 

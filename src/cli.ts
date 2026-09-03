@@ -1,10 +1,6 @@
 #!/usr/bin/env node
 
-import {
-  allOperatorNames,
-  formatAuthoredLambda,
-  lookupOperator,
-} from "./vocab/operators.js";
+import { allOperatorNames, lookupOperator } from "./vocab/operators.js";
 import { checkForbiddenSequence } from "./vocab/grammar.js";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
@@ -96,7 +92,7 @@ function printHelp(): void {
     "  lambda --help | -h",
     "  lambda --version | -v",
     "  lambda operators list",
-    "  lambda operators show <Op>",
+    "  lambda operators show <Op> [<Op>…]",
     "  lambda check <Op> [<Op>…]",
     "  lambda plan <task>",
     "  lambda run [--host ollama|fake|anthropic|cursor|claude-ide] <task>",
@@ -126,7 +122,8 @@ function printHelp(): void {
     "  lambda <verb>",
     "",
     "Vocabulary:",
-    "  operators  — list / show the operator alphabet (authored λ)",
+    "  operators  — list the operator alphabet, or show name/class/meaning/effect",
+    "               for one or more operators as JSON",
     "  check      — hard-reject forbidden operator sequences",
     "  plan       — build a deterministic, budgeted operator plan",
     "  run        — execute through the capability-gated model host",
@@ -229,27 +226,27 @@ function runOperators(args: string[]): void {
   }
 
   if (action === "show") {
-    if (!name || rest.length > 0) {
-      console.error("usage: lambda operators show <Op>");
+    const requested = name === undefined ? [] : [name, ...rest];
+    if (requested.length === 0) {
+      console.error("usage: lambda operators show <Op> [<Op>…]");
       process.exit(1);
     }
-    const op = lookupOperator(name);
-    if (!op) {
-      console.error(`unknown operator: ${name}`);
-      process.exit(1);
+
+    const shown: Array<{ name: string; class: string; meaning: string; effect: string }> = [];
+    for (const raw of requested) {
+      const op = lookupOperator(raw);
+      if (!op) {
+        console.error(`unknown operator: ${raw}`);
+        process.exit(1);
+      }
+      shown.push({ name: op.name, class: op.className, meaning: op.meaning, effect: op.effect });
     }
-    console.log(
-      [
-        `name: ${op.name}`,
-        `symbol: ${op.symbol}`,
-        `class: ${op.className}`,
-        formatAuthoredLambda(op),
-      ].join("\n"),
-    );
+
+    console.log(JSON.stringify(shown, null, 2));
     process.exit(0);
   }
 
-  console.error("usage: lambda operators list | show <Op>");
+  console.error("usage: lambda operators list | show <Op> [<Op>…]");
   process.exit(1);
 }
 

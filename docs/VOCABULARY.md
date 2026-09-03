@@ -32,10 +32,13 @@ the canonical identifier throughout this engine is the operator *name*.
 
 ```sh
 lambda operators list        # ↑  Ana, ↓  Kata, ⟲  Meta, …
-lambda operators show Vale
 ```
 
-Read programmatically via `operatorSymbol(op)` from [formalism.ts](../src/kernel/formalism.ts).
+`operators list` is the only CLI surface for the glyph; `operators show <Op> [<Op>…]`
+returns name, class, meaning, and effect as JSON and omits it deliberately —
+it exists for feeding an operator's `meaning`/`effect` to an agent, not for
+display. Read the glyph programmatically via `operatorSymbol(op)` from
+[formalism.ts](../src/kernel/formalism.ts).
 
 ### Known ambiguity: the `∅` collision
 
