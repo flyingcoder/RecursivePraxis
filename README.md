@@ -197,7 +197,7 @@ recorded by `lambda init` is used — out of the box, a local Ollama server.
 | `lambda bind [--json]` | Finalize the session. Fails closed without an anomaly artifact; `--force` is rejected. |
 | `lambda ir [--json]` | Print the current turn's instruction surface (`legalNext` only). |
 
-`<problem>` is one of `stuck`, `overwhelmed`, `rigid`, `collapsed`, `procrastinating`.
+`<problem>` is one of `stuck`, `overwhelmed`, `rigid`, `collapsed`, `procrastinating`, `spiraling`, `scattered`, `defensive`.
 
 **Agent integrations**
 

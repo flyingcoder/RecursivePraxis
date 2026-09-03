@@ -1,5 +1,11 @@
+import problemTemplates from "../../assets/problem_templates.json" with { type: "json" };
 import { Skill } from "../assets/ProseAsset.js";
 import { EPISTEMIC_FOOTER } from "../shared/epistemic-footer.js";
+
+/** Drawn from src/assets/problem_templates.json so this list can't drift from the keys `lambda diagnose` actually accepts. */
+const PROBLEM_KEYS = Object.keys(problemTemplates)
+  .map((key) => `\`${key}\``)
+  .join(", ");
 
 export default new Skill({
   slug: "intent",
@@ -31,9 +37,9 @@ List the available keys:
 
     lambda diagnose --json
 
-Pick exactly one of \`stuck\`, \`overwhelmed\`, \`rigid\`, \`collapsed\`, \`procrastinating\` — or answer \`none\`.
+Pick exactly one of ${PROBLEM_KEYS} — or answer \`none\`.
 
-\`none\` is a normal answer and often the correct one. Five templates do not cover every request, and a contradiction between stated requirements is not among them. Choose \`none\` rather than forcing the nearest fit.
+\`none\` is a normal answer and often the correct one. The templates do not cover every request, and a contradiction between stated requirements is not among them. Choose \`none\` rather than forcing the nearest fit.
 
 If you are not confident in a key, say so and stop. Abstaining keeps the human in the loop; a confident wrong key produces a sequence that looks authoritative and is not.
 
@@ -43,7 +49,7 @@ If you are not confident in a key, say so and stop. Abstaining keeps the human i
 
 \`problem.initial\` and \`problem.target\` come from the authored template; \`solution.sequence\` comes from the kernel's beam search. Neither is yours to adjust.
 
-If the classification was \`none\`, do not fall back to guessing a D,C pair. Ask the human for the reading, or take the current one from \`lambda status --json\`, and supply an explicit target — see {{invoke:solve}}.
+If the classification was \`none\`, do not fall back to guessing a D,C pair. Derive one instead: {{invoke:derive}} reads the request into named signals and lets the kernel compute the numbers. Where a state already exists, take the current reading from \`lambda status --json\` and supply an explicit target — see {{invoke:solve}}.
 
 ## Step 4 — verify the sequence survived the trip
 

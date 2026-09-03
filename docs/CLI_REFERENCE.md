@@ -48,7 +48,7 @@ lambda replay <task-id>
 | `lambda compile <Op[,Op…]> [--bindings <file>] [--json]` | Compile a sequence into a cognitive execution program: one instruction per operator run, each carrying its capability grant and execution budget. Prototype — see [suggestions/operator-sequence-to-execution-language.md](suggestions/operator-sequence-to-execution-language.md). |
 | `lambda meta-prompt <intent> <Op[,Op…]> [--json]` | Compose a chain into ONE prompt for the stated intent. The chain sets the properties the prompt exhibits *simultaneously*, not steps run in order, and every clause traces to an operator field. See [operator-chain-as-prompt-policy.md](operator-chain-as-prompt-policy.md). |
 | `lambda solve --initial D,C --target D,C [--beam-width N] [--json]` | Run the deterministic beam solver. |
-| `lambda diagnose [<stuck\|overwhelmed\|rigid\|collapsed\|procrastinating>] [--json]` | List or solve authored diagnostic templates. |
+| `lambda diagnose [<stuck\|overwhelmed\|rigid\|collapsed\|procrastinating\|spiraling\|scattered\|defensive>] [--json]` | List or solve authored diagnostic templates. |
 | `lambda halira start\|next\|status [--json]` | Control or inspect the HALIRA recovery state machine. |
 | `lambda bind [--json]` | Attempt formal completion. `--force` is rejected by design. |
 | `lambda ir [--json]` | Render the current session’s instruction surface. |

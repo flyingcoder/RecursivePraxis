@@ -111,7 +111,7 @@ function printHelp(): void {
     "  lambda compile <Op[,Op…]> [--bindings <file>] [--json]",
     "  lambda meta-prompt <intent> <Op[,Op…]> [--json]",
     "  lambda solve --initial D,C --target D,C [--beam-width N] [--json]",
-    "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating>] [--json]",
+    "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating|spiraling|scattered|defensive>] [--json]",
     "  lambda halira start|next|status [--json]",
     "  lambda bind [--json]",
     "  lambda ir [--json]",

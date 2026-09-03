@@ -25,6 +25,9 @@ const TEMPLATE_KEYS = [
   "rigid",
   "collapsed",
   "procrastinating",
+  "spiraling",
+  "scattered",
+  "defensive",
 ] as const;
 
 test("lambda diagnose with no argument lists every template key and description", () => {
@@ -79,12 +82,21 @@ for (const key of TEMPLATE_KEYS) {
  * table on exactly these; `procrastinating` is S* -> S* — target (0.25, 0.20)
  * gives V = 0.33, which is not < 0.3 — so it is the unmapped/empty case.
  */
-test("the five templates cover four mapped attractor pairs plus one same-attractor pair", () => {
+test("the templates cover the mapped attractor pairs plus one same-attractor pair", () => {
   const observed = TEMPLATE_KEYS.map((key) => {
     const parsed = JSON.parse(runLambda("diagnose", key, "--json").stdout);
     return `${parsed.initialAttractor}->${parsed.targetAttractor}`;
   });
-  assert.deepEqual(observed, ["∅->S*", "S*->J=0", "J=0->S*", "∅->S*", "S*->S*"]);
+  assert.deepEqual(observed, [
+    "∅->S*",
+    "S*->J=0",
+    "J=0->S*",
+    "∅->S*",
+    "S*->S*",
+    "S*->J=0",
+    "S*->J=0",
+    "J=0->S*",
+  ]);
 });
 
 test("lambda diagnose with an unknown key exits 1 and lists the available keys", () => {
@@ -108,6 +120,9 @@ const SUGGESTIONS: Readonly<Record<string, readonly string[]>> = {
   rigid: ["Para", "Ana", "Crux", "Echo"],
   collapsed: ["Pro", "Ortho", "Weave", "Seed"],
   procrastinating: [],
+  spiraling: ["Kata", "Telo", "Seed", "Latch"],
+  scattered: ["Kata", "Telo", "Seed", "Latch"],
+  defensive: ["Para", "Ana", "Crux", "Echo"],
 };
 
 for (const [key, ops] of Object.entries(SUGGESTIONS)) {

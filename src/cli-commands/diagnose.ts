@@ -1,40 +1,25 @@
+import problemTemplatesData from "../assets/problem_templates.json" with { type: "json" };
 import { classifyAttractor, solve, suggestTransitionOperators } from "../kernel/index.js";
 
-/** Ported from the quarry's controlled_rupture_cli.py `problem_templates`. */
-const PROBLEM_TEMPLATES = {
-  stuck: {
-    description: "Stuck in infinite loop / analysis paralysis",
-    initial: { D: 0.85, C: 0.75 },
-    target: { D: 0.3, C: 0.35 },
-    diagnosis: "Meta ∘ Meta loop (infinite reflection)",
-  },
-  overwhelmed: {
-    description: "Overwhelmed by complexity",
-    initial: { D: 0.8, C: 0.8 },
-    target: { D: 0.2, C: 0.15 },
-    diagnosis: "Excessive Ana without Kata (no compression)",
-  },
-  rigid: {
-    description: "Too rigid / overthinking correctness",
-    initial: { D: 0.15, C: 0.1 },
-    target: { D: 0.5, C: 0.5 },
-    diagnosis: "Excessive Ortho (over-correction)",
-  },
-  collapsed: {
-    description: "Burned out / collapsed",
-    initial: { D: 0.95, C: 0.9 },
-    target: { D: 0.4, C: 0.45 },
-    diagnosis: "In the Void (∅), need rescue operators",
-  },
-  procrastinating: {
-    description: "Procrastinating / avoiding action",
-    initial: { D: 0.6, C: 0.5 },
-    target: { D: 0.25, C: 0.2 },
-    diagnosis: "Need Telo (goal orientation) + Kata (concrete action)",
-  },
-} as const;
+interface ProblemTemplate {
+  readonly description: string;
+  readonly initial: { readonly D: number; readonly C: number };
+  readonly target: { readonly D: number; readonly C: number };
+  readonly diagnosis: string;
+}
 
-type ProblemKey = keyof typeof PROBLEM_TEMPLATES;
+type ProblemKey =
+  | "stuck"
+  | "overwhelmed"
+  | "rigid"
+  | "collapsed"
+  | "procrastinating"
+  | "spiraling"
+  | "scattered"
+  | "defensive";
+
+/** Ported from the quarry's controlled_rupture_cli.py `problem_templates`; vendored at src/assets/problem_templates.json. */
+const PROBLEM_TEMPLATES = problemTemplatesData as unknown as Record<ProblemKey, ProblemTemplate>;
 
 export function runDiagnose(problemArg: string, json: boolean): void {
   const key = problemArg as ProblemKey;
