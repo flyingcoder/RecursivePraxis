@@ -46,6 +46,7 @@ lambda replay <task-id>
 | `lambda step [--op <Op>] [--json]` | Apply a legal operator. With no `--op`, choose the legal lowest-cost candidate. |
 | `lambda analyze <Op[,Op…]> [--json]` | Report λ analysis, trajectory, and warnings for a sequence. |
 | `lambda compile <Op[,Op…]> [--bindings <file>] [--json]` | Compile a sequence into a cognitive execution program: one instruction per operator run, each carrying its capability grant and execution budget. Prototype — see [suggestions/operator-sequence-to-execution-language.md](suggestions/operator-sequence-to-execution-language.md). |
+| `lambda meta-prompt <intent> <Op[,Op…]> [--json]` | Compose a chain into ONE prompt for the stated intent. The chain sets the properties the prompt exhibits *simultaneously*, not steps run in order, and every clause traces to an operator field. See [operator-chain-as-prompt-policy.md](operator-chain-as-prompt-policy.md). |
 | `lambda solve --initial D,C --target D,C [--beam-width N] [--json]` | Run the deterministic beam solver. |
 | `lambda diagnose [<stuck\|overwhelmed\|rigid\|collapsed\|procrastinating>] [--json]` | List or solve authored diagnostic templates. |
 | `lambda halira start\|next\|status [--json]` | Control or inspect the HALIRA recovery state machine. |
@@ -60,6 +61,18 @@ lambda step --op Non
 lambda step --op Kata
 lambda bind
 ```
+
+`meta-prompt` accepts either separator, so a chain can be pasted in the
+formalism's own notation:
+
+```sh
+lambda meta-prompt "Research about torsion field" "Axis,Ana,Pro,Para,Kata,Latch"
+lambda meta-prompt "Research about torsion field" "Axis ∘ Ana ∘ Pro ∘ Para ∘ Kata ∘ Latch"
+```
+
+An illegal chain is rejected, never repaired: `lambda meta-prompt "…" "Axis,Ana"`
+exits non-zero citing `end-on-ana`, because the formalism forbids ending on an
+operator that leaves the work abstract.
 
 ### `diagnose` output
 

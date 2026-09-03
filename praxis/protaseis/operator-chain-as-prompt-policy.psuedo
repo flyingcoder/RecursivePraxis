@@ -1,0 +1,416 @@
+// ============================================================
+// Process: reading an operator chain as a PROMPT TRANSFORMATION POLICY
+// Worked instance: "Research about torsion field."
+//                  Apply Axis ∘ Ana ∘ Pro ∘ Para ∘ Kata ∘ Latch.
+//
+// Tags used in comments:
+//   [REASONING]  -> judgment call / creative choice, not computed
+//   [COMPUTED]   -> deterministic math or a literal field read
+//   [VERIFIED]   -> ran real code to check a claim, not trusted by eye
+//
+// Real imports. Everything tagged [COMPUTED] reads one of these rather than
+// restating a constant in a comment, so the pseudocode cannot drift from the
+// kernel the way a copied "0.75" silently would.
+//
+//   import {
+//     operatorMeaning, operatorSymbol, operatorClass, lambdaIntrinsic,
+//   } from "../kernel/formalism.js";
+//   import { operatorEffect } from "../kernel/phasePortrait.js";
+//   import { analyzeSequence } from "../kernel/dissipation.js";
+//   import { lookupOperator, formatAuthoredLambda } from "../vocab/operators.js";
+//   import { checkForbiddenSequence, CONSTRAINT } from "../vocab/grammar.js";
+//   import { executionMode, budgetForBand } from "../vocab/execution-classes.js";
+//   import { lambdaBandFor } from "../ir/compile.js";
+//
+// The vocab layer matters more here than the kernel does. src/vocab/
+// execution-classes.ts ALREADY answers the two questions this process most
+// wants to ask — "what does an operator of this class let the executor do"
+// (class -> ExecutionMode) and "how much effort does an operator of this λ
+// buy" (λ band -> ExecutionBudget). An earlier draft of this file authored
+// both mappings by hand. They did not need authoring; they needed importing.
+//
+// ------------------------------------------------------------
+// The one rule this whole file exists to enforce
+// ------------------------------------------------------------
+// A chain is NOT a schedule of six sections. Rendering "∘" as an ordered list
+// of headings — "Step 1 (Axis): do the framing. Step 2 (Ana): do the
+// analysis." — is the same class of error as inventing a measurement: it
+// invents STRUCTURE the notation does not carry. `∘` is composition. What
+// composes is a set of PROPERTIES the finished prompt must exhibit, all of
+// them at once, in every paragraph. Axis ∘ Ana does not mean "frame, then
+// analyse"; it means "analytical, within a fixed frame".
+//
+// The discipline that replaces it, mirroring no-invented-measurement.ts:
+// every clause in the output prompt must be traceable to a NAMED FIELD of a
+// named operator, or to a named field of the ExecutionMode / ExecutionBudget
+// that operator resolves to. A clause a reviewer cannot trace to one of those
+// is a clause the chain did not license, however good it sounds.
+// ============================================================
+
+
+function fieldsToProperty(op):
+
+    // Step 1 — read all NINE formalism fields, then the two vocab records they
+    // resolve to. None is decorative; each binds to a different part of the
+    // emitted constraint.
+    r = formalism.operators[op]
+    require r has { index, name, symbol, meaning, class,
+                    lambda_intrinsic, effect_vector, effect,
+                    idempotent, idempotence_rule? }
+
+    // 1a — `meaning` is the property's ADJECTIVE, not its verb.
+    // [REASONING] this is the whole reframe and it is a reading, not a
+    // computation. "Break apart, raise conceptual level" read as an
+    // instruction yields a step ("break the topic apart"). Read as a
+    // characteristic it yields an adjective ("analytical") that every
+    // paragraph must satisfy. The formalism does not say which reading is
+    // correct. `∘` does: composition of steps would be `;`.
+    property.adjective = adjectiveOf(operatorMeaning(op))
+
+    // 1b — `class` resolves to a real ExecutionMode. Not authored here.
+    mode = executionMode(op)          // real import, vocab/execution-classes.js
+    property.move      = mode.cognitiveMove
+    property.mayCommit = "write" in mode.capabilities
+    property.exitTest  = mode.requiredArtifact
+    // [VERIFIED] ran executionMode over the chain against dist/:
+    //   Axis  D-Structural   "frame, integrate, or freeze structure"
+    //                        caps read,write   -> "a named frame, hinge, or committed contract"
+    //   Ana   B-Disruptive   "diverge, attack, rupture the current framing"
+    //                        caps read         -> "at least two alternatives, or one counterexample"
+    //   Pro   A-Constructive "converge, concretize, commit"
+    //                        caps read,write   -> "a concrete edit or a stated decision"
+    //   Para  B-Disruptive   (same as Ana)
+    //   Kata  A-Constructive (same as Pro)
+    //   Latch A-Constructive (same as Pro)
+    //
+    // `capabilities` is the sharpest thing in this whole process and it is
+    // authored policy, not formalism. B-Disruptive is READ-ONLY by
+    // construction — the table's own docstring: "a step whose job is to attack
+    // the current answer must not be able to commit one". So in this chain the
+    // analytical and adversarial properties may NEVER be the properties that
+    // settle a question. Only Axis, Pro, Kata, Latch may commit. That single
+    // fact does more to shape the output prompt than any adjective does.
+    //
+    // `requiredArtifact` is the property's EXIT TEST, already written. A
+    // prompt clause that carries an adjective but no artifact requirement has
+    // dropped the checkable half of the operator.
+
+    // 1c — `effect` is the LICENSE: the one thing this property permits that
+    // the others do not.
+    // [COMPUTED] literal field read; no accessor exists (Finding 3).
+    property.license = r.effect
+    // Ana's "increases entropy" is a permission slip — under Ana the claim set
+    // is ALLOWED to get messier, and a prompt that forbids that has dropped
+    // the operator while still naming it.
+
+    // 1d — `idempotent` + `idempotence_rule` decide the property's LIFETIME.
+    // This is the field that most distinguishes a policy from a step list, and
+    // the one a step-list rendering wastes entirely.
+    // [REASONING] the mapping below is authored; the formalism states the
+    // algebra, not its prose consequence. Nothing in src/ reads these fields.
+    switch r.idempotent:
+        case true:   property.lifetime = STANDING_INVARIANT
+                     // X² = X. Re-applying changes nothing, so the property
+                     // can hold over the whole prompt without accumulating.
+                     // Safe to phrase as "at all times". (Kata, Latch)
+        case "semi": property.lifetime = DECAYING_LICENSE
+                     // rule gives the coefficient: Pro² = 0.5·Pro. A second
+                     // application returns half. Phrase as "once, and once
+                     // more only if the first pass left something open".
+        case false:  property.lifetime = ONE_SHOT_LICENSE
+                     // algebra_relations.idempotence.never lists Ana, Para,
+                     // Non, Retro. Every re-application is a NEW expansion,
+                     // not a sharpening. Phrase as an explicit budget:
+                     // "one pass, and do not re-open". (Axis, Ana, Para)
+
+    // 1e — `effect_vector` is the property's DIRECTION on the two axes the
+    // kernel actually tracks. [COMPUTED] real import.
+    [dD, dC] = operatorEffect(op)
+    //   dD -> breadth: how much material the prompt admits
+    //   dC -> tension: how much unresolved disagreement it tolerates
+    // [REASONING] naming the axes "breadth" and "tension" for prompt text is a
+    // reading. In the kernel D is dissipation and C is contradiction
+    // curvature, about a reasoning process, not about a document.
+
+    // 1f — `lambda_intrinsic` buys a real BUDGET. Also not authored here.
+    band   = lambdaBandFor(lambdaIntrinsic(op))     // real import, ir/compile.js
+    budget = budgetForBand(band)                    // real import, vocab/
+    property.fanOut    = budget.fanOut
+    property.verify    = budget.verify
+    property.modelTier = budget.modelTier
+    // [VERIFIED] thresholds are compile.ts:21-25 (<0.4 low, <=0.7 mid, else
+    // high). Over the chain:
+    //   Ana   0.75 high -> fanOut 5, verify adversarial, tier strongest
+    //   Para  0.65 mid  -> fanOut 3, verify single,      tier standard
+    //   Pro   0.50 mid  -> fanOut 3, verify single,      tier standard
+    //   Kata  0.35 low  -> fanOut 1, verify optional,    tier cheap
+    //   Axis  0.31 low  -> fanOut 1, verify optional,    tier cheap
+    //   Latch 0.29 low  -> fanOut 1, verify optional,    tier cheap
+    //
+    // [REASONING] read as prose: λ is a DISSIPATION rate, so high λ means the
+    // property degrades fastest, not that it matters most — and the budget
+    // table agrees, spending its effort exactly where λ is high. The prose
+    // consequence is that Ana's clause must be the most explicitly reinforced
+    // in the emitted prompt (five candidate framings, adversarially checked)
+    // while Latch's needs to be stated once. The BUDGET numbers are real; the
+    // decision to spend them on sentences rather than on agent turns is the
+    // reading.
+
+    // 1g — `symbol` + `index` + `name` are the audit handle.
+    // [COMPUTED] carried so every emitted clause can be tagged back to its
+    // source operator, which is what makes the rule at the top checkable.
+    property.tag = operatorSymbol(op) + " " + r.name + " #" + r.index
+
+    return property
+
+
+function composePolicy(chain):
+
+    // Step 2 — legality first, through the vocab layer rather than the kernel,
+    // because vocab/grammar.js attaches a NAMED constraint id to a rejection
+    // and the kernel returns a bare boolean.
+    result = checkForbiddenSequence(chain)          // real import, vocab/grammar.js
+    if not result.accepted:
+        abort with result.constraint, result.reason
+    // [VERIFIED] ran it on [Axis, Ana, Pro, Para, Kata, Latch] against dist/:
+    // { accepted: true }. All five named constraints pass — META_MAX_TWO,
+    // META_THEN_NON, NON_THEN_PARA, END_ON_ANA, VALE_STABILIZER — three of them
+    // vacuously (no Meta, Non, or Vale in the chain). Length 6 is inside
+    // inverse_solver.termination.max_path_length (14).
+
+    properties = [fieldsToProperty(op) for op in chain]
+
+    // Step 3 — the net vector. This is what makes the composition a POLICY:
+    // the properties are simultaneous, so their directions add.
+    net = sum(operatorEffect(op) for op in chain)   // real import
+    // [VERIFIED] net = ΔD -0.2100, ΔC -0.0900, summed by the real
+    // operatorEffect table. Both negative ⇒ the composed policy is
+    // NET-CONTRACTIVE on both axes: the finished prompt must admit less
+    // material and tolerate less unresolved tension than it started with.
+    // That is what forbids the disruptive properties (Ana, Para) from being
+    // rendered as an open-ended "explore freely".
+    //
+    // [REASONING] the sums are of AUTHORED constants.
+    // DEFAULT_OPERATOR_EFFECTS' own docstring says the vectors are "generated
+    // from operator class, not measured" and that no value "should be cited as
+    // evidence about" an observed outcome. So -0.21 licenses a DIRECTION
+    // (contract) and nothing finer. Do not report it as a magnitude.
+    //
+    // 3b — and it does not stand alone. The capability table in Step 1b
+    // reaches the same conclusion through a completely independent authored
+    // table: the two OPENING operators are the two that cannot commit. Two
+    // tables written for different purposes agreeing on which properties may
+    // close the document is the strongest evidence in this file. It is still
+    // two authored tables, not a measurement.
+
+    // Step 4 — conflict resolution. Ana says diverge, Kata says converge, and
+    // as a step list that was a schedule. As a policy it is a contradiction
+    // that needs a rule.
+    //
+    //   4a. On each axis, the SIGN OF THE SUM decides the standing direction.
+    //       [COMPUTED] both negative here ⇒ convergence wins both.
+    //   4b. The divergent properties survive as bounded licenses, not as
+    //       directions — and Step 1b makes that mechanical rather than
+    //       stylistic: they are read-only, so they can require alternatives
+    //       and counterexamples but cannot be what the prompt ends on.
+    //   4c. Terminal character is set by last(chain).
+    //       [REASONING] justified by the formalism's own hard constraint
+    //       "Ana at sequence end: FORBIDDEN (must end concrete)", carried in
+    //       vocab/grammar.js as CONSTRAINT.END_ON_ANA. That constraint only
+    //       makes sense if the final operator governs how the output
+    //       terminates — the formalism is asserting exactly this rule, for
+    //       exactly one operator. Generalising it is the reading. Here
+    //       last = Latch: "locking stabilization", A-Constructive, may commit,
+    //       idempotent ⇒ the prompt terminates evidence-stabilized and stays
+    //       that way.
+
+    // Step 5 — the seams. Adjacent pairs are where a composed policy tears,
+    // and the kernel prices each one.
+    costs = analyzeSequence(chain).pairwiseCosts    // real import
+    // [VERIFIED] against dist/kernel/dissipation.js:
+    //   Axis → Ana   λ 0.90   ← highest: the scoped/analytical seam
+    //   Ana  → Pro   λ 0.65
+    //   Pro  → Para  λ 0.80   ← second: the forward/adversarial seam
+    //   Para → Kata  λ 0.50
+    //   Kata → Latch λ 0.44   ← lowest: synthesis into lock is nearly free
+    //   λ_eff 0.658, totalCost 3.29, halfLife 1.053
+    //   lambdaBandFor(0.658) = "mid" (see Finding 5)
+    //
+    // [REASONING] the prose consequence: the two expensive seams are the two
+    // places the prompt must explicitly BIND its properties together, because
+    // they are the joints most likely to come apart —
+    //   Axis→Ana : say what the analysis is analysis OF, in the frame's terms
+    //   Pro→Para : say that the adversarial pass attacks the PROPAGATED
+    //              claims, not a straw restatement of them.
+    // Pricing a sentence with a cognitive dissipation rate is an ANALOGY.
+    // Nothing has been measured about prompt text. It ranks the seams; it does
+    // not quantify them.
+    //
+    // 5b. halfLife 1.053 steps under decay_law D(t+1) = D(t)·exp(-λ_eff).
+    // [REASONING] read as prose: a property mentioned once is below half
+    // strength by the next property. Hence every property is rendered as a
+    // STANDING constraint restated in place, never as a heading that fires
+    // once. Same analogy caveat — this is why the output has no numbered
+    // sections, and it is the strongest structural claim in the file resting
+    // on the weakest evidence.
+
+    return { properties, net, costs, terminal: last(chain) }
+
+
+function renderPrompt(intent, policy):
+
+    // Step 6 — emit. One brief. No per-operator headings: a heading per
+    // operator is the step-list error re-entering through layout.
+    // [REASONING] house style is the six adjectives as a single standing
+    // description, each carrying its exit test, its commit right, and its
+    // lifetime inline.
+
+    for p in policy.properties:
+        emit clause(p.adjective, p.exitTest, p.mayCommit, p.lifetime, p.license)
+        reinforce clause in proportion to p.fanOut / p.verify
+        annotate clause with p.tag        // audit handle, strippable
+
+    // For the worked instance the six properties resolve to:
+    //
+    //  ⊢ Axis  #17  scoped              may commit   one-shot   named frame
+    //  ↑ Ana   #1   analytical          READ ONLY    one-shot   ≥2 alternatives or 1 counterexample
+    //  ↷ Pro   #9   forward-looking     may commit   decaying   a stated decision
+    //  ∥ Para  #4   adversarial         READ ONLY    one-shot   ≥2 alternatives or 1 counterexample
+    //  ↓ Kata  #2   synthesized         may commit   standing   a stated decision
+    //  ⊣ Latch #20  evidence-stabilized may commit   standing   a stated decision
+    //
+    // and Step 3's net-contractive result, corroborated by the two READ ONLY
+    // rows, forbids any clause that would let the brief end open.
+
+    return brief
+
+
+function verifyPrompt(brief, policy, chain):
+
+    // Step 7 — the traceability check, cheap, so there is no excuse.
+    for clause in brief:
+        assert clause traces to a named field of an operator in chain,
+               or to a field of its ExecutionMode / ExecutionBudget
+    // [REASONING] the assert is by eye — there is no parser for this. It is
+    // still worth writing down, because "which field licensed this sentence?"
+    // is answerable for every sentence in the worked output, and that is the
+    // property this whole file is defending.
+
+    // Step 8 — the coverage check.
+    for op in chain:
+        assert some clause carries operatorSymbol(op)          // real import
+    // A chain member with no surviving clause was dropped, not composed.
+
+    // Step 9 — the exit-test check. Stronger than Step 8 and mechanical.
+    for op in chain:
+        assert executionMode(op).requiredArtifact is demanded somewhere in brief
+    // [VERIFIED] requiredArtifact is per CLASS, not per operator, so the
+    // demands collapse hard: this chain's six operators span three classes
+    // (D-Structural, B-Disruptive, A-Constructive) and therefore make only
+    // THREE distinct demands. A brief that demands "at least two alternatives,
+    // or one counterexample" exactly once has satisfied both Ana and Para with
+    // a single clause, and one "a concrete edit or a stated decision" covers
+    // Pro, Kata and Latch together — check whether that was intended before
+    // accepting it. Step 8's per-symbol coverage check is what keeps the
+    // individual operators visible; this check alone would not.
+
+    // Step 10 — the negative check, which catches the failure mode this file
+    // was written to prevent.
+    assert brief has no section-per-operator
+    assert brief does not order the reader through the chain
+    // [REASONING] if the brief can be split into six blocks that each mention
+    // exactly one operator, the policy reading was lost in rendering.
+
+    return brief
+
+
+// ============================================================
+// What checking this against the real kernel and vocab layer found
+// ============================================================
+//
+// Finding 1 — formalism.json's stated formula and the code disagree, and the
+// code is what runs.
+// [VERIFIED] dissipation_rules.formula reads
+//     λ(i→j) = λ_j_intrinsic + c·min(0.4, |η_ij|)
+// and dissipation.ts:24's own docstring restates it as
+//     lambda_j + c*min(max, |commutator|)
+// but dissipation.ts:26-30 computes
+//     lambda_j + min(c*|commutator|, max)
+// — the multiply and the min are swapped. For |η| = 1 and c = 0.15 the JSON
+// formula gives +0.06 and the code gives +0.15. Swept all 400 pairs: the two
+// readings differ on 328 of them, agreeing only where magnitude is 0.
+// Consequence for this chain: λ_eff is 0.658 (code) versus 0.568 (JSON
+// formula), and halfLife 1.05 versus 1.22. Every number in Step 5 is the
+// CODE's, because the code is the thing that ships. Whichever is intended,
+// formalism.json currently documents a formula the kernel does not implement.
+//
+// Finding 2 — max_interaction_magnitude is dead under the current skeleton.
+// [VERIFIED] magnitudes in commutator_skeleton.json span [0.0, 1.0], so
+// c·|η| ≤ 0.15 and the 0.4 clamp never binds — zero of 400 pairs reach it.
+// Under the JSON formula's ordering the clamp would bind for every |η| > 0.4,
+// i.e. 340 of 400 pairs. The constant is load-bearing in the documented
+// formula and inert in the implemented one, which is corroborating evidence
+// that Finding 1 is a genuine transposition rather than a deliberate change.
+//
+// Finding 3 — three of the nine operator fields have no accessor anywhere.
+// [VERIFIED] formalism.ts exports operatorMeaning, operatorSymbol,
+// operatorClass, lambdaIntrinsic, operatorEffectVector; vocab/operators.ts
+// re-exports name, class, λ, symbol as AuthoredOperator. Nothing anywhere
+// reads `effect`, `idempotent`, or `idempotence_rule`. Steps 1c and 1d — the
+// license and the LIFETIME, the field carrying the entire policy-vs-steps
+// distinction — are served by reading formalism.json directly. Anything built
+// on this file should add those accessors to vocab/operators.ts first, beside
+// the four it already adapts; a second hand-rolled read of formalism.json is
+// exactly the drift that file's docstring says it exists to prevent.
+//
+// Finding 4 — algebra_relations is inert data, and I over-claimed on it.
+// [VERIFIED] grepped src for absorption_laws, triple_relations,
+// neutral_commutations, algebra_relations: zero readers. Nothing in the kernel
+// applies "Para ∘ Kata = Ana", so an earlier claim that the Para→Kata segment
+// is "formally reducible" describes a line of JSON no code consults. Under the
+// policy reading it would not apply anyway: absorption rewrites a composition
+// of steps, and these are simultaneous properties. Left standing as a question
+// for whoever wires algebra_relations up — it is the only place the formalism
+// says two named operators COLLAPSE, which a policy composer would need a
+// story for.
+//
+// Finding 5 — per-operator band and whole-chain band disagree, and nothing
+// says which one a composed policy should spend.
+// [VERIFIED] lambdaBandFor(0.658) = "mid" for the chain as a whole (fanOut 3,
+// verify single, tier standard), while Ana alone is "high" (fanOut 5, verify
+// adversarial, tier strongest). compileIR (ir/compile.ts:29) bands the
+// EFFECTIVE λ of a session's sequence, i.e. it spends the chain-level budget;
+// Step 1f above spends the per-operator one. Averaging λ across a chain
+// averages away exactly the operator that needed the adversarial pass. For a
+// step list the distinction is minor. For a policy — where all properties hold
+// at once and there is no "during Ana" to spend a bigger budget in — it is
+// unresolved, and this file spends the per-operator budget without a stated
+// justification beyond "it is the one that preserves the information".
+//
+// Finding 6 — no execution class is granted `network`, and this is a research
+// chain.
+// [VERIFIED] EXECUTION_MODES grants capabilities read (B-Disruptive,
+// C-Reflexive) and read,write (A-Constructive, D-Structural). `shell` and
+// `network` are granted to no class, deliberately — the table's docstring says
+// "a prototype does not need them, and widening a capability should be a
+// deliberate edit". So a chain executed through this engine cannot fetch a
+// source. The torsion-field brief this file renders is a research brief whose
+// exit tests (counterexamples, cited alternatives) cannot be satisfied by any
+// agent the capability table would authorise. Either the brief is for a human
+// or an out-of-engine model, or D-Structural/A-Constructive need `network` —
+// and that is the deliberate edit the docstring is asking for.
+//
+// Finding 7 — the chain contains no corrective operator.
+// [COMPUTED] classes present: D-Structural (Axis), B-Disruptive (Ana, Para),
+// A-Constructive (Pro, Kata, Latch). Absent: Ortho ("Correction/Alignment",
+// "aligns with truth", λ 0.30) and Telo (terminal absorber). The composed
+// policy is contractive and stabilizing but has no property that checks the
+// synthesized claims against ground truth — Latch locks whatever Kata placed,
+// including whatever Para destabilized. For a topic where one referent of the
+// name is a well-documented pseudoscience claim, that gap is the difference
+// between "evidence-stabilized" and "confidently wrong".
+// [VERIFIED] Axis ∘ Ana ∘ Pro ∘ Para ∘ Ortho ∘ Kata ∘ Latch passes
+// checkForbiddenSequence, and moves λ_eff 0.658 -> 0.6233, totalCost
+// 3.29 -> 3.74 (+0.45), halfLife 1.053 -> 1.112. Ortho bands "low", so it
+// costs one cheap optional-verify property. The user's chain is the user's
+// chain; this is the flag, not an edit.
