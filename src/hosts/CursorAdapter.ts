@@ -39,6 +39,9 @@ export class CursorAdapter extends HostAdapter {
     return new StandaloneLayout(root, ".cursor", {
       skill: { at: (slug) => path.join("skills", praxisPrefixed(slug), "SKILL.md"), nameAs: praxisPrefixed },
       command: { at: (slug) => path.join("commands", `praxis-${slug}.md`) },
+      // Cursor reads `.cursor/mcp.json`, which sits inside this layout's root,
+      // so the shared `mcpServers` renderer fits without a per-host shape.
+      mcp: "mcp.json",
     });
   }
 

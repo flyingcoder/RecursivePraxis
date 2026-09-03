@@ -46,11 +46,18 @@ function extractValueFlags(args: string[]): {
   return { values, rest };
 }
 
-const ACTION_ORDER: readonly FileAction[] = ["created", "refreshed", "skipped", "preserved"];
+const ACTION_ORDER: readonly FileAction[] = [
+  "created",
+  "refreshed",
+  "unreadable",
+  "skipped",
+  "preserved",
+];
 
 const ACTION_LABEL: Record<FileAction, string> = {
   created: "created",
   refreshed: "refreshed (RecursivePraxis-managed content updated)",
+  unreadable: "left alone (not valid JSON — edit it by hand, see `lambda mcp --config`)",
   skipped: "skipped (not RecursivePraxis-managed — left untouched)",
   preserved: "preserved (already up to date)",
 };

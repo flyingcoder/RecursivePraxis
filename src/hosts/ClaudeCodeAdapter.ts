@@ -27,10 +27,10 @@ export class ClaudeCodeAdapter extends HostAdapter {
    * directory — the same directory a marketplace entry points at, so the two
    * distribution routes share one layout.
    *
-   * The plugin deliberately places skills only. Adding `command`, `agent`,
-   * `hooks`, or `mcp` here is one line each and is where the marketplace build
-   * grows; each one changes what a global install writes, so it is a decision
-   * rather than a default.
+   * Both scopes place the MCP server: the kernel now runs as an MCP server and
+   * ships with the plugin by default, so a host that got the skills without it
+   * would be taught to call tools it had not been given. `command` and `agent`
+   * remain absent from the plugin, and adding either is still one line here.
    */
   override layout(ctx: HostContext, scope: Scope): HostLayout {
     if (scope === "global") {
@@ -43,6 +43,7 @@ export class ClaudeCodeAdapter extends HostAdapter {
           // against the directory it was loaded from — `skills/<slug>/` — so
           // the name is the bare slug here and prefixed everywhere else.
           skill: { at: (slug) => path.join("skills", slug, "SKILL.md"), nameAs: (slug) => slug },
+          mcp: ".mcp.json",
         },
       );
     }
@@ -50,6 +51,7 @@ export class ClaudeCodeAdapter extends HostAdapter {
     return new StandaloneLayout(ctx.projectRoot, ".claude", {
       skill: { at: (slug) => path.join("skills", praxisPrefixed(slug), "SKILL.md"), nameAs: praxisPrefixed },
       command: { at: (slug) => path.join("commands", "praxis", `${slug}.md`) },
+      mcp: ".mcp.json",
     });
   }
 

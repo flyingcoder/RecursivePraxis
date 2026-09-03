@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "vitest";
 import { HostRegistry } from "../src/hosts/HostRegistry.js";
-import { SCOPES, type Scope } from "../src/hosts/types.js";
+import { SCOPES, isManagedMarkdown, type Scope } from "../src/hosts/types.js";
 import { ASSETS } from "../src/init/registry.js";
 import { Skill } from "../src/init/assets/ProseAsset.js";
 import { DocumentPipeline } from "../src/render/DocumentPipeline.js";
@@ -23,7 +23,11 @@ function everyRenderedFile(): { label: string; content: string }[] {
   for (const scope of SCOPES) {
     for (const host of registry.all()) {
       for (const file of host.plan(ASSETS, ctx, scope, { version: "9.9.9" })) {
-        if (file.kind === "manifest") continue;
+        // Every assertion below is a property of Markdown — managed markers,
+        // frontmatter, escaped punctuation. The JSON kinds (`.mcp.json`,
+        // `hooks.json`, a plugin manifest) carry none of them by design, since
+        // JSON has nowhere to put an HTML comment.
+        if (!isManagedMarkdown(file.kind)) continue;
         out.push({ label: `${host.id}/${scope}/${file.relPath}`, content: file.content });
       }
     }

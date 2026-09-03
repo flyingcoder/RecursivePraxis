@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { hasManagedMarkers } from "../render/managed-block.js";
 import { isManagedMarkdown } from "../hosts/types.js";
+import { fragmentMatches, fragmentPresent } from "../init/json-fragment.js";
+import type { JsonFragment } from "../hosts/layouts.js";
 import { contentHash, type InstallManifest, type ManifestFileEntry } from "./InstallManifest.js";
 import type { HostRegistry } from "../hosts/HostRegistry.js";
 import type { HostContext } from "../detect/context.js";
@@ -36,6 +38,11 @@ export interface FileFinding {
   readonly displayPath: string;
   readonly status: FileStatus;
   readonly entry: ManifestFileEntry;
+  /**
+   * Set when only one key of this file is ours. `uninstall` needs it to remove
+   * that key instead of the file, which belongs to the user.
+   */
+  readonly fragment?: JsonFragment | undefined;
 }
 
 export interface HostFinding {
@@ -105,20 +112,33 @@ export async function inspectInstall(
   }
 
   const plannedPaths = new Set(planned.map((file) => file.absPath));
+  const fragmentsByPath = new Map(
+    planned.filter((file) => file.fragment !== undefined).map((file) => [file.absPath, file.fragment!]),
+  );
   const files: FileFinding[] = [];
 
   for (const { host, entry, absPath } of manifest.entries()) {
     const displayPath = path.join(host.root, entry.path);
     const existing = await readIfExists(absPath);
+    const fragment = fragmentsByPath.get(absPath);
 
     const status = ((): FileStatus => {
       if (existing === undefined) return "missing";
       if (!plannedPaths.has(absPath)) return "orphaned";
       if (isManagedMarkdown(entry.kind) && !hasManagedMarkers(existing)) return "foreign";
+
+      // A shared file: the question is only ever about our own entry. Hashing
+      // the whole document would report a user's unrelated edit — another MCP
+      // server, a changed setting — as drift in our install.
+      if (fragment !== undefined) {
+        if (!fragmentPresent(existing, fragment)) return "missing";
+        return fragmentMatches(existing, fragment) ? "managed" : "drifted";
+      }
+
       return contentHash(existing) === entry.sha256 ? "managed" : "drifted";
     })();
 
-    files.push({ hostId: host.id, absPath, displayPath, status, entry });
+    files.push({ hostId: host.id, absPath, displayPath, status, entry, fragment });
   }
 
   const counts: Record<FileStatus, number> = {

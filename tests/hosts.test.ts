@@ -111,6 +111,64 @@ describe("global-scope layouts", () => {
 
 // --- invocation ------------------------------------------------------------------
 
+describe("MCP server placement", () => {
+  // The kernel now runs as an MCP server that ships with the plugin by
+  // default, so a host given the skills without it would be taught to call
+  // tools it was never handed.
+  function mcpFile(hostId: (typeof HOST_IDS)[number], scope: "project" | "global") {
+    return planFor(hostId, scope).find((file) => file.kind === "mcp");
+  }
+
+  it("registers the server for every host whose config the shared renderer fits", () => {
+    for (const [hostId, scope, expected] of [
+      ["claude", "global", ".mcp.json"],
+      ["claude", "project", ".mcp.json"],
+      ["cursor", "project", "mcp.json"],
+      ["cursor", "global", "mcp.json"],
+    ] as const) {
+      const file = mcpFile(hostId, scope);
+      assert.ok(file, `${hostId}/${scope} places no MCP config`);
+      assert.ok(
+        file.relPath.endsWith(expected),
+        `${hostId}/${scope} wrote ${file.relPath}, expected to end with ${expected}`,
+      );
+    }
+  });
+
+  it("points every host at the same stdio server", () => {
+    for (const [hostId, scope] of [
+      ["claude", "global"],
+      ["claude", "project"],
+      ["cursor", "project"],
+    ] as const) {
+      const parsed = JSON.parse(mcpFile(hostId, scope)!.content);
+      assert.deepEqual(parsed.mcpServers["recursive-praxis"], {
+        command: "lambda",
+        args: ["mcp"],
+      });
+    }
+  });
+
+  it("lands the plugin's config beside its manifest, where Claude Code reads it", () => {
+    const plan = planFor("claude", "global");
+    const manifest = plan.find((file) => file.kind === "manifest")!;
+    const mcp = plan.find((file) => file.kind === "mcp")!;
+    assert.equal(path.dirname(path.dirname(manifest.absPath)), path.dirname(mcp.absPath));
+  });
+
+  it("places nothing for hosts whose MCP config the shared renderer cannot produce", () => {
+    // Codex keeps its servers in TOML and opencode in an `opencode.json` that
+    // sits outside its layout root under a differently-shaped key. Neither is
+    // `mcpServers` JSON, so both are deliberately unplaced rather than written
+    // wrong; adding them needs a per-host renderer, not a table entry.
+    for (const hostId of ["codex", "opencode"] as const) {
+      for (const scope of ["project", "global"] as const) {
+        assert.equal(mcpFile(hostId, scope), undefined, `${hostId}/${scope} placed an MCP config`);
+      }
+    }
+  });
+});
+
 describe("invocation syntax", () => {
   it("matches the documented form per host and scope", () => {
     const claude = registry.require("claude");

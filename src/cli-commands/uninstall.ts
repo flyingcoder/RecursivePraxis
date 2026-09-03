@@ -18,12 +18,20 @@ import { isHostId, type HostId } from "../hosts/types.js";
  * A kept file is a result, not a failure, and is reported as one.
  */
 
-export type RemovalOutcome = "removed" | "kept-user-content" | "kept-not-ours" | "already-gone";
+export type RemovalOutcome =
+  | "removed"
+  | "entry-removed"
+  | "kept-user-content"
+  | "kept-not-ours"
+  | "kept-unreadable"
+  | "already-gone";
 
 const KEEP_REASON: Record<RemovalOutcome, string> = {
   removed: "removed",
+  "entry-removed": "our entry removed — the file is yours and was left in place",
   "kept-user-content": "kept — content was appended after the END marker, so this file is yours now",
   "kept-not-ours": "kept — no managed markers, or content differs from what we wrote",
+  "kept-unreadable": "kept — not valid JSON, so our entry could not be removed safely",
   "already-gone": "already gone",
 };
 
@@ -32,6 +40,29 @@ interface Removal {
   readonly displayPath: string;
   readonly hostId: HostId;
   readonly outcome: RemovalOutcome;
+}
+
+/**
+ * Removes our entry from a shared file, leaving the rest of it alone.
+ *
+ * Unlike every other removal here, the file itself is never deleted: it is the
+ * user's, and it holds their other MCP servers. Only the key we added goes.
+ */
+async function removeOurEntry(absPath: string, fragment: JsonFragment): Promise<RemovalOutcome> {
+  let content: string;
+  try {
+    content = await readFile(absPath, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return "already-gone";
+    throw error;
+  }
+
+  const outcome = removeFragment(content, fragment);
+  if (outcome.kind === "unparseable") return "kept-unreadable";
+  if (outcome.kind === "unchanged") return "already-gone";
+
+  await writeFile(absPath, outcome.text, "utf8");
+  return "entry-removed";
 }
 
 async function classify(absPath: string, kind: string, recordedHash: string): Promise<RemovalOutcome> {
@@ -135,7 +166,10 @@ export async function runUninstall(
   const touchedDirs = new Set<string>();
 
   for (const file of targeted) {
-    const outcome = await classify(file.absPath, file.entry.kind, file.entry.sha256);
+    const outcome =
+      file.fragment !== undefined
+        ? await removeOurEntry(file.absPath, file.fragment)
+        : await classify(file.absPath, file.entry.kind, file.entry.sha256);
     if (outcome === "removed") {
       await rm(file.absPath, { force: true });
       touchedDirs.add(path.dirname(file.absPath));

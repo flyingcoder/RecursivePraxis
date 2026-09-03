@@ -1,4 +1,4 @@
-import type { McpServer } from "../assets/DataAsset.js";
+import { McpServer } from "../assets/DataAsset.js";
 
 /**
  * MCP servers a host should launch.
@@ -20,4 +20,13 @@ import type { McpServer } from "../assets/DataAsset.js";
  * servers collapse into one config file per host, whole-file generated for the
  * same reason hooks are.
  */
-export const MCP_SERVERS: readonly McpServer[] = [];
+export const MCP_SERVERS: readonly McpServer[] = [
+  new McpServer({
+    slug: "recursive-praxis",
+    title: "RecursivePraxis kernel",
+    description:
+      "Derives a (D, C) arc from a stated intent through the deterministic kernel, so the numbers are computed from named signals rather than read out of free text.",
+    command: "lambda",
+    args: ["mcp"],
+  }),
+];

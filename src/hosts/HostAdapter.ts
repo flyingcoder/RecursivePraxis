@@ -9,7 +9,7 @@ import {
 import type { DocumentPipeline } from "../render/DocumentPipeline.js";
 import type { AssetRegistry } from "../init/assets/AssetRegistry.js";
 import type { ProseAsset } from "../init/assets/ProseAsset.js";
-import type { HostLayout } from "./layouts.js";
+import type { HostLayout, JsonFragment } from "./layouts.js";
 import type { FileKind, HostId, InvocationResolver, ProseFileKind, Scope } from "./types.js";
 
 export interface HostDetection {
@@ -36,7 +36,15 @@ export interface PlannedFile {
   readonly relPath: string;
   /** How the path is shown to a human: `~/…` at global scope, as-is at project scope. */
   readonly displayPath: string;
+  /**
+   * The whole file's content — except for a fragment, where it is our entry
+   * alone. That is deliberate: the manifest hashes this field, and hashing the
+   * whole of a file the user co-owns would report every unrelated edit they
+   * make as our drift.
+   */
   readonly content: string;
+  /** Set when this file is shared and only one key of it is ours. */
+  readonly fragment?: JsonFragment | undefined;
 }
 
 export interface PlanOptions {
@@ -108,12 +116,16 @@ export abstract class HostAdapter implements InvocationResolver {
     const scopeRoot = scopeRootFor(ctx, scope);
 
     return layout.files(assets, { version: options.version }).map((file) => {
+      // A fragment has no whole-file rendering. Its `content` is the entry
+      // itself, which is what the manifest hashes.
       const content =
-        file.content ??
-        render.render(file.asset as ProseAsset, {
-          kind: file.kind as ProseFileKind,
-          name: file.frontmatterName,
-        });
+        file.fragment !== undefined
+          ? `${JSON.stringify(file.fragment.value, null, 2)}\n`
+          : (file.content ??
+            render.render(file.asset as ProseAsset, {
+              kind: file.kind as ProseFileKind,
+              name: file.frontmatterName,
+            }));
 
       const relPath = path.relative(scopeRoot, file.absPath).split(path.sep).join("/");
       return {
@@ -126,6 +138,7 @@ export abstract class HostAdapter implements InvocationResolver {
         relPath,
         displayPath: scope === "global" ? `~/${relPath}` : relPath,
         content,
+        fragment: file.fragment,
       };
     });
   }

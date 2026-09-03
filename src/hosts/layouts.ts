@@ -3,7 +3,7 @@ import type { HostContext } from "../detect/context.js";
 import type { FileKind } from "./types.js";
 import type { Asset } from "../init/assets/Asset.js";
 import type { AssetRegistry } from "../init/assets/AssetRegistry.js";
-import { renderHooksJson, renderMcpJson } from "../init/assets/DataAsset.js";
+import { renderHooksJson, renderMcpJson, type McpServer } from "../init/assets/DataAsset.js";
 
 /**
  * Where a host's package lives on disk, and which asset kinds it can hold.
@@ -23,6 +23,22 @@ import { renderHooksJson, renderMcpJson } from "../init/assets/DataAsset.js";
  * every host supports it.
  */
 
+/**
+ * One entry spliced into a JSON document somebody else owns.
+ *
+ * The distinction this carries is ownership, not format. A whole-file JSON
+ * asset (`Placement.mcp`) lands somewhere only RecursivePraxis writes, so
+ * generating it wholesale is safe. A fragment lands inside a file that holds
+ * the user's own configuration — every MCP server they have, alongside
+ * unrelated settings — so only the value at `pointer` may be touched, and
+ * everything around it has to survive untouched.
+ */
+export interface JsonFragment {
+  /** Key path to write, from the document root. */
+  readonly pointer: readonly string[];
+  readonly value: unknown;
+}
+
 export interface LayoutFile {
   readonly absPath: string;
   readonly kind: FileKind;
@@ -32,6 +48,11 @@ export interface LayoutFile {
   readonly frontmatterName: string | undefined;
   /** Fixed content, for files the layout authors itself rather than rendering. */
   readonly content: string | undefined;
+  /**
+   * Set when this file is a shared one we may only splice into. Mutually
+   * exclusive with `content`: a fragment has no whole-file rendering.
+   */
+  readonly fragment?: JsonFragment | undefined;
 }
 
 export interface LayoutOptions {
@@ -71,8 +92,33 @@ export interface Placement {
   readonly rule?: ProsePlacement;
   /** Single aggregate file for every hook, relative to the layout root. */
   readonly hooks?: string;
-  /** Single aggregate file for every MCP server, relative to the layout root. */
+  /**
+   * Single aggregate file for every MCP server, relative to the layout root.
+   *
+   * Only for a file RecursivePraxis owns outright — in practice just the
+   * `.mcp.json` inside our own plugin directory. Every other host keeps its MCP
+   * servers in a file the user shares with their own; those use `mcpFragment`.
+   */
   readonly mcp?: string;
+  /**
+   * One entry spliced into a config file the user owns.
+   *
+   * `absPath` is absolute rather than root-relative because these files sit
+   * outside the layout's directory: `<proj>/.mcp.json` is not inside
+   * `.claude/`, and `opencode.json` is not inside `.opencode/commands/`.
+   *
+   * `render` exists because the schemas genuinely differ. Claude and Cursor
+   * key servers under `mcpServers` as `{command, args}`; opencode keys them
+   * under `mcp` as `{type, command: [cmd, ...args]}`, with the arguments folded
+   * into the command array. One pointer plus one renderer covers both without a
+   * per-host writer.
+   */
+  readonly mcpFragment?: {
+    readonly absPath: string;
+    /** Container path; the server's slug is appended to it. */
+    readonly pointer: readonly string[];
+    readonly render: (server: McpServer) => unknown;
+  };
 }
 
 const PROSE_KINDS = ["skill", "command", "agent", "rule"] as const;
@@ -84,6 +130,19 @@ export function praxisPrefixed(slug: string): string {
 export abstract class HostLayout {
   /** Absolute path of the directory this layout owns. */
   abstract readonly root: string;
+
+  /**
+   * Every directory this layout owns.
+   *
+   * Almost always just `[root]`. It differs only for a `CompositeLayout`, whose
+   * whole purpose is spanning more than one. Consumers that mean "the
+   * boundaries of what we may touch" — `uninstall`'s directory pruning — must
+   * read this rather than `root`, or they will stop at the first root and treat
+   * the others as somebody else's.
+   */
+  get roots(): readonly string[] {
+    return [this.root];
+  }
 
   protected abstract readonly placement: Placement;
 
@@ -137,6 +196,23 @@ export abstract class HostLayout {
         frontmatterName: undefined,
         content: renderMcpJson(servers),
       });
+    }
+
+    const fragment = this.placement.mcpFragment;
+    if (fragment !== undefined && servers.length > 0) {
+      for (const server of servers) {
+        out.push({
+          absPath: fragment.absPath,
+          kind: "mcp",
+          asset: undefined,
+          frontmatterName: undefined,
+          content: undefined,
+          fragment: {
+            pointer: [...fragment.pointer, server.slug],
+            value: fragment.render(server),
+          },
+        });
+      }
     }
 
     return out;
@@ -219,9 +295,9 @@ export class PluginLayout extends HostLayout {
  * `<root>/praxis-<slug>.md`. opencode reads Markdown commands with
  * `description` frontmatter and takes the command name from the file name.
  *
- * Its MCP and plugin configuration live in `opencode.json`, which sits outside
- * this root — so those kinds are not placed here. Adding them needs a layout
- * whose root can span both, not another entry in this table.
+ * Its MCP configuration lives in `opencode.json`, which sits outside this root,
+ * so it is not placed here. `CompositeLayout` is the layout whose root spans
+ * both; this one stays a flat directory of commands.
  */
 export class CommandsOnlyLayout extends HostLayout {
   protected readonly placement: Placement;
@@ -229,5 +305,52 @@ export class CommandsOnlyLayout extends HostLayout {
   constructor(readonly root: string) {
     super();
     this.placement = { command: { at: (slug) => `praxis-${slug}.md` } };
+  }
+}
+
+/**
+ * Several layouts presented as one, for a host whose files do not all live
+ * under a single directory.
+ *
+ * Three placements need this. `~/.claude/rules/` is not inside the plugin
+ * directory and a plugin has no rules component to carry it; `<proj>/.mcp.json`
+ * is not inside `.claude/`; `opencode.json` is not inside `.opencode/commands/`.
+ *
+ * Composing whole layouts rather than adding a second path table to each one
+ * keeps every existing layout as simple as it is: each still describes one
+ * directory, and spanning is a property of the composition. `root` reports the
+ * first child's, which is the host's principal directory and the one
+ * `layoutMissing` is a meaningful question about; `roots` reports them all, so
+ * `uninstall` treats every directory as in-bounds for pruning.
+ */
+export class CompositeLayout extends HostLayout {
+  protected readonly placement: Placement = {};
+
+  private readonly layouts: readonly HostLayout[];
+
+  constructor(layouts: readonly HostLayout[]) {
+    super();
+    if (layouts.length === 0) {
+      throw new Error("a CompositeLayout needs at least one layout to compose");
+    }
+    this.layouts = layouts;
+  }
+
+  get root(): string {
+    return this.layouts[0]!.root;
+  }
+
+  override get roots(): readonly string[] {
+    // De-duplicated: two children may legitimately share a root, and a repeated
+    // boundary would make `pruneEmptyDirs` walk the same directory twice.
+    return [...new Set(this.layouts.map((layout) => layout.root))];
+  }
+
+  override files(assets: AssetRegistry, options: LayoutOptions): readonly LayoutFile[] {
+    return this.layouts.flatMap((layout) => layout.files(assets, options));
+  }
+
+  override ownsAnyExistingFile(ctx: HostContext, assets: AssetRegistry): boolean {
+    return this.layouts.some((layout) => layout.ownsAnyExistingFile(ctx, assets));
   }
 }
