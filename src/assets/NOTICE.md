@@ -62,13 +62,44 @@ below); the rest are either genuinely open or, on inspection, not bugs at all.
    `idempotent: "semi"` / `idempotence_rule: "Pro² = 0.5·Pro"` — consistent
    with how `Meta` and `Echo`, the other two `"semi"` operators, are declared.
 
-4. **Declarative-only fields.** `algebra_relations` (idempotence, absorption,
-   triples, identity/null, dissipative relations) and the per-operator
-   `idempotent` / `idempotence_rule` / `absorption` / `effect` fields are **never
-   read** by this engine. Composition strings such as `Ortho ∘ Ana = Kata` are
-   documentation: the kernel never reduces one operator sequence to another.
-   Fields that *are* read: `index`, `class`, `lambda_intrinsic`, `effect_vector`,
-   `meaning`, `symbol`, and `dissipation_rules`.
+4. **Declarative-only fields.** Composition strings such as `Ortho ∘ Ana = Kata`
+   are descriptive: the kernel never reduces one operator sequence to another,
+   and nothing here is enforced.
+
+   *Read, but only ever reported.* `algebra_relations` — absorption laws,
+   triples, neutral commutations, anti-symmetry exceptions, dissipative
+   relations, `identity_and_null` — is parsed by `src/kernel/algebra.ts` and
+   reported over a chain's adjacent pairs by `src/ir/chainReading.ts`, through
+   `lambda analyze` and the `read_chain_algebra` MCP tool. Every rendering
+   carries a caveat saying it changes nothing. `phase_portrait.attractors`'
+   prose (name, description, basin, characteristics, `reached_by`,
+   `escape_requires`) is read the same way, by `attractorProfile`.
+
+   *Read and load-bearing:* `index`, `class`, `lambda_intrinsic`,
+   `effect_vector`, `meaning`, `symbol`, `effect`, `idempotent` /
+   `idempotence_rule`, `dissipation_rules`, `phase_portrait.transitions`,
+   `lyapunov.alpha`, `J=0`'s `lyapunov_threshold`, and
+   `inverse_solver.attractor_penalties`.
+
+   *Still unread, deliberately:* `algebra_relations.idempotence` and the
+   per-operator `absorption` field, both of which restate something the
+   per-operator `idempotent` / `idempotence_rule` fields and
+   `absorption_laws` already carry — a second reader would be a second source
+   of truth. Also `metadata`, `cognitive_bootloader_integration`, Vale's
+   `note`, `commutator_skeleton` (superseded by the vendored
+   `commutator_skeleton.json`), and `dissipation_rules`' formula strings, which
+   state in prose what `dissipation.ts` implements in code — Finding 1 in
+   `praxis/protaseis/operator-chain-as-prompt-policy.psuedo` reports those two
+   disagreeing, which is unresolved and not settled here.
+
+   *Unread and duplicated in code*, which is drift waiting to happen rather
+   than a deliberate omission: `inverse_solver.objective`'s `beta` / `gamma`
+   and `inverse_solver.termination`'s `distance_threshold` / `max_path_length`
+   are stated here and independently hardcoded as `SOLVER_BETA`,
+   `SOLVER_GAMMA`, `DISTANCE_THRESHOLD` and `MAX_PATH_LENGTH` in
+   `src/kernel/solver.ts`. The `attractor_penalties` beside them in the same
+   JSON block *are* read from this file, so the block is half-wired: editing
+   those four numbers here changes nothing.
 
    These fields are a **parallel descriptive model over function composition** —
    not a specification this engine has failed to implement. The engine models

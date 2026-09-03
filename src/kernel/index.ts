@@ -10,6 +10,7 @@ export {
   operatorEffectNote,
   operatorIdempotence,
   operatorClassProfile,
+  attractorProfile,
   allOperators,
   PHASE_PORTRAIT_ALPHA,
   PHASE_PORTRAIT_STABILITY_THRESHOLD,
@@ -17,6 +18,7 @@ export {
   formalismTransitionOperators,
   type OperatorIdempotence,
   type OperatorClassProfile,
+  type AttractorProfile,
 } from "./formalism.js";
 export { commutatorMagnitude, commutatorPairCount } from "./commutator.js";
 

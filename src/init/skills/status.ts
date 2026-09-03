@@ -22,6 +22,7 @@ Run this first, before proposing any operator or making claims about "where the 
 ## Reading the output
 
 - \`attractor\`, \`V\`, \`state.D\`, \`state.C\` — the current dissipation-state reading.
+- \`attractorProfile\` — what that attractor is, in the formalism's words: name, description, basin, and how it is reached. When the session is in the void it also carries \`escapeRequires\`, the operators stated as the way out — read them together with \`legalNext\`, which is what the kernel will actually accept now.
 - \`lambdaEffective\` / \`lambdaBand\` — computed from the session's operator sequence so far.
 - \`mode\` — \`1\` (normal) or \`2\` (HALIRA escalation); see {{invoke:session}} if \`mode\` is \`2\`.
 - \`legalNext\` — the operators the kernel will currently accept via \`lambda step\`. This is a constraint, not a suggestion — do not propose an operator outside this list.

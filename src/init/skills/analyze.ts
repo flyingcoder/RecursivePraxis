@@ -25,7 +25,8 @@ Use this to test a candidate sequence before committing to it with \`lambda step
 
 - \`lambdaEffective\` — computed mean pairwise λ across the sequence.
 - \`trajectory\` — simulated D/C path and attractor per step, starting from \`S*\` (D=0.5, C=0.5).
-- \`warnings\` — deterministic grammar checks (forbidden transitions, Meta collapse risk, void entry). These are hard constraint checks, not opinions — do not override or reinterpret a warning in prose.
+- \`warnings\` — deterministic grammar checks (forbidden transitions, Meta collapse risk, void entry). These are hard constraint checks, not opinions — do not override or reinterpret a warning in prose. A void warning names the operators the formalism states as the escape; quote them rather than inventing a rescue.
+- \`attractors\` — what each attractor the trajectory visits means: its name, description, basin, and how the formalism says it is reached. Use these words for the labels instead of glossing \`∅\` yourself.
 - \`algebra\` — what the formalism *states about the operators in the sequence*: adjacent pairs it relates, whether the measured commutator agrees with each stated relation, the classes in play, and any operator it calls a projection onto an attractor.
 
 ## Reading \`algebra\`

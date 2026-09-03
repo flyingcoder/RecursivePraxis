@@ -26,9 +26,22 @@ interface FormalismDissipationRules {
   readonly max_interaction_magnitude: number;
 }
 
+interface FormalismAttractorEntry {
+  readonly name: string;
+  readonly description: string;
+  readonly basin: string;
+  readonly characteristics: string;
+  readonly phase_state_label: string;
+  readonly reached_by: readonly string[];
+  /** Stated only for the collapse attractor. */
+  readonly escape_requires?: readonly string[];
+}
+
 interface FormalismPhasePortrait {
   readonly attractors: {
-    readonly J_equals_0: { readonly lyapunov_threshold: number };
+    readonly J_equals_0: FormalismAttractorEntry & { readonly lyapunov_threshold: number };
+    readonly S_star: FormalismAttractorEntry;
+    readonly void: FormalismAttractorEntry;
   };
   readonly transitions: Record<string, readonly Operator[]>;
   readonly lyapunov: { readonly alpha: number };
@@ -69,7 +82,12 @@ export const PHASE_PORTRAIT_ALPHA = formalism.phase_portrait.lyapunov.alpha;
 export const PHASE_PORTRAIT_STABILITY_THRESHOLD =
   formalism.phase_portrait.attractors.J_equals_0.lyapunov_threshold;
 
-const ATTRACTOR_PENALTY_KEYS: Readonly<Record<AttractorLabel, keyof FormalismInverseSolver["attractor_penalties"]>> = {
+/**
+ * The formalism spells an attractor the same way in both blocks it appears in
+ * — `phase_portrait.attractors` and `inverse_solver.attractor_penalties` — so
+ * one map serves both rather than each reader keeping its own.
+ */
+const ATTRACTOR_KEYS: Readonly<Record<AttractorLabel, keyof FormalismInverseSolver["attractor_penalties"]>> = {
   "J=0": "J_equals_0",
   "S*": "S_star",
   "∅": "void",
@@ -87,8 +105,65 @@ const TRANSITION_KEYS: Readonly<Record<`${AttractorLabel}|${AttractorLabel}`, st
   "∅|∅": undefined,
 };
 
+/** What the formalism says an attractor *is*, beside the number that scores it. */
+export interface AttractorProfile {
+  readonly label: AttractorLabel;
+  /** e.g. "Noble Gas (Productive Contradiction)". */
+  readonly name: string;
+  readonly description: string;
+  readonly basin: string;
+  readonly characteristics: string;
+  readonly phaseStateLabel: string;
+  /**
+   * How the formalism says the attractor is reached — as authored, which is
+   * not a uniform kind: `J=0` lists four operators, `S*` says "Ana + Pro +
+   * Para combinations" and the void says "repeated Meta". Strings, therefore,
+   * and not parsed into operators: three of these entries are prose, and
+   * typing them as an operator list would be a claim the file does not make.
+   */
+  readonly reachedBy: readonly string[];
+  /** Only the collapse attractor states one, and it is a clean operator list. */
+  readonly escapeRequires?: readonly Operator[];
+}
+
+/**
+ * The `phase_portrait.attractors` entry for a label.
+ *
+ * The block was read for one number (`J=0`'s Lyapunov threshold) and its prose
+ * went unused, so every command printed a bare `∅` and left the reader to know
+ * what that meant — including `analyze`, which warned that a trajectory
+ * "requires rescue" while the file three lines away named the rescue.
+ */
+export function attractorProfile(label: AttractorLabel): AttractorProfile {
+  const entry = formalism.phase_portrait.attractors[ATTRACTOR_KEYS[label]];
+  const profile = {
+    label,
+    name: entry.name,
+    description: entry.description,
+    basin: entry.basin,
+    characteristics: entry.characteristics,
+    phaseStateLabel: entry.phase_state_label,
+    reachedBy: entry.reached_by,
+  };
+  if (entry.escape_requires === undefined) return profile;
+  return { ...profile, escapeRequires: escapeOperators(label, entry.escape_requires) };
+}
+
+/** Fail-closed: an escape route naming something that is not an operator is
+ * advice no caller could act on, so it throws rather than being passed along. */
+function escapeOperators(label: AttractorLabel, authored: readonly string[]): readonly Operator[] {
+  return authored.map((name) => {
+    if (!(OPERATORS as readonly string[]).includes(name)) {
+      throw new Error(
+        `phase_portrait.attractors["${label}"].escape_requires names "${name}", which is not an operator`,
+      );
+    }
+    return name as Operator;
+  });
+}
+
 export function formalismAttractorPenalty(attractor: AttractorLabel): number {
-  return formalism.inverse_solver.attractor_penalties[ATTRACTOR_PENALTY_KEYS[attractor]];
+  return formalism.inverse_solver.attractor_penalties[ATTRACTOR_KEYS[attractor]];
 }
 
 /** The formalism's required operators for a transition. This is deliberately

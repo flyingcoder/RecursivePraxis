@@ -1,6 +1,13 @@
-import { analyzeSequence, simulateTrajectory, type Operator, type TrajectoryStep } from "../kernel/index.js";
+import {
+  analyzeSequence,
+  simulateTrajectory,
+  type AttractorLabel,
+  type Operator,
+  type TrajectoryStep,
+} from "../kernel/index.js";
 import { parseOperatorSequence } from "../cli-support/parse.js";
 import { ChainReading } from "../ir/chainReading.js";
+import { AttractorVocabulary } from "../vocab/attractors.js";
 import { sequenceViolations } from "../vocab/grammar.js";
 
 // S*, matching the quarry's controlled_rupture_cli.py analyze_sequence default.
@@ -26,7 +33,10 @@ function checkWarnings(sequence: readonly Operator[], trajectory: readonly Traje
     warnings.push(`${metaCount} Meta operators in sequence (collapse risk)`);
   }
   if (trajectory.some((step) => step.attractor === "∅")) {
-    warnings.push("trajectory enters void — requires rescue");
+    // The formalism states the rescue (`escape_requires`), so the warning names
+    // it rather than leaving the reader to know which operators climb out.
+    const escape = AttractorVocabulary.escapeAdvice("∅");
+    warnings.push(`trajectory enters void — requires rescue: ${escape ?? "no escape route is stated"}`);
   }
   for (const violation of sequenceViolations(sequence)) {
     warnings.push(`step ${violation.index} (${violation.operator}): ${violation.reason} [${violation.constraint}]`);
@@ -47,10 +57,22 @@ export function runAnalyze(sequenceArg: string, json: boolean): void {
   const trajectory = simulateTrajectory(SIMULATION_START, sequence);
   const warnings = checkWarnings(sequence, trajectory);
   const reading = ChainReading.read(sequence);
+  // In visit order, so the legend reads down the trajectory above it.
+  const visited = [...new Set(trajectory.map((step) => step.attractor))] as AttractorLabel[];
 
   if (json) {
     console.log(
-      JSON.stringify({ ...analysis, trajectory, warnings, algebra: reading.summary() }, null, 2),
+      JSON.stringify(
+        {
+          ...analysis,
+          trajectory,
+          warnings,
+          attractors: visited.map((label) => AttractorVocabulary.profile(label)),
+          algebra: reading.summary(),
+        },
+        null,
+        2,
+      ),
     );
     process.exit(0);
   }
@@ -63,6 +85,11 @@ export function runAnalyze(sequenceArg: string, json: boolean): void {
   console.log("trajectory (from S* D=0.5,C=0.5):");
   for (const step of trajectory.slice(1)) {
     console.log(`  ${step.operator} -> ${step.attractor} (D=${step.D.toFixed(2)}, C=${step.C.toFixed(2)})`);
+  }
+  console.log("");
+  console.log("attractors visited:");
+  for (const label of visited) {
+    console.log(`  ${AttractorVocabulary.gloss(label)}`);
   }
   if (warnings.length > 0) {
     console.log("");
