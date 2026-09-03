@@ -1,0 +1,273 @@
+// ============================================================
+// Process: deriving initial + target (D, C) from a user's stated intent
+// Tags used in comments:
+//   [REASONING]  -> judgment call / creative choice, not computed
+//   [COMPUTED]   -> deterministic math, follows a fixed formula
+//   [VERIFIED]   -> ran real code to check a claim, not trusted by eye
+//
+// Real imports. Everything tagged [COMPUTED] reads one of these rather than
+// restating a constant in a comment, so the pseudocode cannot drift from the
+// kernel the way a copied "0.3" silently would.
+//
+//   import {
+//     classifyAttractor, lyapunov,
+//     LYAPUNOV_ALPHA, STABILITY_THRESHOLD,
+//     VOID_D_THRESHOLD, VOID_C_THRESHOLD,
+//     suggestTransitionOperators, attractorPenalty,
+//   } from "./phasePortrait.js";
+//   import { solve, distance, DISTANCE_THRESHOLD } from "./solver.js";
+//   import { allOperators, operatorMeaning, operatorClass } from "./formalism.js";
+//   import { STABLE_TARGET_DISSIPATION } from "../engine/core.js";
+//
+// VOID_D_THRESHOLD / VOID_C_THRESHOLD are not re-exported by kernel/index.ts;
+// they come from phasePortrait.js directly.
+//
+// ------------------------------------------------------------
+// The one rule this whole file exists to enforce
+// ------------------------------------------------------------
+// A free-text intent must NEVER be read directly into a (D, C) pair. Reading
+// "I keep rewriting the same function" and emitting `{ D: 0.85, C: 0.75 }` is
+// inventing a measurement: the numbers carry four significant figures of
+// authority that the reading cannot support, and nothing downstream can tell
+// them apart from numbers that were derived.
+//
+// The intent is read into SIGNALS — things a reader can point at in the
+// transcript and disagree with — and a FIXED FORMULA turns signals into
+// numbers. The judgment stays visible and arguable; the arithmetic stays
+// checkable. Same discipline engine/core.ts already applies in
+// `deriveInitialDissipation`.
+// ============================================================
+
+function deriveStateFromIntent(intentText, transcript):
+
+    // Step 1 — read the intent into signals, NOT into numbers
+    signals = {
+        uncertainty:           readHowUnsureTheyAre(intentText),      // 0..1
+        failedChecks:          listThingsThatDemonstrablyFailed(transcript),
+        unresolvedClaims:      listAssertionsNothingHasSettled(transcript),
+        contradictionDetected: didTheyStateTwoIncompatibleThings(intentText),
+    }
+    // [REASONING] every field here is a reading of English. But each one is a
+    // reading a reviewer can CHALLENGE by name — "that check didn't fail",
+    // "that claim was resolved in the previous turn" — which is the entire
+    // difference between this and picking D = 0.85 by feel.
+    //
+    // Note the asymmetry: `uncertainty` is the only free scalar, and it is the
+    // one to be most suspicious of. The other three are counts of nameable
+    // things. Prefer moving weight onto the countable fields.
+
+    // Step 2 — signals become numbers by formula, not by judgment
+    // D = clamp01(0.2 + uncertainty * 0.4 + failedChecks.length * 0.1)
+    // C = clamp01(0.15 + unresolvedClaims.length * 0.08 + (contradiction ? 0.25 : 0))
+    initialDC = deriveInitialDissipation(signals)
+    // [COMPUTED] the formula is fixed. [REASONING] belongs to its CONSTANTS,
+    // not to this call — engine/core.ts:405 says so in its own docstring:
+    // "Authored constants, not measured." The 0.4 weight on uncertainty is a
+    // choice nobody has calibrated. This step launders no judgment; it just
+    // pins it to one auditable place instead of re-making it per intent.
+    //
+    // BLOCKER: `deriveInitialDissipation` is currently module-private in
+    // src/engine/core.ts (line 407) — it has no export. Wiring this for real
+    // means exporting it, or moving it somewhere the kernel can reach without
+    // the kernel importing from engine/. Do not copy the formula; a second
+    // copy is the thing this file is trying to prevent.
+
+    initialLabel = classifyAttractor(initialDC.D, initialDC.C)   // real import
+    // [COMPUTED] and [VERIFIED] in the same breath — unlike the template
+    // process this replaced, the initial label is now DERIVED, never guessed,
+    // so there is nothing here for Step 7 to catch. Half the old file's
+    // guess-then-check loop is gone because the guess is gone.
+
+
+function chooseTargetArc(intentText, initialLabel):
+
+    // Step 3 — only the DESTINATION is authorial now.
+    targetLabel = readWhereThisShouldLand(intentText)
+    // [REASONING] irreducible: "they want to stop thrashing and ship" is a
+    // reading. But it is a choice among THREE values, not among a continuum of
+    // (D, C) pairs — a judgment call with three outcomes is one a reviewer can
+    // actually check.
+
+    // Default, when the intent does not say: the engine already has an opinion.
+    if targetLabel is unstated:
+        targetDC    = STABLE_TARGET_DISSIPATION          // real import, engine/core.ts
+        targetLabel = classifyAttractor(targetDC.D, targetDC.C)
+        // [VERIFIED] STABLE_TARGET_DISSIPATION is { D: 0.1, C: 0.1 };
+        // lyapunov gives V = 0.14, so it classifies "J=0". Every planning path
+        // in engine/core.ts already aims here. Reusing it means an
+        // intent-derived arc and an engine-planned one target the same point
+        // instead of quietly disagreeing.
+
+    // Step 3b — is this arc one the formalism can actually tell?
+    suggested = suggestTransitionOperators(initialLabel, targetLabel)   // real import
+    // [VERIFIED] enumerated all nine pairs against the built kernel:
+    // `suggested` is empty for exactly the three same-label arcs
+    // (J=0→J=0, S*→S*, ∅→∅) and non-empty for all six cross-label ones.
+    // diagnose.ts:42 suppresses the "Suggested operators:" line when empty.
+
+    if suggested is empty:
+        // Same-label arc. For a TEMPLATE this was a thin-output problem. For a
+        // derived intent it is a real FINDING and must be reported as one:
+        // "the state your intent describes is already the state you asked for."
+        return { initialLabel, targetLabel, suggested, sameLabel: true }
+        // [REASONING] do not re-roll the target to manufacture a non-empty arc.
+        // That fabricates a problem to have something to solve.
+
+    // Step 3c — direction sanity
+    if attractorPenalty(targetLabel) > attractorPenalty(initialLabel):   // real import
+        // [VERIFIED] penalties read from formalism.json: J=0 → 0.1,
+        // S* → 0.3, ∅ → 1.0. So this fires on any arc toward collapse.
+        flag("intent asks to move toward the costlier attractor")
+        // [REASONING] a flag, not a rejection. The shipped `rigid` template
+        // deliberately runs J=0 → S* uphill; some intents genuinely want more
+        // agitation, not less.
+
+    return { initialLabel, targetLabel, suggested, sameLabel: false }
+
+
+function numbersForLabel(label, initialDC):
+
+    // Step 4 — the target's numbers. Needed only when Step 3 chose a target
+    // label other than the STABLE_TARGET_DISSIPATION default.
+    //
+    // The label→numbers rule, from classifyAttractor:
+    //   V(D, C) = lyapunov(D, C) = D + LYAPUNOV_ALPHA * C
+    //   if V < STABILITY_THRESHOLD:                         return "J=0"
+    //   elif D > VOID_D_THRESHOLD or C > VOID_C_THRESHOLD:  return "∅"
+    //   else:                                               return "S*"
+    // [COMPUTED] fixed, read from the kernel. ALPHA and STABILITY_THRESHOLD
+    // load from formalism.json, so a change there moves these bands under us —
+    // which is why this solves the inequality instead of hardcoding a band.
+
+    switch label:
+        case "J=0":
+            C = pickIn(0, STABILITY_THRESHOLD / LYAPUNOV_ALPHA)  // [REASONING] free
+            ceilingD = STABILITY_THRESHOLD - LYAPUNOV_ALPHA * C  // [COMPUTED]
+            D = ceilingD - margin                                // [REASONING] headroom
+        case "∅":
+            D = VOID_D_THRESHOLD + margin                        // [COMPUTED] band
+            C = pickIn(0, 1)                                     // [REASONING] free
+            // one axis over its threshold suffices; V >= STABILITY_THRESHOLD
+            // then holds for free, since D > 0.8 already exceeds 0.3.
+        case "S*":
+            D = pickIn(STABILITY_THRESHOLD, VOID_D_THRESHOLD)    // [COMPUTED] band
+            C = pickIn(0, VOID_C_THRESHOLD)                      // [REASONING] free
+
+    // 4b — margin is not decoration. A point on a threshold classifies by float
+    // comparison, and 0.3 - 0.4*0.5 is 0.09999999999999998.
+    // [REASONING] margin >= 0.02 keeps the arc off that edge.
+
+    // 4c — the arc must be big enough for the solver to have anything to do.
+    if distance(initialDC, {D, C}) <= DISTANCE_THRESHOLD:        // real import
+        // [VERIFIED] solve() returns at the start node the moment distance
+        // <= DISTANCE_THRESHOLD (0.12): { D: 0.15, C: 0.13 } against the
+        // stable target is 0.0583 away and returns SUCCESS with an EMPTY
+        // sequence. A caller that prints "SUCCESS" there reports a solved plan
+        // when the truth is "nothing to do".
+        report("intent is already within the solver's success radius")
+        // [REASONING] report it; do not push the target further out to
+        // manufacture a sequence.
+
+    return { D, C }
+
+
+function describeIntent(intentText, arc):
+
+    // Step 5 — the prose. Narrow the field first: a diagnosis naming an
+    // operator irrelevant to the arc reads as authoritative and is not.
+    relevant = arc.suggested                        // [COMPUTED] from Step 3b
+    if relevant is empty: relevant = allOperators() // real import, formalism.ts
+
+    for op in relevant:
+        meaning = operatorMeaning(op)               // real import, formalism.ts
+        cls     = operatorClass(op)                 // real import, formalism.ts
+        score[op] = howWellThisPhraseDescribesTheIntent(intentText, meaning, cls)
+    // [REASONING] pure pattern-match on English. "analysis paralysis" against
+    // Meta's meaning string is a reading, not a similarity metric — do not
+    // dress it up as one by reporting a number.
+
+    text = phraseAsFailureMode(top(score, 1 or 2))
+    // [REASONING] house style, matched by eye against problem_templates.json,
+    // which names a failure mode rather than a prescription:
+    //   "Meta ∘ Meta loop (infinite reflection)"      — too much of an operator
+    //   "Excessive Ana without Kata (no compression)" — an unbalanced pair
+    //   "In the Void (∅), need rescue operators"      — a location
+
+    return text
+    // UNVERIFIABLE as prose. The one claim inside it that IS checkable — that
+    // the operators it names are ones the engine would reach for — is below.
+
+
+function verifyDerivedArc(derived):
+
+    // Step 6 — the label claims. Cheap, so there is no excuse for skipping it.
+    assert classifyAttractor(derived.initial.D, derived.initial.C) == derived.initialLabel
+    assert classifyAttractor(derived.target.D,  derived.target.C)  == derived.targetLabel
+    // [VERIFIED] executes the real compiled kernel function. Nothing is
+    // presented to the user as a label until this passes.
+
+    // Step 7 — the arc claim.
+    solution = solve({                              // real import, solver.ts
+        initial: derived.initial,
+        target:  derived.target,
+        beamWidth: 10,                              // matches diagnose.ts:27
+    })
+    // [VERIFIED] runs the real A* beam search under the same options the CLI
+    // uses, so the reported sequence is the one `lambda solve` would return.
+
+    if solution.length == 0:
+        report("no operators needed — initial already within DISTANCE_THRESHOLD")
+        // [COMPUTED] see 4c. Distinguish this from a real plan in the OUTPUT;
+        // `success` is true in both cases and the flag alone will mislead.
+
+    if not solution.success:
+        report("PARTIAL — the operator algebra cannot reach this target")
+        // [COMPUTED] success means the final state came within
+        // DISTANCE_THRESHOLD of the target. [VERIFIED] all five shipped
+        // templates return SUCCESS at beamWidth 10, so a PARTIAL here is a
+        // signal about the derived arc, not a known-flaky solver.
+
+    for op in operatorsNamedIn(derived.diagnosis):
+        if op not in solution.sequence:
+            flag("diagnosis names " + op + ", solver never uses it")
+            // [REASONING] a flag, not an auto-fix. [VERIFIED] `stuck` is a live
+            // instance: its diagnosis names Meta, and solve() returns
+            // Axis ∘ Telo ∘ Telo, containing no Meta. That template describes
+            // the CAUSE, not the cure — so this must never be wired to rewrite
+            // the text automatically.
+
+    return solution
+
+
+// ============================================================
+// What the sweep found — read this before trusting a derived initial state
+// ============================================================
+// [VERIFIED] swept the deriveInitialDissipation formula across
+// uncertainty 0..1 (step 0.05) x failedChecks 0..8 x unresolvedClaims 0..10 x
+// contradiction {false, true} = 4158 signal combinations, classifying each with
+// the real classifyAttractor:
+//
+//   J=0 :    3 combinations
+//   S*  : 1646
+//   ∅   : 2509
+//
+// J=0 requires failedChecks == 0, contradiction == false, AND
+// 0.4*uncertainty + 0.032*unresolvedClaims < 0.04 — effectively "the user
+// reported nothing at all". The formula's floor is D = 0.2, C = 0.15, giving
+// V = 0.26 against a 0.3 threshold: there is only 0.04 of headroom before every
+// intent classifies as agitated.
+//
+// Two consequences for anything built on this file:
+//
+//  1. A derived initial label is almost always S* or ∅, and both arcs into the
+//     default J=0 target ARE mapped (S*→J=0: Kata, Telo, Seed, Latch;
+//     ∅→J=0: Telo, Kata, Axis, Bind). So the common path works. The
+//     same-label degenerate case in Step 3b is rare, not the norm.
+//
+//  2. ∅ is reachable from SEVEN unresolved claims plus a contradiction with
+//     zero failed checks and zero uncertainty (D = 0.2, C = 0.96). ∅ carries a
+//     penalty of 1.0 against S*'s 0.3 — a 3.3x cost swing that here turns on
+//     how many sentences the reader chose to call "unresolved". Before shipping
+//     this, either bound `unresolvedClaims` or re-weight its 0.08 coefficient.
+//     Right now the most consequential number in the output is decided by a
+//     count nobody has defined.

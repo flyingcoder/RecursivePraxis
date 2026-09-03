@@ -31,6 +31,11 @@ export {
 export {
   LYAPUNOV_ALPHA,
   STABILITY_THRESHOLD,
+  // Needed by anything that solves the label -> (D, C) inequality rather than
+  // hardcoding a band, since ALPHA and the thresholds load from formalism.json
+  // and a change there moves the bands underneath the caller.
+  VOID_D_THRESHOLD,
+  VOID_C_THRESHOLD,
   lyapunov,
   classifyAttractor,
   applyOperator,
@@ -45,6 +50,30 @@ export {
   type TrajectoryStep,
   type BasinStructure,
 } from "./phasePortrait.js";
+
+export {
+  DERIVE_C_INTERCEPT,
+  DERIVE_CONTRADICTION_WEIGHT,
+  DERIVE_D_INTERCEPT,
+  DERIVE_FAILED_CHECK_WEIGHT,
+  DERIVE_UNCERTAINTY_WEIGHT,
+  DERIVE_UNRESOLVED_CLAIM_WEIGHT,
+  STABLE_TARGET_DISSIPATION,
+  deriveInitialDissipation,
+  type IntentSignals,
+} from "./derive.js";
+
+export {
+  ARC_BEAM_WIDTH,
+  BAND_MARGIN,
+  numbersForLabel,
+  operatorsNamedIn,
+  planArc,
+  verifyArc,
+  type ArcPlan,
+  type ArcVerification,
+  type VerifyArcInput,
+} from "./intentArc.js";
 
 export {
   MAX_CONSECUTIVE_META,

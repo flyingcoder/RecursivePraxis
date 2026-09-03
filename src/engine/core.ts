@@ -3,7 +3,9 @@ import { checkForbiddenSequence } from "../vocab/grammar.js";
 import { ALL_OPERATORS } from "../vocab/operators.js";
 import {
   DEFAULT_BEAM_WIDTH,
+  STABLE_TARGET_DISSIPATION,
   analyzeSequence,
+  deriveInitialDissipation,
   lambdaIntrinsic,
   solve,
   type DissipationState,
@@ -217,12 +219,12 @@ export function budgetAllows(
 }
 
 /**
- * Fixed target attractor for sequencing: a low-D, low-C stable ("J=0")
- * dissipation state. planTask() always searches from the task's current
- * dissipation state toward this target; the initial state carries the
- * task-specific signal (see deriveInitialDissipation), the target does not.
+ * Re-exported from `kernel/derive.ts`, where it sits beside the formula that
+ * produces the initial state, so an intent-derived arc and an engine-planned
+ * one aim at the same point. Kept exported here because callers of this module
+ * have always read it from this name.
  */
-export const STABLE_TARGET_DISSIPATION: DissipationState = { D: 0.1, C: 0.1 };
+export { STABLE_TARGET_DISSIPATION };
 
 /**
  * Mirrors the kernel's Mode-1 nextAnomalyArtifact() rule (session.ts): a
@@ -394,29 +396,10 @@ export function planHaliraRecoveryTask(
   return plan;
 }
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-/**
- * Deterministic mapping from observable task-state signals to an initial
- * dissipation state for the solver to search from. Higher uncertainty and
- * more failed checks raise D (dissipation); unresolved claims and detected
- * contradictions raise C. Authored constants, not measured.
- */
-function deriveInitialDissipation(
-  state: Pick<
-    ObservableTaskState,
-    "uncertainty" | "failedChecks" | "unresolvedClaims" | "contradictionDetected"
-  >,
-): DissipationState {
-  return {
-    D: clamp01(0.2 + state.uncertainty * 0.4 + state.failedChecks.length * 0.1),
-    C: clamp01(
-      0.15 + state.unresolvedClaims.length * 0.08 + (state.contradictionDetected ? 0.25 : 0),
-    ),
-  };
-}
+// `deriveInitialDissipation` and `STABLE_TARGET_DISSIPATION` now live in
+// `kernel/derive.ts` — the intent-derivation path needs the same formula, and
+// the kernel may not import from here. `ObservableTaskState` satisfies
+// `IntentSignals` structurally, so `createTaskState` passes itself straight in.
 
 export function createTaskState(
   objective: string,
