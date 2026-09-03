@@ -8,6 +8,7 @@ import {
   verifyArc,
 } from "../kernel/index.js";
 import { PromptPolicy } from "../ir/promptPolicy.js";
+import { ChainReading } from "../ir/chainReading.js";
 import type { AttractorLabel } from "../kernel/types.js";
 
 /**
@@ -200,5 +201,30 @@ export const META_PROMPT_TOOLS: readonly ToolDefinition[] = [
         verification: policy.verify(brief),
       };
     },
+  ),
+];
+
+/**
+ * The chain-reading tool, in its own array for the same reason the composer is:
+ * `DERIVE_TOOLS` is the named set implementing one pseudocode document, and
+ * this implements none of them. It reads `formalism.json`'s `algebra_relations`
+ * — the block that until now nothing read at all.
+ *
+ * It answers a different question from `analyze`. That one prices a sequence
+ * (λ, trajectory, half-life); this one reports what the formalism *says about
+ * the operators in it*, which is the part a model has otherwise been guessing.
+ */
+export const ALGEBRA_TOOLS: readonly ToolDefinition[] = [
+  defineTool(
+    "read_chain_algebra",
+    "Read a chain against the formalism's algebra",
+    "Report what the formalism states about the operators in a chain: which adjacent pairs it relates (absorption laws, triple relations, commutator exceptions), where the vendored commutator skeleton's measured magnitude agrees or disagrees with those statements, which operator classes are in play and what each class does, which operators are projections onto an attractor, and every sequence-grammar rule the chain breaks. Read the result as description, never as a rewrite: these are function-space statements and this engine composes displacements, so `Ortho ∘ Ana = Kata` is not permission to replace that pair with Kata, drop a repeat, or reorder anything. The `caveat` field says the same thing and is worth quoting if you pass the reading on. Unlike compose_prompt_policy this neither rejects nor repairs a chain — a chain that breaks the grammar is read and its violations reported.",
+    z.strictObject({
+      chain: z
+        .array(z.enum(OPERATORS))
+        .min(1)
+        .describe("Operators in chain order, e.g. ['Meta','Ortho','Kata']. Order matters: composition statements are matched as written."),
+    }),
+    (args) => ChainReading.read(args.chain).summary(),
   ),
 ];

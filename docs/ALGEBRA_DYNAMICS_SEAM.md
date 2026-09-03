@@ -189,7 +189,20 @@ Pinned by `tests/kernel/selectionStudy.test.ts`.
   first place.
 - **Sequence length is not in the objective**, deliberately. `overwhelmed` gets
   *longer* under the corrected ranking (7 → 8 operators) while scoring better.
-- **`algebra_relations` is not enforced** and should not be — see §2.
+- **`algebra_relations` is not enforced** and should not be — see §2. It is now
+  *read*, which is a different thing: `src/kernel/algebra.ts` parses the block
+  into queryable relations and `src/ir/chainReading.ts` reports the ones that
+  apply to a chain's adjacent pairs, through `lambda analyze` and the
+  `read_chain_algebra` MCP tool. Every rendering carries a caveat naming §2, and
+  nothing downstream rewrites, shortens or reorders a chain from a relation.
+  Two details worth keeping: the reading matches `A ∘ B` in the repo's own
+  left-to-right display order rather than the right-to-left reading of function
+  composition (nothing applies the rewrite, so the convention decides what is
+  *shown*), and it crosses each commutator statement against the skeleton's
+  measured `|η|` — which is how `[Telo, Para] = 0` now reports its disagreement
+  with the skeleton's `0.335` instead of the two claims sitting in separate
+  files. `algebra_relations.idempotence` stays unread: the per-operator
+  `idempotent` / `idempotence_rule` fields already carry it.
 - **The upstream inconsistencies in `src/assets/NOTICE.md` are not yet
   corrected**, but as of 2026-09-02 that is no longer policy — see the "upstream
   is inspiration, not a constraint" note there. They remain pinned by a

@@ -15,6 +15,12 @@ interface FormalismOperatorEntry {
   readonly idempotence_rule?: string;
 }
 
+interface FormalismOperatorClassEntry {
+  readonly members: readonly Operator[];
+  readonly characteristics: string;
+  readonly commutation_bias: string;
+}
+
 interface FormalismDissipationRules {
   readonly pairwise_interaction_coefficient: number;
   readonly max_interaction_magnitude: number;
@@ -38,6 +44,7 @@ interface FormalismInverseSolver {
 
 interface FormalismDocument {
   readonly operators: Record<Operator, FormalismOperatorEntry>;
+  readonly operator_classes: Record<OperatorClass, FormalismOperatorClassEntry>;
   readonly dissipation_rules: FormalismDissipationRules;
   readonly phase_portrait: FormalismPhasePortrait;
   readonly inverse_solver: FormalismInverseSolver;
@@ -110,6 +117,32 @@ export function operatorEffectVector(op: Operator): readonly [number, number] {
 
 export function operatorClass(op: Operator): OperatorClass {
   return formalism.operators[op].class;
+}
+
+/** What the formalism says about a whole class, beside its member list. */
+export interface OperatorClassProfile {
+  readonly className: OperatorClass;
+  readonly members: readonly Operator[];
+  /** e.g. B-Disruptive = "Rupture, increase entropy, destabilize". */
+  readonly characteristics: string;
+  /** How members of this class tend to commute, e.g. "mostly ±1". Advisory
+   * prose about the class, not a substitute for `commutatorMagnitude`. */
+  readonly commutationBias: string;
+}
+
+/**
+ * The `operator_classes` entry for a class. Until this accessor the block's
+ * prose was unread: `operatorClass` returned the label and nothing said what
+ * the label meant, so every consumer that wanted the distinction re-authored it.
+ */
+export function operatorClassProfile(className: OperatorClass): OperatorClassProfile {
+  const entry = formalism.operator_classes[className];
+  return {
+    className,
+    members: entry.members,
+    characteristics: entry.characteristics,
+    commutationBias: entry.commutation_bias,
+  };
 }
 
 export function operatorMeaning(op: Operator): string {

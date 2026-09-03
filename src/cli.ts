@@ -2,6 +2,7 @@
 
 import { allOperatorNames, lookupOperator } from "./vocab/operators.js";
 import { checkForbiddenSequence } from "./vocab/grammar.js";
+import { ALGEBRA, operatorClassProfile } from "./kernel/index.js";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -138,7 +139,9 @@ function printHelp(): void {
     "  status     — attractor, V, D/C, λ_eff, mode, legalNext for the current session",
     "  sense      — set the session's D/C state directly",
     "  step       — apply one operator to the session (auto-picks if --op omitted)",
-    "  analyze    — λ_eff / trajectory / warnings for an arbitrary sequence",
+    "  analyze    — λ_eff / trajectory / warnings for an arbitrary sequence,",
+    "               plus what the formalism's algebra states about its pairs",
+    "               (descriptive — it never rewrites the sequence)",
     "  compile    — compile a sequence into a cognitive execution program",
     "               (capability + budget per step; --bindings attaches the",
     "               model-authored domain bindings)",
@@ -154,7 +157,8 @@ function printHelp(): void {
     "MCP server:",
     "  mcp        — speak MCP over stdio, exposing the intent-derivation tools",
     "               (derive_initial_state, plan_arc, numbers_for_label,",
-    "               verify_arc) and the composer (compose_prompt_policy).",
+    "               verify_arc), the composer (compose_prompt_policy) and the",
+    "               chain reader (read_chain_algebra).",
     "               Installed into host agents by `lambda init`; not normally",
     "               run by hand.",
     "",
@@ -232,14 +236,37 @@ function runOperators(args: string[]): void {
       process.exit(1);
     }
 
-    const shown: Array<{ name: string; class: string; meaning: string; effect: string }> = [];
+    const shown: Array<{
+      name: string;
+      class: string;
+      classCharacteristics: string;
+      commutationBias: string;
+      meaning: string;
+      effect: string;
+      projectsOnto?: string;
+      relations: string[];
+    }> = [];
     for (const raw of requested) {
       const op = lookupOperator(raw);
       if (!op) {
         console.error(`unknown operator: ${raw}`);
         process.exit(1);
       }
-      shown.push({ name: op.name, class: op.className, meaning: op.meaning, effect: op.effect });
+      // The class prose and the algebra statements are read from formalism.json
+      // rather than restated here; `relations` is descriptive, not a rewrite
+      // rule — see src/ir/chainReading.ts.
+      const profile = operatorClassProfile(op.className);
+      const projection = ALGEBRA.projectionFor(op.name);
+      shown.push({
+        name: op.name,
+        class: op.className,
+        classCharacteristics: profile.characteristics,
+        commutationBias: profile.commutationBias,
+        meaning: op.meaning,
+        effect: op.effect,
+        ...(projection === undefined ? {} : { projectsOnto: projection }),
+        relations: ALGEBRA.relationsNaming(op.name).map((relation) => relation.statement),
+      });
     }
 
     console.log(JSON.stringify(shown, null, 2));

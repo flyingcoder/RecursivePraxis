@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { DERIVE_TOOLS, META_PROMPT_TOOLS, type ToolDefinition } from "./tools.js";
+import { ALGEBRA_TOOLS, DERIVE_TOOLS, META_PROMPT_TOOLS, type ToolDefinition } from "./tools.js";
 
 /**
  * The stdio MCP server `lambda mcp` runs.
@@ -59,7 +59,7 @@ export function registerTool(server: McpServer, tool: ToolDefinition): void {
 
 export function createServer(version: string): McpServer {
   const server = new McpServer({ name: "recursive-praxis", version });
-  for (const tool of [...DERIVE_TOOLS, ...META_PROMPT_TOOLS]) registerTool(server, tool);
+  for (const tool of [...DERIVE_TOOLS, ...META_PROMPT_TOOLS, ...ALGEBRA_TOOLS]) registerTool(server, tool);
   return server;
 }
 

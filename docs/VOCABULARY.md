@@ -35,9 +35,14 @@ lambda operators list        # ↑  Ana, ↓  Kata, ⟲  Meta, …
 ```
 
 `operators list` is the only CLI surface for the glyph; `operators show <Op> [<Op>…]`
-returns name, class, meaning, and effect as JSON and omits it deliberately —
-it exists for feeding an operator's `meaning`/`effect` to an agent, not for
-display. Read the glyph programmatically via `operatorSymbol(op)` from
+returns name, class (with that class's characteristics and commutation bias),
+meaning, effect, any attractor the operator projects onto, and every
+`algebra_relations` statement naming it — as JSON, omitting the glyph
+deliberately, because it exists for feeding an operator's description to an
+agent rather than for display. The `relations` it returns describe what the
+formalism relates the operator to; they are not rewrite rules, and nothing acts
+on them (see [ALGEBRA_DYNAMICS_SEAM.md](ALGEBRA_DYNAMICS_SEAM.md) §2). Read the
+glyph programmatically via `operatorSymbol(op)` from
 [formalism.ts](../src/kernel/formalism.ts).
 
 ### Known ambiguity: the `∅` collision

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DERIVE_TOOLS, META_PROMPT_TOOLS, deriveInitialStateInput } from "../../src/mcp/tools.js";
+import { ALGEBRA_TOOLS, DERIVE_TOOLS, META_PROMPT_TOOLS, deriveInitialStateInput } from "../../src/mcp/tools.js";
 import { DISTANCE_THRESHOLD, STABLE_TARGET_DISSIPATION } from "../../src/kernel/index.js";
 
 /**
@@ -62,6 +62,41 @@ describe("the meta-prompting tool surface", () => {
 
   it("rejects a chain the sequence grammar forbids", () => {
     expect(() => compose({ intent: "x", chain: ["Axis", "Ana"] })).toThrow(/end-on-ana/u);
+  });
+});
+
+describe("the chain-reading tool surface", () => {
+  // Its own array again: this one implements no pseudocode document, it reads
+  // formalism.json's algebra_relations.
+  it("exposes exactly the one reading tool", () => {
+    expect(ALGEBRA_TOOLS.map((t) => t.name)).toEqual(["read_chain_algebra"]);
+  });
+
+  function read(args: unknown): any {
+    const t = ALGEBRA_TOOLS[0]!;
+    return t.handler(t.inputSchema.parse(args) as never);
+  }
+
+  it("returns the stated relations for adjacent pairs, under the caveat", () => {
+    const out = read({ chain: ["Meta", "Ortho", "Kata"] });
+    expect(out.pairs[0].relations[0].statement).toBe("Meta ∘ Ortho = Retro");
+    expect(out.caveat).toContain("none of them rewrites");
+  });
+
+  /**
+   * The composer rejects an illegal chain because it is about to emit a brief
+   * built from it. A reading emits nothing to act on, so it reports instead —
+   * refusing to describe a chain would leave the caller with less than it
+   * arrived with.
+   */
+  it("reads a chain the composer would reject, and reports the violation", () => {
+    const out = read({ chain: ["Axis", "Ana"] });
+    expect(out.violations.map((v: { constraint: string }) => v.constraint)).toEqual(["end-on-ana"]);
+  });
+
+  it("rejects an operator outside the alphabet", () => {
+    const t = ALGEBRA_TOOLS[0]!;
+    expect(t.inputSchema.safeParse({ chain: ["Meta", "Nope"] }).success).toBe(false);
   });
 });
 

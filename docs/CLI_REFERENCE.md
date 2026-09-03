@@ -33,7 +33,7 @@ lambda replay <task-id>
 | Command | Purpose |
 | --- | --- |
 | `lambda operators list` | List the 20 operator names. |
-| `lambda operators show <Op> [<Op>…]` | Print name, class, meaning, and effect for one or more operators, as JSON. |
+| `lambda operators show <Op> [<Op>…]` | Print name, class (with the formalism's characteristics and commutation bias), meaning, effect, any attractor the operator projects onto, and every algebra statement naming it, as JSON. |
 | `lambda check <Op> [<Op>…]` | Validate an operator sequence against hard grammar constraints. |
 
 ## Session and kernel controls
@@ -44,7 +44,7 @@ lambda replay <task-id>
 | `lambda sense --d <n> --c <n> [--json]` | Set state directly; each value must be in `[0, 1]`. |
 | `lambda sense --from <json> [--json]` | Set state from a JSON file containing `D` and `C`. |
 | `lambda step [--op <Op>] [--json]` | Apply a legal operator. With no `--op`, choose the legal lowest-cost candidate. |
-| `lambda analyze <Op[,Op…]> [--json]` | Report λ analysis, trajectory, and warnings for a sequence. |
+| `lambda analyze <Op[,Op…]> [--json]` | Report λ analysis, trajectory, warnings, and the formalism's algebraic reading of the sequence's adjacent pairs. The reading is descriptive: it never rewrites, shortens, or reorders the sequence (see `docs/ALGEBRA_DYNAMICS_SEAM.md` §2). |
 | `lambda compile <Op[,Op…]> [--bindings <file>] [--json]` | Compile a sequence into a cognitive execution program: one instruction per operator run, each carrying its capability grant and execution budget. Prototype — see [suggestions/operator-sequence-to-execution-language.md](suggestions/operator-sequence-to-execution-language.md). |
 | `lambda meta-prompt <intent> <Op[,Op…]> [--json]` | Compose a chain into ONE prompt for the stated intent. The chain sets the properties the prompt exhibits *simultaneously*, not steps run in order, and every clause traces to an operator field. See [operator-chain-as-prompt-policy.md](operator-chain-as-prompt-policy.md). |
 | `lambda solve --initial D,C --target D,C [--beam-width N] [--json]` | Run the deterministic beam solver. |

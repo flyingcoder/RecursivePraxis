@@ -9,14 +9,28 @@ export {
   operatorName,
   operatorEffectNote,
   operatorIdempotence,
+  operatorClassProfile,
   allOperators,
   PHASE_PORTRAIT_ALPHA,
   PHASE_PORTRAIT_STABILITY_THRESHOLD,
   formalismAttractorPenalty,
   formalismTransitionOperators,
   type OperatorIdempotence,
+  type OperatorClassProfile,
 } from "./formalism.js";
 export { commutatorMagnitude, commutatorPairCount } from "./commutator.js";
+
+export {
+  ALGEBRA,
+  OperatorAlgebra,
+  RelationParser,
+  type OperatorRelation,
+  type RelationFamily,
+  type RelationForm,
+  type RelationMatch,
+  type RelationOperand,
+  type RelationResult,
+} from "./algebra.js";
 
 export {
   lambdaPairwise,
