@@ -45,6 +45,13 @@ export type AttractorLabel = "J=0" | "S*" | "∅";
 
 export type LambdaBand = "low" | "mid" | "high";
 
+/**
+ * An operator's idempotence as the formalism states it: `true` for X² = X,
+ * `"semi"` for X² = c·X, `false` for operators that never collapse under
+ * repetition.
+ */
+export type Idempotence = true | "semi" | false;
+
 export type HaliraStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface AnomalyArtifact {

@@ -5,11 +5,16 @@ export {
   operatorClass,
   operatorMeaning,
   operatorSymbol,
+  operatorIndex,
+  operatorName,
+  operatorEffectNote,
+  operatorIdempotence,
   allOperators,
   PHASE_PORTRAIT_ALPHA,
   PHASE_PORTRAIT_STABILITY_THRESHOLD,
   formalismAttractorPenalty,
   formalismTransitionOperators,
+  type OperatorIdempotence,
 } from "./formalism.js";
 export { commutatorMagnitude, commutatorPairCount } from "./commutator.js";
 

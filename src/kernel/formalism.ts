@@ -1,14 +1,18 @@
 import formalismData from "../assets/formalism.json" with { type: "json" };
-import type { AttractorLabel, Operator, OperatorClass } from "./types.js";
+import type { AttractorLabel, Idempotence, Operator, OperatorClass } from "./types.js";
 import { OPERATORS } from "./types.js";
 
 interface FormalismOperatorEntry {
   readonly index: number;
+  readonly name: string;
   readonly class: OperatorClass;
   readonly lambda_intrinsic: number;
   readonly effect_vector: readonly [number, number];
   readonly meaning: string;
+  readonly effect: string;
   readonly symbol: string;
+  readonly idempotent: Idempotence;
+  readonly idempotence_rule?: string;
 }
 
 interface FormalismDissipationRules {
@@ -37,6 +41,12 @@ interface FormalismDocument {
   readonly dissipation_rules: FormalismDissipationRules;
   readonly phase_portrait: FormalismPhasePortrait;
   readonly inverse_solver: FormalismInverseSolver;
+}
+
+export interface OperatorIdempotence {
+  readonly idempotent: Idempotence;
+  /** Present only where the formalism states one, i.e. never for `false`. */
+  readonly rule?: string;
 }
 
 const formalism = formalismData as unknown as FormalismDocument;
@@ -114,6 +124,37 @@ export function operatorMeaning(op: Operator): string {
  */
 export function operatorSymbol(op: Operator): string {
   return formalism.operators[op].symbol;
+}
+
+/** The operator's 1-based position in the formalism's 20-operator table. */
+export function operatorIndex(op: Operator): number {
+  return formalism.operators[op].index;
+}
+
+/** The operator's full name (e.g. Ana = "Analysis/Abstraction"). */
+export function operatorName(op: Operator): string {
+  return formalism.operators[op].name;
+}
+
+/**
+ * The `effect` field: what applying this operator does to the state, in the
+ * formalism's own words (e.g. Ana = "increases entropy"). Distinct from
+ * `meaning`, which describes the move rather than its consequence.
+ */
+export function operatorEffectNote(op: Operator): string {
+  return formalism.operators[op].effect;
+}
+
+/**
+ * The operator's idempotence and, where the formalism states one, its algebraic
+ * rule. `true` means X² = X, `"semi"` means X² = c·X for a stated coefficient,
+ * `false` means every re-application is a fresh act.
+ */
+export function operatorIdempotence(op: Operator): OperatorIdempotence {
+  const entry = formalism.operators[op];
+  return entry.idempotence_rule === undefined
+    ? { idempotent: entry.idempotent }
+    : { idempotent: entry.idempotent, rule: entry.idempotence_rule };
 }
 
 export function allOperators(): readonly Operator[] {
