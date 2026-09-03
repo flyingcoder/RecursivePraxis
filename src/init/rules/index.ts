@@ -1,4 +1,5 @@
 import type { Rule } from "../assets/ProseAsset.js";
+import noInventedMeasurement from "./no-invented-measurement.js";
 
 /**
  * Always-on context a host loads without being asked.
@@ -18,4 +19,4 @@ import type { Rule } from "../assets/ProseAsset.js";
  * Rules are not invocable — nothing types a rule's name — so `{{invoke:<slug>}}`
  * may not target one. Reference a skill or command instead.
  */
-export const RULES: readonly Rule[] = [];
+export const RULES: readonly Rule[] = [noInventedMeasurement];

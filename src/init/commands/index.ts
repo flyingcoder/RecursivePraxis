@@ -4,6 +4,7 @@ import analyze from "./analyze.js";
 import solve from "./solve.js";
 import diagnose from "./diagnose.js";
 import intent from "./intent.js";
+import derive from "./derive.js";
 import session from "./session.js";
 import ir from "./ir.js";
 import metaPrompt from "./meta-prompt.js";
@@ -21,6 +22,7 @@ export const COMMANDS: readonly Command[] = [
   solve,
   diagnose,
   intent,
+  derive,
   session,
   ir,
   metaPrompt,
