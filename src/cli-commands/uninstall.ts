@@ -1,9 +1,11 @@
-import { readFile, rm, rmdir } from "node:fs/promises";
+import { readFile, rm, rmdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { InstallManifest, contentHash } from "../manifest/InstallManifest.js";
 import { inspectInstall } from "../manifest/inspect.js";
 import { HostRegistry } from "../hosts/HostRegistry.js";
 import { createHostContext } from "../detect/context.js";
+import { removeFragment } from "../init/json-fragment.js";
+import type { JsonFragment } from "../hosts/layouts.js";
 import { ASSETS } from "../init/registry.js";
 import { MARKER_END, hasManagedMarkers } from "../render/managed-block.js";
 import { parseScope } from "./doctor.js";
