@@ -124,3 +124,84 @@ describe("verification catches a brief that lost the policy reading", () => {
     expect(policy.verify(stepList).perOperatorHeadings).toHaveLength(1);
   });
 });
+
+/**
+ * The adjective seam.
+ *
+ * The authored table is intent-blind by construction — Ana is "analytical"
+ * whether the task is a literature review or a crash triage — so a caller may
+ * substitute one word. What must not happen is a substituted word passing as an
+ * authored one: the whole meta-prompt discipline is that every clause traces to
+ * a named operator field, so a clause traceable only to the caller has to say
+ * so. Composition with no options stays a pure function of the chain, which is
+ * what keeps a composed brief replayable.
+ */
+describe("a caller-supplied adjective", () => {
+  const TRIAGE: readonly Operator[] = ["Axis", "Ana", "Ortho", "Kata", "Latch"];
+  const override = {
+    Ana: {
+      adjective: "diagnostic",
+      reason: "the intent is a crash triage, where breaking apart isolates a fault",
+    },
+  };
+
+  it("is the default's opposite number: with no options nothing is the caller's", () => {
+    expect(policy.properties.every((p) => p.adjectiveSource === "authored")).toBe(true);
+    expect(policy.properties.every((p) => p.adjectiveReason === undefined)).toBe(true);
+    expect(policy.verify(brief).callerSuppliedAdjectives).toEqual([]);
+  });
+
+  it("composes the same brief twice from the same chain, options aside", () => {
+    expect(PromptPolicy.compose(CHAIN).render(INTENT)).toBe(brief);
+  });
+
+  it("replaces only the operator it names", () => {
+    const composed = PromptPolicy.compose(TRIAGE, { adjectives: override });
+    const byOp = new Map(composed.properties.map((p) => [p.op, p]));
+    expect(byOp.get("Ana")!.adjective).toBe("diagnostic");
+    expect(byOp.get("Ana")!.adjectiveSource).toBe("caller");
+    expect(byOp.get("Kata")!.adjective).toBe("synthesized");
+    expect(byOp.get("Kata")!.adjectiveSource).toBe("authored");
+  });
+
+  it("says in the brief that the word is the caller's, and what it displaced", () => {
+    const composed = PromptPolicy.compose(TRIAGE, { adjectives: override });
+    const rendered = composed.render("Find why the parser drops the last token");
+    expect(rendered).toContain("Work **diagnostic**");
+    expect(rendered).toContain('The adjective is the caller\'s, not this operator\'s authored "analytical"');
+    expect(rendered).toContain("where breaking apart isolates a fault");
+  });
+
+  it("is reported by verification, so a reviewer need not read for it", () => {
+    const composed = PromptPolicy.compose(TRIAGE, { adjectives: override });
+    const rendered = composed.render("Find why the parser drops the last token");
+    expect(composed.verify(rendered).callerSuppliedAdjectives).toEqual(["Ana"]);
+  });
+
+  it("cannot make two operators indistinguishable in the same brief", () => {
+    // The invariant the authored table is tested for, enforced over the
+    // composed set: a clause has to be traceable to one property.
+    expect(() =>
+      PromptPolicy.compose(TRIAGE, {
+        adjectives: { Ana: { adjective: "Truth-Aligned", reason: "case is not a loophole" } },
+      }),
+    ).toThrow(/would both be "truth-aligned"/u);
+  });
+
+  it("still admits a repeated operator, which is not a collision", () => {
+    const repeated = PromptPolicy.compose(["Axis", "Meta", "Meta", "Kata"], {
+      adjectives: { Meta: { adjective: "self-auditing", reason: "the intent is a post-mortem" } },
+    });
+    expect(repeated.properties).toHaveLength(4);
+    expect(repeated.properties.filter((p) => p.adjective === "self-auditing")).toHaveLength(2);
+  });
+
+  it("rejects an override for an operator the chain does not contain", () => {
+    // Ignoring it would let the caller believe a word took effect.
+    expect(() =>
+      PromptPolicy.compose(TRIAGE, {
+        adjectives: { Meta: { adjective: "reflective", reason: "not in this chain" } },
+      }),
+    ).toThrow(/which the chain does not contain/u);
+  });
+});

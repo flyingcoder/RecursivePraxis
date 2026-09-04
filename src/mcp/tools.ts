@@ -9,7 +9,8 @@ import {
 } from "../kernel/index.js";
 import { PromptPolicy } from "../ir/promptPolicy.js";
 import { ChainReading } from "../ir/chainReading.js";
-import type { AttractorLabel } from "../kernel/types.js";
+import type { AdjectiveOverride } from "../vocab/prompt-policy.js";
+import type { AttractorLabel, Operator } from "../kernel/types.js";
 
 /**
  * The four derive tools, as data.
@@ -158,6 +159,25 @@ export const DERIVE_TOOLS: readonly ToolDefinition[] = [
 ];
 
 /**
+ * Turns the wire form — a list, which a model produces more reliably than a
+ * keyed object — into the map `compose` takes, rejecting a repeated operator
+ * rather than letting the last entry win silently.
+ */
+function adjectiveOverrides(
+  entries: readonly { op: Operator; adjective: string; reason: string }[] | undefined,
+): Readonly<Partial<Record<Operator, AdjectiveOverride>>> | undefined {
+  if (entries === undefined || entries.length === 0) return undefined;
+  const overrides: Partial<Record<Operator, AdjectiveOverride>> = {};
+  for (const entry of entries) {
+    if (overrides[entry.op] !== undefined) {
+      throw new Error(`two adjective overrides given for ${entry.op}; give at most one`);
+    }
+    overrides[entry.op] = { adjective: entry.adjective, reason: entry.reason };
+  }
+  return overrides;
+}
+
+/**
  * The meta-prompting tool, kept in its own array.
  *
  * `DERIVE_TOOLS` is asserted by name in `tests/mcp/tools.test.ts` as the exact
@@ -176,9 +196,31 @@ export const META_PROMPT_TOOLS: readonly ToolDefinition[] = [
         .array(z.enum(OPERATORS))
         .min(1)
         .describe("Operators in composition order, e.g. ['Axis','Ana','Pro','Para','Kata','Latch']. The last one sets how the brief terminates."),
+      adjectives: z
+        .array(
+          z.strictObject({
+            op: z.enum(OPERATORS).describe("Which operator's adjective to replace. Must appear in `chain`."),
+            adjective: z
+              .string()
+              .min(1)
+              .describe("One short phrase, as the authored table uses (e.g. 'diagnostic'). Not a sentence."),
+            reason: z
+              .string()
+              .min(1)
+              .describe("Why the authored adjective misfits THIS intent. Recorded in the brief and reported by verification — an override nobody explained is indistinguishable from a preference."),
+          }),
+        )
+        .optional()
+        .describe(
+          "Leave this out unless you can name the misfit. The authored adjective is derived from the operator's `meaning` and reviewed; supplying your own puts a word you chose where the operator's authority would otherwise sit, so every substitution is labelled as yours in the brief rather than blended into it. Call `lambda operators show` first and override only when that operator's meaning genuinely reads differently over this intent.",
+        ),
     }),
     (args) => {
-      const policy = PromptPolicy.compose(args.chain);
+      const overrides = adjectiveOverrides(args.adjectives);
+      const policy = PromptPolicy.compose(
+        args.chain,
+        overrides === undefined ? {} : { adjectives: overrides },
+      );
       const brief = policy.render(args.intent);
       return {
         brief,
@@ -192,6 +234,8 @@ export const META_PROMPT_TOOLS: readonly ToolDefinition[] = [
           op: p.op,
           symbol: p.symbol,
           adjective: p.adjective,
+          adjectiveSource: p.adjectiveSource,
+          ...(p.adjectiveReason === undefined ? {} : { adjectiveReason: p.adjectiveReason }),
           license: p.license,
           lifetime: p.lifetime,
           mayCommit: p.mayCommit,

@@ -106,7 +106,7 @@ function printHelp(): void {
     "  lambda step [--op <Op>] [--json]",
     "  lambda analyze <Op[,Op…]> [--json]",
     "  lambda compile <Op[,Op…]> [--bindings <file>] [--json]",
-    "  lambda meta-prompt <intent> <Op[,Op…]> [--json]",
+    "  lambda meta-prompt <intent> <Op[,Op…]> [--adjectives <file>] [--json]",
     "  lambda solve --initial D,C --target D,C [--beam-width N] [--json]",
     "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating|spiraling|scattered|defensive>] [--json]",
     "  lambda halira start|next|status [--json]",
@@ -147,7 +147,8 @@ function printHelp(): void {
     "               model-authored domain bindings)",
     "  meta-prompt — compose a chain into ONE prompt whose every clause traces",
     "               to an operator field (properties held simultaneously, not",
-    "               steps run in order)",
+    "               steps run in order; --adjectives substitutes an operator's",
+    "               adjective for this intent and labels the substitution)",
     "  solve      — beam search from --initial to --target D,C",
     "  diagnose   — canned problem templates (run with no argument to list them)",
     "  halira     — Mode-2 escalation step machine (start | next | status)",
@@ -534,7 +535,7 @@ async function main(argv: string[]): Promise<void> {
 
   if (first === "meta-prompt") {
     const { json, rest: metaArgs } = extractJsonFlag(rest);
-    runMetaPrompt(metaArgs, json);
+    await runMetaPrompt(metaArgs, json);
     return;
   }
 

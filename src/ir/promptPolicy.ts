@@ -31,8 +31,19 @@ import {
   type ExecutionBudget,
 } from "../vocab/execution-classes.js";
 import { lookupOperator, type AuthoredOperator } from "../vocab/operators.js";
-import { PromptVocabulary, type PromptLifetime } from "../vocab/prompt-policy.js";
+import {
+  PromptVocabulary,
+  type AdjectiveOverride,
+  type AdjectiveSource,
+  type PromptLifetime,
+  type ResolvedAdjective,
+} from "../vocab/prompt-policy.js";
 import { lambdaBandFor } from "./compile.js";
+
+/** Per-operator adjective substitutions, keyed by operator. */
+export interface ComposeOptions {
+  readonly adjectives?: Readonly<Partial<Record<Operator, AdjectiveOverride>>>;
+}
 
 /** One operator, read as a property the composed prompt must exhibit. */
 export class OperatorProperty {
@@ -41,7 +52,8 @@ export class OperatorProperty {
     readonly symbol: string,
     readonly displayName: string,
     readonly index: number,
-    readonly adjective: string,
+    /** The adjective and where it came from — authored table, or this caller. */
+    readonly resolvedAdjective: ResolvedAdjective,
     /** The operator's `effect`: what this property licenses that others don't. */
     readonly license: string,
     readonly lifetime: PromptLifetime,
@@ -54,7 +66,7 @@ export class OperatorProperty {
     readonly effectVector: readonly [number, number],
   ) {}
 
-  static for(op: Operator): OperatorProperty {
+  static for(op: Operator, override?: AdjectiveOverride): OperatorProperty {
     const entry = OperatorProperty.authored(op);
     const mode = executionMode(op);
     return new OperatorProperty(
@@ -62,7 +74,7 @@ export class OperatorProperty {
       entry.symbol,
       entry.displayName,
       entry.index,
-      PromptVocabulary.adjectiveFor(op),
+      PromptVocabulary.resolveAdjective(op, override),
       entry.effect,
       PromptVocabulary.lifetimeFor(entry),
       mode.cognitiveMove,
@@ -77,6 +89,19 @@ export class OperatorProperty {
     const entry = lookupOperator(op);
     if (entry === undefined) throw new Error(`unknown operator "${op}"`);
     return entry;
+  }
+
+  get adjective(): string {
+    return this.resolvedAdjective.adjective;
+  }
+
+  get adjectiveSource(): AdjectiveSource {
+    return this.resolvedAdjective.source;
+  }
+
+  /** Stated only where the caller supplied the adjective. */
+  get adjectiveReason(): string | undefined {
+    return this.resolvedAdjective.reason;
   }
 
   /**
@@ -105,6 +130,9 @@ export interface PolicyVerification {
   readonly missingOperators: readonly Operator[];
   readonly missingArtifacts: readonly string[];
   readonly perOperatorHeadings: readonly string[];
+  /** Operators whose adjective this caller supplied rather than the table —
+   * the clauses a reviewer cannot trace to an authored field. */
+  readonly callerSuppliedAdjectives: readonly Operator[];
 }
 
 export class PromptPolicy {
@@ -120,14 +148,24 @@ export class PromptPolicy {
   /**
    * Rejects rather than repairs, matching `compileExecutionProgram`: a chain
    * that fails the sequence grammar is an error, not something to rewrite.
+   *
+   * With no options this is a pure function of the chain — the same chain
+   * composes the same brief, which is what makes a composed brief replayable.
+   * `options.adjectives` is the one seam off that, and it is recorded wherever
+   * it is used rather than blended into the authored text.
    */
-  static compose(chain: readonly Operator[]): PromptPolicy {
+  static compose(chain: readonly Operator[], options: ComposeOptions = {}): PromptPolicy {
     if (chain.length === 0) throw new Error("cannot compose an empty chain");
 
     const verdict = checkForbiddenSequence(chain);
     if (!verdict.accepted) {
       throw new Error(`cannot compose: ${verdict.reason} [${verdict.constraint}]`);
     }
+
+    const overrides = options.adjectives ?? {};
+    PromptPolicy.rejectOverridesOutsideChain(chain, overrides);
+    const properties = chain.map((op) => OperatorProperty.for(op, overrides[op]));
+    PromptPolicy.rejectAmbiguousAdjectives(properties);
 
     const analysis = analyzeSequence(chain);
     const seams = analysis.pairwiseCosts.map((cost, i) => ({
@@ -144,13 +182,45 @@ export class PromptPolicy {
       netC += dC;
     }
 
-    return new PromptPolicy(
-      chain,
-      chain.map(OperatorProperty.for),
-      [netD, netC],
-      seams,
-      analysis.lambdaEffective,
-    );
+    return new PromptPolicy(chain, properties, [netD, netC], seams, analysis.lambdaEffective);
+  }
+
+  /** An override for an operator the chain never names is a caller mistake, and
+   * silently ignoring it would let a caller believe a word took effect. */
+  private static rejectOverridesOutsideChain(
+    chain: readonly Operator[],
+    overrides: Readonly<Partial<Record<Operator, AdjectiveOverride>>>,
+  ): void {
+    const absent = Object.keys(overrides).filter((op) => !chain.includes(op as Operator));
+    if (absent.length > 0) {
+      throw new Error(
+        `cannot compose: adjective override given for ${absent.join(", ")}, which the chain does not contain`,
+      );
+    }
+  }
+
+  /**
+   * Two *different* operators sharing an adjective make the brief ambiguous
+   * about which one a clause came from — the invariant the authored table is
+   * tested for, enforced over the composed set so an override cannot break it
+   * either. A repeated operator is not a collision: `Kata ∘ Kata` is a legal
+   * chain and both occurrences are the same property.
+   */
+  private static rejectAmbiguousAdjectives(properties: readonly OperatorProperty[]): void {
+    const byAdjective = new Map<string, Set<Operator>>();
+    for (const property of properties) {
+      const key = property.adjective.toLowerCase();
+      const holders = byAdjective.get(key);
+      if (holders === undefined) byAdjective.set(key, new Set([property.op]));
+      else holders.add(property.op);
+    }
+    for (const [adjective, holders] of byAdjective) {
+      if (holders.size > 1) {
+        throw new Error(
+          `cannot compose: ${[...holders].join(" and ")} would both be "${adjective}", so no clause could be traced to one of them`,
+        );
+      }
+    }
   }
 
   /**
@@ -223,9 +293,16 @@ export class PromptPolicy {
     const commit = p.mayCommit
       ? "It may settle a question"
       : "It may never settle a question — it is read-only by construction";
+    // A caller-supplied adjective is marked in the brief itself, not only in
+    // the verification: whoever reads the brief without the JSON beside it is
+    // exactly the reader who would otherwise take the word for an authored one.
+    const supplied =
+      p.adjectiveSource === "caller"
+        ? ` The adjective is the caller's, not this operator's authored "${PromptVocabulary.adjectiveFor(p.op)}": ${p.adjectiveReason}`
+        : "";
     return (
       `Work **${p.adjective}**: ${p.move}. This licenses one thing the others do not — ` +
-      `${p.license}. ${commit}, and it owes ${p.exitTest}. It ${p.lifetime.phrase}.`
+      `${p.license}. ${commit}, and it owes ${p.exitTest}. It ${p.lifetime.phrase}.${supplied}`
     );
   }
 
@@ -263,6 +340,10 @@ export class PromptPolicy {
       .filter((line) => /^#{2,}\s/u.test(line))
       .filter((line) => this.properties.some((p) => line.includes(p.op)));
 
-    return { missingOperators, missingArtifacts, perOperatorHeadings };
+    const callerSuppliedAdjectives = this.properties
+      .filter((p) => p.adjectiveSource === "caller")
+      .map((p) => p.op);
+
+    return { missingOperators, missingArtifacts, perOperatorHeadings, callerSuppliedAdjectives };
   }
 }

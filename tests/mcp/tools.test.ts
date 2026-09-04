@@ -63,6 +63,56 @@ describe("the meta-prompting tool surface", () => {
   it("rejects a chain the sequence grammar forbids", () => {
     expect(() => compose({ intent: "x", chain: ["Axis", "Ana"] })).toThrow(/end-on-ana/u);
   });
+
+  /**
+   * The adjective seam over the wire. A model may substitute one word where the
+   * authored adjective misfits the intent, and the substitution is labelled
+   * rather than absorbed — otherwise a word the model chose would carry the
+   * operator's authority, which is the shape `no-invented-measurement` forbids
+   * for D and C.
+   */
+  it("labels a supplied adjective as the caller's, in the properties and the brief", () => {
+    const result = compose({
+      intent: "Find why the parser drops the last token",
+      chain: ["Axis", "Ana", "Ortho", "Kata", "Latch"],
+      adjectives: [{ op: "Ana", adjective: "diagnostic", reason: "the intent is a crash triage" }],
+    });
+    const ana = result.properties.find((p: { op: string }) => p.op === "Ana");
+    expect(ana.adjective).toBe("diagnostic");
+    expect(ana.adjectiveSource).toBe("caller");
+    expect(ana.adjectiveReason).toBe("the intent is a crash triage");
+    expect(result.verification.callerSuppliedAdjectives).toEqual(["Ana"]);
+    expect(result.brief).toContain("the caller's");
+  });
+
+  it("marks nothing as the caller's when no adjectives are supplied", () => {
+    const result = compose({ intent: "x", chain: ["Axis", "Kata"] });
+    expect(result.verification.callerSuppliedAdjectives).toEqual([]);
+    expect(result.properties.every((p: { adjectiveSource: string }) => p.adjectiveSource === "authored")).toBe(true);
+  });
+
+  it("rejects two overrides for the same operator instead of letting the last win", () => {
+    expect(() =>
+      compose({
+        intent: "x",
+        chain: ["Axis", "Kata"],
+        adjectives: [
+          { op: "Kata", adjective: "condensed", reason: "one" },
+          { op: "Kata", adjective: "distilled", reason: "two" },
+        ],
+      }),
+    ).toThrow(/two adjective overrides given for Kata/u);
+  });
+
+  it("requires a reason at the schema boundary", () => {
+    const t = META_PROMPT_TOOLS[0]!;
+    const parsed = t.inputSchema.safeParse({
+      intent: "x",
+      chain: ["Axis", "Kata"],
+      adjectives: [{ op: "Kata", adjective: "condensed" }],
+    });
+    expect(parsed.success).toBe(false);
+  });
 });
 
 describe("the chain-reading tool surface", () => {
