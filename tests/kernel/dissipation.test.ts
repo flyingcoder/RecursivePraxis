@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
+import formalismData from "../../src/assets/formalism.json" with { type: "json" };
 import { OPERATORS } from "../../src/kernel/types.js";
 import { commutatorMagnitude, commutatorPairCount } from "../../src/kernel/commutator.js";
+import {
+  DISSIPATION_MAX_INTERACTION,
+  DISSIPATION_PAIRWISE_COEFFICIENT,
+  lambdaIntrinsic,
+} from "../../src/kernel/formalism.js";
 import {
   lambdaEffective,
   lambdaPairwise,
@@ -15,6 +21,72 @@ describe("formalism/commutator ground truth", () => {
 
   it("has a full 20x20 = 400 commutator pair table", () => {
     expect(commutatorPairCount()).toBe(400);
+  });
+});
+
+/**
+ * Where the clamp sits, pinned.
+ *
+ * `formalism.json`'s formula string and `lambdaPairwise`'s docstring both used
+ * to state `λ_j + c·min(max, |η|)` while the code computed
+ * `λ_j + min(c·|η|, max)` — a transposition that changes the interaction term
+ * on every pair with `|η| > 0.4`, capping it at 0.06 rather than 0.15. The
+ * implementation was the sound one: upstream's calculator clamps the scaled
+ * term (docs/inspirations/20-controlled-rupture-operators.md), and this port
+ * follows it. Both prose statements were corrected, and these tests are what
+ * stop them drifting apart again.
+ */
+describe("the pairwise λ formula the formalism states", () => {
+  const stated = (i: (typeof OPERATORS)[number], j: (typeof OPERATORS)[number]) =>
+    lambdaIntrinsic(j) +
+    Math.min(
+      DISSIPATION_PAIRWISE_COEFFICIENT * Math.abs(commutatorMagnitude(i, j)),
+      DISSIPATION_MAX_INTERACTION,
+    );
+
+  const transposed = (i: (typeof OPERATORS)[number], j: (typeof OPERATORS)[number]) =>
+    lambdaIntrinsic(j) +
+    DISSIPATION_PAIRWISE_COEFFICIENT *
+      Math.min(DISSIPATION_MAX_INTERACTION, Math.abs(commutatorMagnitude(i, j)));
+
+  it("clamps the scaled term, over all 400 pairs", () => {
+    for (const i of OPERATORS) {
+      for (const j of OPERATORS) {
+        expect(lambdaPairwise(i, j)).toBeCloseTo(stated(i, j), 12);
+      }
+    }
+  });
+
+  it("is not the transposed reading, wherever the two differ", () => {
+    const differing = OPERATORS.flatMap((i) =>
+      OPERATORS.filter((j) => Math.abs(stated(i, j) - transposed(i, j)) > 1e-12).map((j) => [i, j]),
+    );
+    // The readings agree only where |η| <= 0.4; that they differ on most pairs
+    // is why the transposition was worth correcting rather than shrugging at.
+    expect(differing.length).toBeGreaterThan(0);
+    for (const [i, j] of differing) {
+      expect(lambdaPairwise(i!, j!)).not.toBeCloseTo(transposed(i!, j!), 12);
+    }
+  });
+
+  it("states in formalism.json the formula the kernel implements", () => {
+    const formula = (formalismData as unknown as { dissipation_rules: { formula: string } })
+      .dissipation_rules.formula;
+    expect(formula).toBe("λ(i→j) = λ_j_intrinsic + min(c·|η_{ij}|, max_interaction_magnitude)");
+  });
+
+  /**
+   * Inert, and faithfully so: `|η| ≤ 1` and `c = 0.15`, so the scaled term
+   * never approaches the 0.4 clamp. It is upstream's constant, kept because
+   * this is a port — not because anything here depends on it.
+   */
+  it("never reaches the max-interaction clamp on the shipped skeleton", () => {
+    for (const i of OPERATORS) {
+      for (const j of OPERATORS) {
+        const scaled = DISSIPATION_PAIRWISE_COEFFICIENT * Math.abs(commutatorMagnitude(i, j));
+        expect(scaled).toBeLessThan(DISSIPATION_MAX_INTERACTION);
+      }
+    }
   });
 });
 

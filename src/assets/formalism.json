@@ -328,7 +328,7 @@
   "dissipation_rules": {
     "pairwise_interaction_coefficient": 0.15,
     "max_interaction_magnitude": 0.4,
-    "formula": "λ(i→j) = λ_j_intrinsic + c·min(0.4, |η_{ij}|)",
+    "formula": "λ(i→j) = λ_j_intrinsic + min(c·|η_{ij}|, max_interaction_magnitude)",
     "decay_law": "D(t+1) = D(t)·exp(-λ_eff)",
     "effective_lambda": "λ_eff = mean(λ(k_t→k_{t+1}))",
     "note": "This is the ∂/∂t dissipation law for cognitive bootloader"

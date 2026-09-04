@@ -21,7 +21,24 @@ export interface SequenceAnalysis {
   readonly halfLife: number;
 }
 
-/** Ported from dissipation_calculator.py: lambda(i->j) = lambda_j + c*min(max, |commutator|) */
+/**
+ * `λ(i→j) = λ_j_intrinsic + min(c·|η_ij|, max_interaction_magnitude)`, ported
+ * from `dissipation_calculator.py`'s `lambda_pairwise`.
+ *
+ * The clamp goes around the *scaled* term, not around `|η|`. Both this
+ * docstring and `formalism.json`'s `formula` string used to state the
+ * transposed form, `λ_j + c·min(max, |η|)`, which differs on every pair with
+ * `|η| > 0.4` — the two readings cap the interaction at 0.15 and at 0.06
+ * respectively. The implementation was right and both prose statements were
+ * wrong: upstream's calculator implements the clamp this way and, as
+ * `docs/inspirations/20-controlled-rupture-operators.md` records, does not read
+ * its own formula string either. Pinned by the dissipation tests so the prose
+ * cannot drift from the code again.
+ *
+ * A consequence worth stating: `|η| ≤ 1` and `c = 0.15`, so `c·|η| ≤ 0.15` and
+ * the `0.4` clamp never binds for any of the 400 pairs. The constant is inert
+ * here exactly as it is upstream — faithfully ported, not load-bearing.
+ */
 export function lambdaPairwise(opI: Operator, opJ: Operator): number {
   const base = lambdaIntrinsic(opJ);
   const interaction = Math.min(

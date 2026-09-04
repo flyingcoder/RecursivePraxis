@@ -1,6 +1,41 @@
 import { describe, expect, it } from "vitest";
-import { solve, SOLVER_BETA, SOLVER_GAMMA } from "../../src/kernel/solver.js";
+import formalismData from "../../src/assets/formalism.json" with { type: "json" };
+import {
+  solve,
+  SOLVER_BETA,
+  SOLVER_GAMMA,
+  DISTANCE_THRESHOLD,
+  MAX_PATH_LENGTH,
+} from "../../src/kernel/solver.js";
 import { violatesHardConstraint } from "../../src/kernel/constraints.js";
+
+/**
+ * The objective's weights and stopping rule are the formalism's to state. They
+ * were hardcoded here with the same values the file gives, beside an
+ * `attractor_penalties` that was read from it — so the block was half-wired and
+ * editing a weight in the formalism moved nothing. This pins the wiring, not
+ * the numbers: change them in the JSON and the solver follows.
+ */
+describe("the solver reads its objective from the formalism", () => {
+  const inverseSolver = (
+    formalismData as unknown as {
+      inverse_solver: {
+        objective: { beta: number; gamma: number };
+        termination: { distance_threshold: number; max_path_length: number };
+      };
+    }
+  ).inverse_solver;
+
+  it("takes beta and gamma from inverse_solver.objective", () => {
+    expect(SOLVER_BETA).toBe(inverseSolver.objective.beta);
+    expect(SOLVER_GAMMA).toBe(inverseSolver.objective.gamma);
+  });
+
+  it("takes the stopping rule from inverse_solver.termination", () => {
+    expect(DISTANCE_THRESHOLD).toBe(inverseSolver.termination.distance_threshold);
+    expect(MAX_PATH_LENGTH).toBe(inverseSolver.termination.max_path_length);
+  });
+});
 
 describe("solve", () => {
   it("returns an immediate empty-sequence success when already within threshold", () => {

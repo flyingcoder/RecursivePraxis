@@ -24,7 +24,7 @@ a change here.
 The list below records contradictions inherited from the vendored files, kept
 for diagnostic value — so a reader doesn't mistake them for porting defects,
 and so anyone changing this behaviour knows what they're changing away from.
-It is a log, not a restriction. Items 1, 3, and 5 have been resolved (dated
+It is a log, not a restriction. Items 1, 3, 5, and 9 have been resolved (dated
 below); the rest are either genuinely open or, on inspection, not bugs at all.
 
 1. **Resolved 2026-09-02.** `algebra_relations.neutral_commutations` declared
@@ -87,19 +87,10 @@ below); the rest are either genuinely open or, on inspection, not bugs at all.
    `absorption_laws` already carry — a second reader would be a second source
    of truth. Also `metadata`, `cognitive_bootloader_integration`, Vale's
    `note`, `commutator_skeleton` (superseded by the vendored
-   `commutator_skeleton.json`), and `dissipation_rules`' formula strings, which
-   state in prose what `dissipation.ts` implements in code — Finding 1 in
-   `praxis/protaseis/operator-chain-as-prompt-policy.psuedo` reports those two
-   disagreeing, which is unresolved and not settled here.
-
-   *Unread and duplicated in code*, which is drift waiting to happen rather
-   than a deliberate omission: `inverse_solver.objective`'s `beta` / `gamma`
-   and `inverse_solver.termination`'s `distance_threshold` / `max_path_length`
-   are stated here and independently hardcoded as `SOLVER_BETA`,
-   `SOLVER_GAMMA`, `DISTANCE_THRESHOLD` and `MAX_PATH_LENGTH` in
-   `src/kernel/solver.ts`. The `attractor_penalties` beside them in the same
-   JSON block *are* read from this file, so the block is half-wired: editing
-   those four numbers here changes nothing.
+   `commutator_skeleton.json`), and `dissipation_rules`' `formula` /
+   `decay_law` / `effective_lambda` strings, which state in prose what
+   `dissipation.ts` implements in code. The prose is now checked against the
+   code by test rather than merely believed — see item 9.
 
    These fields are a **parallel descriptive model over function composition** —
    not a specification this engine has failed to implement. The engine models
@@ -168,3 +159,28 @@ below); the rest are either genuinely open or, on inspection, not bugs at all.
    is unaffected: `DEFAULT_OPERATOR_EFFECTS` now reads this field instead of
    declaring the numbers twice, but any caller can still substitute a whole
    different table.
+
+9. **Resolved 2026-09-04.** `dissipation_rules.formula` stated
+   `λ(i→j) = λ_j_intrinsic + c·min(0.4, |η_{ij}|)` — the clamp around `|η|` —
+   while `dissipation.ts` computes `λ_j + min(c·|η|, max)`, the clamp around
+   the scaled term. The two differ on every pair with `|η| > 0.4`, capping the
+   interaction at 0.06 and 0.15 respectively, so this was not cosmetic.
+
+   The implementation is the sound reading and both prose statements were
+   wrong. `docs/inspirations/20-controlled-rupture-operators.md` records that
+   upstream's `DissipationCalculator.lambda_pairwise` implements
+   `λ_j_intrinsic + min(c · |η_ij|, max_interaction)` and — in that document's
+   words — "does not use the formula string in `formalism.json`": the
+   transposition is inherited, and upstream never read its own statement of it.
+   `lambdaPairwise`'s docstring had transposed it independently while the code
+   below it was right. Both strings were corrected to the implemented form; no
+   behaviour changed, and no pinned value moved.
+
+   This also retires the inference in Finding 2 of
+   `praxis/protaseis/operator-chain-as-prompt-policy.psuedo`, which read
+   `max_interaction_magnitude`'s inertness as evidence that the *code* had
+   transposed the formula. The constant is inert upstream too, for the same
+   reason (`|η| ≤ 1`, `c = 0.15`, so `c·|η| ≤ 0.15 < 0.4`); it is a faithfully
+   ported constant that nothing depends on, not a clue. `tests/kernel/dissipation.test.ts`
+   now pins which side the clamp is on, across all 400 pairs, and checks the
+   JSON string against the implemented formula.

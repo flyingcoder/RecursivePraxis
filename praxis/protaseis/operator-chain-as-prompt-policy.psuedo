@@ -344,6 +344,14 @@ function verifyPrompt(brief, policy, chain):
 // CODE's, because the code is the thing that ships. Whichever is intended,
 // formalism.json currently documents a formula the kernel does not implement.
 //
+// [RESOLVED 2026-09-04] The disagreement was real and the code was the sound
+// side. docs/inspirations/20-controlled-rupture-operators.md records that
+// upstream's DissipationCalculator implements min(c·|η|, max) and "does not
+// use the formula string in formalism.json" — so the transposition is in the
+// JSON, inherited, and dissipation.ts's docstring had repeated it while the
+// code below stayed correct. Both strings now state the implemented form; the
+// numbers in Step 5 are unchanged. See NOTICE.md item 9.
+//
 // Finding 2 — max_interaction_magnitude is dead under the current skeleton.
 // [VERIFIED] magnitudes in commutator_skeleton.json span [0.0, 1.0], so
 // c·|η| ≤ 0.15 and the 0.4 clamp never binds — zero of 400 pairs reach it.
@@ -351,6 +359,12 @@ function verifyPrompt(brief, policy, chain):
 // i.e. 340 of 400 pairs. The constant is load-bearing in the documented
 // formula and inert in the implemented one, which is corroborating evidence
 // that Finding 1 is a genuine transposition rather than a deliberate change.
+//
+// [RETIRED 2026-09-04] The inertness is real; the inference drawn from it was
+// wrong. It points at neither side: upstream's calculator clamps the scaled
+// term too, so the constant is equally inert there. A faithfully ported
+// constant that nothing depends on is not evidence about which statement of
+// the formula was intended.
 //
 // Finding 3 — three of the nine operator fields have no accessor anywhere.
 // [VERIFIED] formalism.ts exports operatorMeaning, operatorSymbol,

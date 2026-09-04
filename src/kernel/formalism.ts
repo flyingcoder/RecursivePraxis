@@ -48,10 +48,18 @@ interface FormalismPhasePortrait {
 }
 
 interface FormalismInverseSolver {
+  readonly objective: {
+    readonly beta: number;
+    readonly gamma: number;
+  };
   readonly attractor_penalties: {
     readonly J_equals_0: number;
     readonly S_star: number;
     readonly void: number;
+  };
+  readonly termination: {
+    readonly distance_threshold: number;
+    readonly max_path_length: number;
   };
 }
 
@@ -75,6 +83,25 @@ export const DISSIPATION_PAIRWISE_COEFFICIENT =
   formalism.dissipation_rules.pairwise_interaction_coefficient;
 export const DISSIPATION_MAX_INTERACTION =
   formalism.dissipation_rules.max_interaction_magnitude;
+
+/**
+ * The solver's objective weights and stopping rule, as `inverse_solver` states
+ * them.
+ *
+ * These four were hardcoded in `solver.ts` with the same values this file
+ * states, while `attractor_penalties` — the third field of the same JSON block
+ * — was read from here. The block was half-wired, so editing a weight in the
+ * formalism moved nothing. Reading them here makes the file the single source
+ * of truth for the whole block; `solver.ts` re-exports them under its existing
+ * names, which is what its callers and tests import.
+ *
+ * `DEFAULT_BEAM_WIDTH` stays in `solver.ts`: the formalism states no beam
+ * width, so there is nothing here for it to read.
+ */
+export const SOLVER_BETA = formalism.inverse_solver.objective.beta;
+export const SOLVER_GAMMA = formalism.inverse_solver.objective.gamma;
+export const DISTANCE_THRESHOLD = formalism.inverse_solver.termination.distance_threshold;
+export const MAX_PATH_LENGTH = formalism.inverse_solver.termination.max_path_length;
 
 /** Values consumed by the phase portrait; kept here so its topology has one
  * source of truth with the copied formalism, as the Python implementation did. */
