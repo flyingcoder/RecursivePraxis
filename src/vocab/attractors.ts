@@ -1,13 +1,13 @@
 /**
  * How an attractor label is said, for a reader who has only the glyph.
  *
- * Sits beside `prompt-policy.ts` and for the same reason: the formalism states
+ * Authored prose policy for this engine: the formalism states
  * the values (`phase_portrait.attractors`), and this file is how
  * RecursivePraxis chooses to phrase them. Nothing here decides anything — the
  * label a state carries is `classifyAttractor`'s answer, and this only puts
  * words to it.
  *
- * Unlike the adjective table next door, no wording here is authored: every
+ * No wording here is authored: every
  * string is the formalism's own, composed rather than translated. The judgment
  * is in what to show and when, not in what the attractor means.
  */

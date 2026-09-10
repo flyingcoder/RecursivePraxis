@@ -176,8 +176,7 @@ below); the rest are either genuinely open or, on inspection, not bugs at all.
    below it was right. Both strings were corrected to the implemented form; no
    behaviour changed, and no pinned value moved.
 
-   This also retires the inference in Finding 2 of
-   `praxis/protaseis/operator-chain-as-prompt-policy.psuedo`, which read
+   This also retires an inference drawn while auditing this seam, which read
    `max_interaction_magnitude`'s inertness as evidence that the *code* had
    transposed the formula. The constant is inert upstream too, for the same
    reason (`|η| ≤ 1`, `c = 0.15`, so `c·|η| ≤ 0.15 < 0.4`); it is a faithfully

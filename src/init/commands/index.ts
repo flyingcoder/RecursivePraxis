@@ -7,7 +7,6 @@ import intent from "./intent.js";
 import derive from "./derive.js";
 import session from "./session.js";
 import ir from "./ir.js";
-import metaPrompt from "./meta-prompt.js";
 
 /**
  * Authoring order. It is preserved in generated file lists, `--json` output,
@@ -25,5 +24,4 @@ export const COMMANDS: readonly Command[] = [
   derive,
   session,
   ir,
-  metaPrompt,
 ];

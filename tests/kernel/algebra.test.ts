@@ -135,7 +135,7 @@ describe("the operator's algebraic neighbourhood", () => {
 });
 
 /**
- * Fail-closed, matching `PromptVocabulary.semiCoefficient`: a relation nobody
+ * Fail-closed, matching `compileExecutionProgram`: a relation nobody
  * can read is not something to skip quietly, because a skipped statement looks
  * exactly like a formalism that says nothing about that pair.
  */

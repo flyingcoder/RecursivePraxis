@@ -35,7 +35,6 @@ import { runStep } from "./cli-commands/step.js";
 import { runStatus } from "./cli-commands/status.js";
 import { runAnalyze } from "./cli-commands/analyze.js";
 import { runCompile } from "./cli-commands/compile.js";
-import { runMetaPrompt } from "./cli-commands/meta-prompt.js";
 import { runSolve } from "./cli-commands/solve.js";
 import { runDiagnose, listDiagnoseProblems } from "./cli-commands/diagnose.js";
 import { runHalira } from "./cli-commands/halira.js";
@@ -106,7 +105,6 @@ function printHelp(): void {
     "  lambda step [--op <Op>] [--json]",
     "  lambda analyze <Op[,Op…]> [--json]",
     "  lambda compile <Op[,Op…]> [--bindings <file>] [--json]",
-    "  lambda meta-prompt <intent> <Op[,Op…]> [--adjectives <file>] [--json]",
     "  lambda solve --initial D,C --target D,C [--beam-width N] [--json]",
     "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating|spiraling|scattered|defensive>] [--json]",
     "  lambda halira start|next|status [--json]",
@@ -145,10 +143,6 @@ function printHelp(): void {
     "  compile    — compile a sequence into a cognitive execution program",
     "               (capability + budget per step; --bindings attaches the",
     "               model-authored domain bindings)",
-    "  meta-prompt — compose a chain into ONE prompt whose every clause traces",
-    "               to an operator field (properties held simultaneously, not",
-    "               steps run in order; --adjectives substitutes an operator's",
-    "               adjective for this intent and labels the substitution)",
     "  solve      — beam search from --initial to --target D,C",
     "  diagnose   — canned problem templates (run with no argument to list them)",
     "  halira     — Mode-2 escalation step machine (start | next | status)",
@@ -158,8 +152,7 @@ function printHelp(): void {
     "MCP server:",
     "  mcp        — speak MCP over stdio, exposing the intent-derivation tools",
     "               (derive_initial_state, plan_arc, numbers_for_label,",
-    "               verify_arc), the composer (compose_prompt_policy) and the",
-    "               chain reader (read_chain_algebra).",
+    "               verify_arc) and the chain reader (read_chain_algebra).",
     "               Installed into host agents by `lambda init`; not normally",
     "               run by hand.",
     "",
@@ -533,11 +526,6 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
-  if (first === "meta-prompt") {
-    const { json, rest: metaArgs } = extractJsonFlag(rest);
-    await runMetaPrompt(metaArgs, json);
-    return;
-  }
 
   if (first === "solve") {
     const { json, rest: solveArgs } = extractJsonFlag(rest);

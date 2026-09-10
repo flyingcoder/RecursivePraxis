@@ -7,9 +7,7 @@ import {
   planArc,
   verifyArc,
 } from "../kernel/index.js";
-import { PromptPolicy } from "../ir/promptPolicy.js";
 import { ChainReading } from "../ir/chainReading.js";
-import type { AdjectiveOverride } from "../vocab/prompt-policy.js";
 import type { AttractorLabel, Operator } from "../kernel/types.js";
 
 /**
@@ -159,99 +157,9 @@ export const DERIVE_TOOLS: readonly ToolDefinition[] = [
 ];
 
 /**
- * Turns the wire form — a list, which a model produces more reliably than a
- * keyed object — into the map `compose` takes, rejecting a repeated operator
- * rather than letting the last entry win silently.
- */
-function adjectiveOverrides(
-  entries: readonly { op: Operator; adjective: string; reason: string }[] | undefined,
-): Readonly<Partial<Record<Operator, AdjectiveOverride>>> | undefined {
-  if (entries === undefined || entries.length === 0) return undefined;
-  const overrides: Partial<Record<Operator, AdjectiveOverride>> = {};
-  for (const entry of entries) {
-    if (overrides[entry.op] !== undefined) {
-      throw new Error(`two adjective overrides given for ${entry.op}; give at most one`);
-    }
-    overrides[entry.op] = { adjective: entry.adjective, reason: entry.reason };
-  }
-  return overrides;
-}
-
-/**
- * The meta-prompting tool, kept in its own array.
- *
- * `DERIVE_TOOLS` is asserted by name in `tests/mcp/tools.test.ts` as the exact
- * set of tools implementing `praxis/protaseis/derive-state-from-intent.psuedo`. This composes a
- * different document (`praxis/protaseis/operator-chain-as-prompt-policy.psuedo`) and does not
- * belong to that set, so it registers alongside rather than inside it.
- */
-export const META_PROMPT_TOOLS: readonly ToolDefinition[] = [
-  defineTool(
-    "compose_prompt_policy",
-    "Compose an operator chain into a prompt policy",
-    "Read an operator chain as a set of properties the finished prompt exhibits simultaneously, not as a sequence of steps to run in order, and render one composed brief for the given intent. `∘` is composition: `Axis ∘ Ana` means 'analytical, within a fixed frame', not 'frame, then analyse'. Every clause in the returned brief traces to a named operator field, so do not re-expand the result into a section per operator — `verification.perOperatorHeadings` reports it if you have. The chain is rejected, not repaired, if it violates the sequence grammar.",
-    z.strictObject({
-      intent: z.string().min(1).describe("The task in the user's own words, e.g. 'Research about torsion field'."),
-      chain: z
-        .array(z.enum(OPERATORS))
-        .min(1)
-        .describe("Operators in composition order, e.g. ['Axis','Ana','Pro','Para','Kata','Latch']. The last one sets how the brief terminates."),
-      adjectives: z
-        .array(
-          z.strictObject({
-            op: z.enum(OPERATORS).describe("Which operator's adjective to replace. Must appear in `chain`."),
-            adjective: z
-              .string()
-              .min(1)
-              .describe("One short phrase, as the authored table uses (e.g. 'diagnostic'). Not a sentence."),
-            reason: z
-              .string()
-              .min(1)
-              .describe("Why the authored adjective misfits THIS intent. Recorded in the brief and reported by verification — an override nobody explained is indistinguishable from a preference."),
-          }),
-        )
-        .optional()
-        .describe(
-          "Leave this out unless you can name the misfit. The authored adjective is derived from the operator's `meaning` and reviewed; supplying your own puts a word you chose where the operator's authority would otherwise sit, so every substitution is labelled as yours in the brief rather than blended into it. Call `lambda operators show` first and override only when that operator's meaning genuinely reads differently over this intent.",
-        ),
-    }),
-    (args) => {
-      const overrides = adjectiveOverrides(args.adjectives);
-      const policy = PromptPolicy.compose(
-        args.chain,
-        overrides === undefined ? {} : { adjectives: overrides },
-      );
-      const brief = policy.render(args.intent);
-      return {
-        brief,
-        chain: policy.chain,
-        netEffect: policy.netEffect,
-        netContractive: policy.netContractive,
-        lambdaEffective: policy.lambdaEffective,
-        seams: policy.seams,
-        requiredArtifacts: policy.requiredArtifacts(),
-        properties: policy.properties.map((p) => ({
-          op: p.op,
-          symbol: p.symbol,
-          adjective: p.adjective,
-          adjectiveSource: p.adjectiveSource,
-          ...(p.adjectiveReason === undefined ? {} : { adjectiveReason: p.adjectiveReason }),
-          license: p.license,
-          lifetime: p.lifetime,
-          mayCommit: p.mayCommit,
-          exitTest: p.exitTest,
-          budget: p.budget,
-        })),
-        verification: policy.verify(brief),
-      };
-    },
-  ),
-];
-
-/**
- * The chain-reading tool, in its own array for the same reason the composer is:
- * `DERIVE_TOOLS` is the named set implementing one pseudocode document, and
- * this implements none of them. It reads `formalism.json`'s `algebra_relations`
+ * The chain-reading tool, kept in its own array: `DERIVE_TOOLS` is the named
+ * set implementing one pseudocode document, and this implements none of
+ * them. It reads `formalism.json`'s `algebra_relations`
  * — the block that until now nothing read at all.
  *
  * It answers a different question from `analyze`. That one prices a sequence
@@ -262,7 +170,7 @@ export const ALGEBRA_TOOLS: readonly ToolDefinition[] = [
   defineTool(
     "read_chain_algebra",
     "Read a chain against the formalism's algebra",
-    "Report what the formalism states about the operators in a chain: which adjacent pairs it relates (absorption laws, triple relations, commutator exceptions), where the vendored commutator skeleton's measured magnitude agrees or disagrees with those statements, which operator classes are in play and what each class does, which operators are projections onto an attractor, and every sequence-grammar rule the chain breaks. Read the result as description, never as a rewrite: these are function-space statements and this engine composes displacements, so `Ortho ∘ Ana = Kata` is not permission to replace that pair with Kata, drop a repeat, or reorder anything. The `caveat` field says the same thing and is worth quoting if you pass the reading on. Unlike compose_prompt_policy this neither rejects nor repairs a chain — a chain that breaks the grammar is read and its violations reported.",
+    "Report what the formalism states about the operators in a chain: which adjacent pairs it relates (absorption laws, triple relations, commutator exceptions), where the vendored commutator skeleton's measured magnitude agrees or disagrees with those statements, which operator classes are in play and what each class does, which operators are projections onto an attractor, and every sequence-grammar rule the chain breaks. Read the result as description, never as a rewrite: these are function-space statements and this engine composes displacements, so `Ortho ∘ Ana = Kata` is not permission to replace that pair with Kata, drop a repeat, or reorder anything. The `caveat` field says the same thing and is worth quoting if you pass the reading on. Unlike compileExecutionProgram this neither rejects nor repairs a chain — a chain that breaks the grammar is read and its violations reported.",
     z.strictObject({
       chain: z
         .array(z.enum(OPERATORS))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALGEBRA_TOOLS, DERIVE_TOOLS, META_PROMPT_TOOLS, deriveInitialStateInput } from "../../src/mcp/tools.js";
+import { ALGEBRA_TOOLS, DERIVE_TOOLS, deriveInitialStateInput } from "../../src/mcp/tools.js";
 import { DISTANCE_THRESHOLD, STABLE_TARGET_DISSIPATION } from "../../src/kernel/index.js";
 
 /**
@@ -27,91 +27,6 @@ describe("the tool surface", () => {
       "numbers_for_label",
       "verify_arc",
     ]);
-  });
-});
-
-describe("the meta-prompting tool surface", () => {
-  // Kept apart from DERIVE_TOOLS above: that array's identity is the set of
-  // tools implementing praxis/protaseis/derive-state-from-intent.psuedo, and this composes a
-  // different document.
-  it("exposes exactly the one compose tool", () => {
-    expect(META_PROMPT_TOOLS.map((t) => t.name)).toEqual(["compose_prompt_policy"]);
-  });
-
-  function compose(args: unknown): any {
-    const t = META_PROMPT_TOOLS[0]!;
-    return t.handler(t.inputSchema.parse(args) as never);
-  }
-
-  it("returns one composed brief with no heading per operator", () => {
-    const result = compose({
-      intent: "Research about torsion field",
-      chain: ["Axis", "Ana", "Pro", "Para", "Kata", "Latch"],
-    });
-    expect(result.brief).toContain("Research about torsion field");
-    expect(result.verification.perOperatorHeadings).toEqual([]);
-    expect(result.verification.missingOperators).toEqual([]);
-    expect(result.netContractive).toBe(true);
-  });
-
-  it("rejects an operator outside the alphabet rather than ignoring it", () => {
-    const t = META_PROMPT_TOOLS[0]!;
-    const parsed = t.inputSchema.safeParse({ intent: "x", chain: ["Axis", "Nope"] });
-    expect(parsed.success).toBe(false);
-  });
-
-  it("rejects a chain the sequence grammar forbids", () => {
-    expect(() => compose({ intent: "x", chain: ["Axis", "Ana"] })).toThrow(/end-on-ana/u);
-  });
-
-  /**
-   * The adjective seam over the wire. A model may substitute one word where the
-   * authored adjective misfits the intent, and the substitution is labelled
-   * rather than absorbed — otherwise a word the model chose would carry the
-   * operator's authority, which is the shape `no-invented-measurement` forbids
-   * for D and C.
-   */
-  it("labels a supplied adjective as the caller's, in the properties and the brief", () => {
-    const result = compose({
-      intent: "Find why the parser drops the last token",
-      chain: ["Axis", "Ana", "Ortho", "Kata", "Latch"],
-      adjectives: [{ op: "Ana", adjective: "diagnostic", reason: "the intent is a crash triage" }],
-    });
-    const ana = result.properties.find((p: { op: string }) => p.op === "Ana");
-    expect(ana.adjective).toBe("diagnostic");
-    expect(ana.adjectiveSource).toBe("caller");
-    expect(ana.adjectiveReason).toBe("the intent is a crash triage");
-    expect(result.verification.callerSuppliedAdjectives).toEqual(["Ana"]);
-    expect(result.brief).toContain("the caller's");
-  });
-
-  it("marks nothing as the caller's when no adjectives are supplied", () => {
-    const result = compose({ intent: "x", chain: ["Axis", "Kata"] });
-    expect(result.verification.callerSuppliedAdjectives).toEqual([]);
-    expect(result.properties.every((p: { adjectiveSource: string }) => p.adjectiveSource === "authored")).toBe(true);
-  });
-
-  it("rejects two overrides for the same operator instead of letting the last win", () => {
-    expect(() =>
-      compose({
-        intent: "x",
-        chain: ["Axis", "Kata"],
-        adjectives: [
-          { op: "Kata", adjective: "condensed", reason: "one" },
-          { op: "Kata", adjective: "distilled", reason: "two" },
-        ],
-      }),
-    ).toThrow(/two adjective overrides given for Kata/u);
-  });
-
-  it("requires a reason at the schema boundary", () => {
-    const t = META_PROMPT_TOOLS[0]!;
-    const parsed = t.inputSchema.safeParse({
-      intent: "x",
-      chain: ["Axis", "Kata"],
-      adjectives: [{ op: "Kata", adjective: "condensed" }],
-    });
-    expect(parsed.success).toBe(false);
   });
 });
 

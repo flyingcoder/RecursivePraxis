@@ -90,7 +90,7 @@ describe("what else the reading carries", () => {
   });
 
   /**
-   * A reading is a report, not a gate: unlike `PromptPolicy.compose` it neither
+   * A reading is a report, not a gate: unlike `compileExecutionProgram` it neither
    * rejects nor repairs an illegal chain, it reads it and says what is wrong.
    */
   it("reads a chain that breaks the grammar and reports the violations", () => {

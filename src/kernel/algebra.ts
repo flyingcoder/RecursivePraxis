@@ -3,8 +3,7 @@
  *
  * Until now this block was the largest inert region of the formalism: it is the
  * only place the spec says two *named* operators collapse into a third, and
- * nothing read it (recorded as Finding 4 in
- * `praxis/protaseis/operator-chain-as-prompt-policy.psuedo`). This module is the
+ * nothing read it. This module is the
  * read; it is deliberately not an enforcement.
  *
  * **Not enforced, and must not become enforcement.** Under
@@ -23,8 +22,7 @@
  *
  * Parsing is fail-closed at module load: a statement this grammar cannot read,
  * or one naming something that is not an operator, throws rather than being
- * skipped, matching the reject-don't-repair stance in `PromptVocabulary` and
- * `compileExecutionProgram`.
+ * skipped, matching the reject-don't-repair stance in `compileExecutionProgram`.
  */
 
 import formalismData from "../assets/formalism.json" with { type: "json" };

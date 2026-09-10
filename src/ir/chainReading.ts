@@ -6,8 +6,7 @@
  * that `Ortho ∘ Ana` is a pair it composes to `Kata`, that `[Telo, Para]` is
  * one of two pairs it calls commuting, that `Vale ∘ Non = Vale` is invariant
  * under collapse. Those statements sat unread in `algebra_relations` — see
- * `src/kernel/algebra.ts` for why they were, and Finding 4 in
- * `praxis/protaseis/operator-chain-as-prompt-policy.psuedo` for who asked.
+ * `src/kernel/algebra.ts` for why they were.
  *
  * Every relation is rendered as a **note, never as a rewrite**. Operators are
  * displacements here, not functions (`docs/ALGEBRA_DYNAMICS_SEAM.md` §1–2), so
