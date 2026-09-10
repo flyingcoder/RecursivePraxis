@@ -7,7 +7,7 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D20-2dd4bf?style=flat-square&logo=node.js&logoColor=white)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.json)
 [![Tested with Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white)](vitest.config.ts)
-[![Status](https://img.shields.io/badge/status-experimental-f59e0b?style=flat-square)](docs/CURRENT_STATE.md)
+![Status](https://img.shields.io/badge/status-experimental-f59e0b?style=flat-square)
 
 </div>
 
@@ -51,8 +51,7 @@ The core kernel, orchestrator, CLI, trace replay, and integration initializer ar
 The reserved `record`, `validate`, `score`, and `revise` verbs intentionally **fail closed** and are not
 capabilities yet.
 
-Read [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) for an architecture overview and
-[docs/REQUIREMENTS_MATRIX.md](docs/REQUIREMENTS_MATRIX.md) for verified coverage and remaining boundaries.
+See the reserved-verb boundaries in [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md).
 
 <br />
 
@@ -251,9 +250,7 @@ execution** — not remote model calls, tool side effects, or the truth of unava
 
 | | |
 |---|---|
-| 📐 [Current architecture and audit](docs/CURRENT_STATE.md) | System design, invariants, and audit notes |
 | 🔤 [Vocabulary](docs/VOCABULARY.md) | How specification terms map to code identifiers |
-| ✅ [Requirements matrix](docs/REQUIREMENTS_MATRIX.md) | Verified coverage and remaining boundaries |
 | 💻 [CLI reference](docs/CLI_REFERENCE.md) | Full command and flag reference |
 | 📦 [Installation architecture](docs/INSTALL_ARCHITECTURE.md) | Why install and `lambda init` are separate, and how hosts are detected |
 | 🤝 [Contributing](CONTRIBUTING.md) | Development conventions |

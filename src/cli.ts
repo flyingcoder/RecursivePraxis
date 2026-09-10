@@ -66,12 +66,10 @@ const SESSION_BASE_DIR = path.resolve(process.cwd(), ".recursive-praxis");
  * rejected by a string match here. Each module throws; the CLI turns that into
  * a non-zero exit. This keeps `src/{record,validate,score,revise}/index.ts`
  * load-bearing — deleting one breaks the fail-closed test — so the reserved
- * namespace documented in the requirements matrix is enforced rather than
- * merely claimed.
+ * namespace is enforced rather than merely claimed.
  *
  * They stay unimplemented deliberately: each would need a measurement
- * authority the runtime does not have. See docs/REQUIREMENTS_MATRIX.md and
- * docs/ALGEBRA_DYNAMICS_SEAM.md §4/§6.
+ * authority the runtime does not have. See docs/ALGEBRA_DYNAMICS_SEAM.md §4/§6.
  */
 const RESERVED_VERBS = {
   record,

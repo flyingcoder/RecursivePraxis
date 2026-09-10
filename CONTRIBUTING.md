@@ -60,7 +60,7 @@ and copying would put macOS binaries inside the Linux tarball.
 3. Keep model outputs and external inputs runtime-validated, not only TypeScript-typed.
 4. Do not write raw objectives, model summaries, or artifact content into redacted task traces.
 5. Keep replay semantics in sync with every execution-state transition.
-6. Update `docs/CURRENT_STATE.md`, `docs/REQUIREMENTS_MATRIX.md`, and `docs/CLI_REFERENCE.md` when a public behavior or stated boundary changes.
+6. Update `docs/CLI_REFERENCE.md` when a public behavior or stated boundary changes.
 7. Generated host files must stay a fixed point of the render pipeline: `render(w) === restringify(render(w))` for every workflow, host, and scope. Without it an idempotent `init` silently becomes a churning one, and `doctor` reports permanent, meaningless drift. `tests/render.test.ts` asserts this.
 8. Asset prose lives in `src/init/<kind>s/<slug>.ts` only, one asset per file, listed in that directory's `index.ts`. Reference another asset with `{{invoke:<slug>}}` rather than naming a host's invocation syntax literally — the placeholder is rewritten per host and scope, and a literal would be correct on at most one host.
 9. Detection contributes evidence; it never authorizes a write. Env markers are heuristic and must be labelled as such, and a host adapter must not count this tool's own generated files as evidence of the host.
