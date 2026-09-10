@@ -3,7 +3,13 @@ import type { HostContext } from "../detect/context.js";
 import type { FileKind } from "./types.js";
 import type { Asset } from "../init/assets/Asset.js";
 import type { AssetRegistry } from "../init/assets/AssetRegistry.js";
-import { renderHooksJson, renderMcpJson, type McpServer } from "../init/assets/DataAsset.js";
+import {
+  renderHooksJson,
+  renderMcpJson,
+  type Hook,
+  type HookEvent,
+  type McpServer,
+} from "../init/assets/DataAsset.js";
 
 /**
  * Where a host's package lives on disk, and which asset kinds it can hold.
@@ -33,11 +39,47 @@ import { renderHooksJson, renderMcpJson, type McpServer } from "../init/assets/D
  * unrelated settings — so only the value at `pointer` may be touched, and
  * everything around it has to survive untouched.
  */
-export interface JsonFragment {
+interface FragmentTarget {
   /** Key path to write, from the document root. */
   readonly pointer: readonly string[];
   readonly value: unknown;
 }
+
+/** The value at `pointer` is ours alone, so we set it outright. */
+export interface KeyedFragment extends FragmentTarget {
+  readonly merge: "set";
+}
+
+/**
+ * `pointer` names an array the user shares with us, and our entry is one
+ * element of it.
+ *
+ * Claude Code's `hooks.<Event>` is the case that needs this: it is a list of
+ * matcher groups with no key to address ours by, so "set the value at pointer"
+ * would delete every hook the user wrote. Appending is the only safe write, and
+ * deep equality of the element is the only identity available — a hand-edited
+ * copy of our entry is therefore a different entry, which `init` re-adds beside
+ * and `uninstall` leaves alone rather than guessing it was once ours.
+ */
+export interface ArrayEntryFragment extends FragmentTarget {
+  readonly merge: "append";
+}
+
+/**
+ * A key the host's schema requires, which we create but do not own.
+ *
+ * Cursor's top-level `"version": 1` is the case: a `hooks.json` we author from
+ * nothing needs it, but a file the user already had has it already, and it is
+ * not ours to change or to take away. So it is written only when absent, left
+ * alone when present — even at a different value, since a schema version the
+ * host raised is the host's business — and never removed on uninstall. Deleting
+ * it would break the hooks of theirs we deliberately left behind.
+ */
+export interface SchemaKeyFragment extends FragmentTarget {
+  readonly merge: "ensure";
+}
+
+export type JsonFragment = KeyedFragment | ArrayEntryFragment | SchemaKeyFragment;
 
 export interface LayoutFile {
   readonly absPath: string;
@@ -119,6 +161,43 @@ export interface Placement {
     readonly pointer: readonly string[];
     readonly render: (server: McpServer) => unknown;
   };
+  /**
+   * Our hooks spliced into a config file the user owns, one entry per hook.
+   *
+   * The counterpart of `hooks` for a shared file, and it needs its own field
+   * rather than reusing `mcpFragment`'s shape because the write is a different
+   * one: an MCP server is a map entry keyed by slug, while a hook is an element
+   * appended to the array at `<pointer>.<Event>`.
+   *
+   * `eventAs` and `render` default to the Claude Code vocabulary and shape that
+   * `HOOK_EVENTS` and `Hook.toMatcherEntry` already speak, so a host that agrees
+   * with it — Codex CLI does, name for name — supplies neither. Cursor supplies
+   * both: it calls the event `beforeShellExecution`, and its entry is flat
+   * (`{type, command, matcher}`) rather than a matcher group wrapping a handler
+   * list. That is the same reason `mcpFragment` carries a `render`, and the same
+   * boundary: a vocabulary is modelled once, per host, beside the
+   * `verifiedAgainst` string of the person who checked it.
+   */
+  readonly hooksFragment?: {
+    readonly absPath: string;
+    /** Container path; this host's name for the event is appended to it. */
+    readonly pointer: readonly string[];
+    /**
+     * This host's name for one of our events, or undefined when it has no
+     * equivalent — a hook for that event is then simply not placed here, the
+     * same way an absent prose kind is not written.
+     */
+    readonly eventAs?: (event: HookEvent) => string | undefined;
+    /** This host's shape for one element of the event's array. */
+    readonly render?: (hook: Hook) => unknown;
+    /**
+     * Fixed keys this host's schema requires alongside our entry — Cursor's
+     * top-level `"version": 1` is the only one so far. Written only when a hook
+     * was actually placed, so we never author a file we put nothing in, and
+     * written as `ensure`: created if absent, never overwritten, never removed.
+     */
+    readonly alsoSet?: readonly { readonly pointer: readonly string[]; readonly value: unknown }[];
+  };
 }
 
 const PROSE_KINDS = ["skill", "command", "agent", "rule"] as const;
@@ -187,6 +266,47 @@ export abstract class HostLayout {
       });
     }
 
+    const hooksFragment = this.placement.hooksFragment;
+    if (hooksFragment !== undefined) {
+      const spliced: LayoutFile[] = [];
+      for (const hook of hooks) {
+        // Not `?? hook.event`: `eventAs` returning undefined is the host saying
+        // it has no such event, which is a different fact from having no mapping.
+        const event =
+          hooksFragment.eventAs === undefined ? hook.event : hooksFragment.eventAs(hook.event);
+        if (event === undefined) continue;
+        spliced.push({
+          absPath: hooksFragment.absPath,
+          kind: "hook",
+          asset: undefined,
+          frontmatterName: undefined,
+          content: undefined,
+          fragment: {
+            merge: "append",
+            pointer: [...hooksFragment.pointer, event],
+            value: hooksFragment.render?.(hook) ?? hook.toMatcherEntry(),
+          },
+        });
+      }
+
+      // The schema keys come first so that a file we are creating is valid at
+      // every intermediate state, and they are skipped entirely when no hook
+      // was placed — a `version` alone is a file we gave the user nothing for.
+      if (spliced.length > 0) {
+        for (const { pointer, value } of hooksFragment.alsoSet ?? []) {
+          out.push({
+            absPath: hooksFragment.absPath,
+            kind: "hook",
+            asset: undefined,
+            frontmatterName: undefined,
+            content: undefined,
+            fragment: { merge: "ensure", pointer, value },
+          });
+        }
+        out.push(...spliced);
+      }
+    }
+
     const servers = assets.mcpServers();
     if (this.placement.mcp !== undefined && servers.length > 0) {
       out.push({
@@ -208,6 +328,7 @@ export abstract class HostLayout {
           frontmatterName: undefined,
           content: undefined,
           fragment: {
+            merge: "set",
             pointer: [...fragment.pointer, server.slug],
             value: fragment.render(server),
           },

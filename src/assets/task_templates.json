@@ -1,0 +1,32 @@
+{
+  "git-commit": {
+    "description": "Writing a commit for a diff that bundles multiple motives, before determining which ones are actually independent",
+    "initial": { "D": 0.5, "C": 0.75 },
+    "target": { "D": 0.15, "C": 0.15 },
+    "rationale": "Excessive Ana without Non (every hunk is read and tagged by motive, but the independent clusters are never ruptured apart — Kata compresses all of them into one message instead of Bind closing each rupture on its own, so the contradiction between motives is papered over rather than resolved)"
+  },
+  "documentation": {
+    "description": "Docs have drifted from the code they describe; reconciling before it compounds",
+    "initial": { "D": 0.85, "C": 0.5 },
+    "target": { "D": 0.2, "C": 0.2 },
+    "rationale": "In the Void relative to the source of truth (∅), need Axis (ground in current behavior) and Bind (commit the reconciled doc)"
+  },
+  "meta-prompting": {
+    "description": "Recursive over-refinement while drafting a prompt or instruction for another agent",
+    "initial": { "D": 0.82, "C": 0.6 },
+    "target": { "D": 0.3, "C": 0.3 },
+    "rationale": "Meta ∘ Meta loop on the prompt itself (infinite reflection instead of a draft to test)"
+  },
+  "mindset": {
+    "description": "Perfecting an unvalidated approach before writing anything that runs",
+    "initial": { "D": 0.1, "C": 0.15 },
+    "target": { "D": 0.45, "C": 0.4 },
+    "rationale": "Excessive Ortho without Ana (correcting a design that hasn't been explored yet)"
+  },
+  "code-review": {
+    "description": "Reviewing a PR by listing inline nits before locating the structural issue",
+    "initial": { "D": 0.75, "C": 0.85 },
+    "target": { "D": 0.2, "C": 0.15 },
+    "rationale": "Excessive Ana without Kata (every line reviewed before the structural issue is named)"
+  }
+}

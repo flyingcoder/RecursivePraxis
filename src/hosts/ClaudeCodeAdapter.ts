@@ -9,7 +9,7 @@ import { DocumentPipeline } from "../render/DocumentPipeline.js";
 export class ClaudeCodeAdapter extends HostAdapter {
   readonly id: HostId = "claude";
   readonly label = "Claude Code";
-  readonly verifiedAgainst = "Claude Code skills-directory plugins, 2026-08";
+  readonly verifiedAgainst = "Claude Code skills-directory plugins and hook settings, 2026-09";
 
   protected override probes(ctx: HostContext) {
     return [
@@ -31,6 +31,15 @@ export class ClaudeCodeAdapter extends HostAdapter {
    * ships with the plugin by default, so a host that got the skills without it
    * would be taught to call tools it had not been given. `command` and `agent`
    * remain absent from the plugin, and adding either is still one line here.
+   *
+   * Hooks are placed at both scopes, but by different routes, because Claude
+   * Code loads them from two different kinds of file. A plugin carries its own
+   * `hooks/hooks.json` — ours outright, exactly as `.mcp.json` is — so global
+   * scope gets a whole file. Project scope has no such file: hooks are read from
+   * the `hooks` key of `.claude/settings.json`, which holds the user's own
+   * settings, and `hooks.<Event>` there is an array of matcher groups rather
+   * than a map. Writing that file wholesale would delete both their settings and
+   * their own hooks, so our entry is appended to the array instead.
    */
   override layout(ctx: HostContext, scope: Scope): HostLayout {
     if (scope === "global") {
@@ -43,6 +52,7 @@ export class ClaudeCodeAdapter extends HostAdapter {
           // against the directory it was loaded from — `skills/<slug>/` — so
           // the name is the bare slug here and prefixed everywhere else.
           skill: { at: (slug) => path.join("skills", slug, "SKILL.md"), nameAs: (slug) => slug },
+          hooks: path.join("hooks", "hooks.json"),
           mcp: ".mcp.json",
         },
       );
@@ -51,6 +61,10 @@ export class ClaudeCodeAdapter extends HostAdapter {
     return new StandaloneLayout(ctx.projectRoot, ".claude", {
       skill: { at: (slug) => path.join("skills", praxisPrefixed(slug), "SKILL.md"), nameAs: praxisPrefixed },
       command: { at: (slug) => path.join("commands", "praxis", `${slug}.md`) },
+      hooksFragment: {
+        absPath: path.join(ctx.projectRoot, ".claude", "settings.json"),
+        pointer: ["hooks"],
+      },
       mcp: ".mcp.json",
     });
   }

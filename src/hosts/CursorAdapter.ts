@@ -9,7 +9,7 @@ import { DocumentPipeline } from "../render/DocumentPipeline.js";
 export class CursorAdapter extends HostAdapter {
   readonly id: HostId = "cursor";
   readonly label = "Cursor";
-  readonly verifiedAgainst = "Cursor skills + commands, 2026-08";
+  readonly verifiedAgainst = "Cursor skills + commands 2026-08; Cursor hooks (hooks.json v1) 2026-09";
 
   protected override probes(ctx: HostContext) {
     return [
@@ -42,6 +42,28 @@ export class CursorAdapter extends HostAdapter {
       // Cursor reads `.cursor/mcp.json`, which sits inside this layout's root,
       // so the shared `mcpServers` renderer fits without a per-host shape.
       mcp: "mcp.json",
+      // Hooks, unlike MCP, do need a per-host shape. Cursor agrees with nobody
+      // here: the event is `beforeShellExecution`, an entry is flat rather than
+      // a matcher group wrapping a handler list, `matcher` is a regex over the
+      // *command text* rather than a tool name, and the file carries a schema
+      // `version`. Only the exit-code contract is shared — 2 blocks, as it does
+      // for Claude Code and Codex — which is what lets one `lambda gate` serve
+      // all three.
+      hooksFragment: {
+        absPath: path.join(root, ".cursor", "hooks.json"),
+        pointer: ["hooks"],
+        eventAs: (event) => (event === "PreToolUse" ? "beforeShellExecution" : undefined),
+        render: (hook) => ({
+          type: "command",
+          command: hook.command,
+          // `hook.matcher` is a tool name (`Bash`), which is meaningless to a
+          // matcher Cursor tests against the command line. The gate is a no-op
+          // for anything that is not a `lambda step` call, so the honest
+          // translation is the binary it guards.
+          matcher: "lambda",
+        }),
+        alsoSet: [{ pointer: ["version"], value: 1 }],
+      },
     });
   }
 

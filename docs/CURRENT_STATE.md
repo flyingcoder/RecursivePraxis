@@ -85,12 +85,20 @@ This is deterministic semantic verification of the recorded abstract execution. 
 - `lambda plan <task>`: deterministic budgeted operator plan.
 - `lambda run [--host ...] <task>`: execute through fake, Anthropic, Cursor, or Claude IDE hosts.
 - `lambda inspect <task-id>` / `lambda replay <task-id>`: inspect or verify redacted traces.
-- `lambda status`, `sense`, `step`, `analyze`, `solve`, `diagnose`, `halira`, `bind`, `ir`: direct kernel/session inspection and control.
+- `lambda status`, `sense`, `step`, `analyze`, `solve`, `diagnose`, `task`, `halira`, `bind`, `ir`: direct kernel/session inspection and control. `diagnose` and `task` are the same canned-template-plus-solve mechanism over two different template sets — `src/assets/problem_templates.json` (psychological states) and `src/assets/task_templates.json` (recurring work: git commits, docs, meta-prompting, coding mindset).
 - `lambda eval` / `lambda promote`: run the three-domain capability benchmark and promote a policy only with grounded passing evidence.
 - `lambda init`: detect host agents, confirm which to configure and at which scope, then emit host-native
   integration files for Claude Code, Cursor, Codex CLI, and opencode. Four questions on a terminal;
   `--tools` / `--scope` pre-answer them and it prompts for nothing. Installing the CLI touches no host
-  agent — only `init` does.
+  agent — only `init` does. It also installs `lambda gate` as a real pre-execution hook for three of the
+  four hosts, so an illegal `lambda step` shell call is blocked before it runs: Claude Code
+  (`PreToolUse`, in the plugin's own `hooks/hooks.json` at global scope and spliced into the user's
+  `.claude/settings.json` at project scope), Codex CLI (`PreToolUse` in `.codex/hooks.json`, name for
+  name the same vocabulary), and Cursor (`beforeShellExecution` in `.cursor/hooks.json`, a different
+  event name and a flatter entry shape). One `lambda gate` serves all three because they agree on the
+  stdin-JSON and exit-2 contract even where they disagree on everything else. opencode gets no hook: its
+  equivalent surface is a JavaScript plugin module, not a config entry, so there is nothing to write
+  without generating executable code.
 - `lambda doctor`: verify an install against its manifest — drift, orphans, a stale manifest, a vanished
   host — exiting non-zero on any of them.
 - `lambda sync` (alias `update`): regenerate managed files from the manifest; `--check` is a CI gate.

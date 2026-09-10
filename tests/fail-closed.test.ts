@@ -39,7 +39,7 @@ test("help names operators, check, and the ported kernel command surface", () =>
   for (const verb of ["record", "validate", "score", "revise"]) {
     assert.match(out, new RegExp(`${verb}.*not implemented`, "i"));
   }
-  for (const command of ["status", "sense", "step", "analyze", "solve", "diagnose", "halira", "bind", "ir"]) {
+  for (const command of ["status", "sense", "step", "analyze", "solve", "diagnose", "task", "halira", "bind", "ir"]) {
     assert.match(out, new RegExp(`\\b${command}\\b`, "i"));
   }
 });

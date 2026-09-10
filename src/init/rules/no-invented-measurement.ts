@@ -33,7 +33,8 @@ This holds regardless of how confident the reading feels, and regardless of whet
 Read the intent into **signals** — nameable things a reviewer can point at and disagree with — and let the kernel's fixed formula produce the numbers:
 
 - the \`derive_initial_state\` MCP tool, or
-- \`lambda diagnose <template>\` for an authored initial/target pair, or
+- \`lambda diagnose <template>\` for an authored initial/target pair keyed to a psychological state, or
+- \`lambda task <template>\` for an authored initial/target pair keyed to a recurring task (git commits, docs, meta-prompting, coding mindset), or
 - \`lambda sense\` / \`lambda status\` to read a state a human supplied.
 
 \`derive_initial_state\` rejects any payload containing \`D\` or \`C\`. That is this rule, enforced.

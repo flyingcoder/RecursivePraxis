@@ -102,8 +102,8 @@ describe("InitWizard", () => {
       assert.equal(manifest.lambdaVersion, "9.9.9");
       assert.equal(manifest.scope, "project");
       assert.deepEqual(manifest.hosts.map((h) => h.id), ["codex"]);
-      // Codex takes the skill surface only, so its file count is the skill count.
-      assert.equal(manifest.hosts[0]!.files.length, ASSETS.skills().length);
+      // Codex takes the skill surface plus one spliced hook entry.
+      assert.equal(manifest.hosts[0]!.files.length, ASSETS.skills().length + 1);
       assert.ok(manifest.hosts[0]!.files.every((file) => /^[0-9a-f]{64}$/.test(file.sha256)));
     } finally {
       box.dispose();

@@ -39,12 +39,18 @@ describe("project-scope layouts", () => {
     }
   });
 
-  it("gives Codex the skill surface only", () => {
+  it("gives Codex the skill surface plus its hook, and nothing else", () => {
     const files = planFor("codex", "project");
-    assert.ok(files.every((file) => file.kind === "skill"));
+    assert.ok(files.every((file) => file.kind === "skill" || file.kind === "hook"));
     for (const id of SLUGS) {
       assert.ok(files.some((f) => f.relPath === `.agents/skills/recursive-praxis-${id}/SKILL.md`));
     }
+    // Codex has no command or MCP surface here; the hook is the one file of its
+    // own that lives outside `.agents/`.
+    assert.deepEqual(
+      files.filter((f) => f.kind === "hook").map((f) => f.relPath),
+      [".codex/hooks.json"],
+    );
   });
 
   it("gives opencode the command surface only — it has no skills", () => {
@@ -89,7 +95,12 @@ describe("global-scope layouts", () => {
     for (const id of SLUGS) {
       assert.ok(paths.includes(`.agents/skills/recursive-praxis-${id}/SKILL.md`));
     }
-    assert.ok(paths.every((p) => !p.startsWith(".codex/")));
+    // `~/.codex/` is read for hooks and nothing else. A skill written there is
+    // the mistake this test exists to catch, and it stays caught.
+    assert.deepEqual(
+      paths.filter((p) => p.startsWith(".codex/")),
+      [".codex/hooks.json"],
+    );
   });
 
   it("puts global opencode commands under ~/.config/opencode", () => {

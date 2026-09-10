@@ -22,6 +22,11 @@ import type { Confidence } from "../detect/signals.js";
  * with three chances to disagree.
  */
 
+/** Identity of one spliced entry: which file it is in, and which entry it is. */
+function fragmentKey(absPath: string, sha256: string): string {
+  return `${absPath}\u0000${sha256}`;
+}
+
 export type FileStatus = "managed" | "drifted" | "missing" | "orphaned" | "foreign";
 
 export const STATUS_NOTE: Record<FileStatus, string> = {
@@ -112,15 +117,25 @@ export async function inspectInstall(
   }
 
   const plannedPaths = new Set(planned.map((file) => file.absPath));
-  const fragmentsByPath = new Map(
-    planned.filter((file) => file.fragment !== undefined).map((file) => [file.absPath, file.fragment!]),
-  );
+
+  // Keyed by path *and* content hash, not by path alone: one shared file can
+  // legitimately hold several of our entries — two MCP servers in one
+  // `.mcp.json`, or Cursor's `version` key beside its hook — and a
+  // path-keyed map would check every manifest entry against whichever
+  // fragment happened to be planned last, reporting the rest as permanent
+  // drift. The manifest already records each entry's hash, and a fragment's
+  // recorded content is its own value, so the pair identifies it exactly.
+  const fragmentsByPath = new Map<string, JsonFragment>();
+  for (const file of planned) {
+    if (file.fragment === undefined) continue;
+    fragmentsByPath.set(fragmentKey(file.absPath, contentHash(file.content)), file.fragment);
+  }
   const files: FileFinding[] = [];
 
   for (const { host, entry, absPath } of manifest.entries()) {
     const displayPath = path.join(host.root, entry.path);
     const existing = await readIfExists(absPath);
-    const fragment = fragmentsByPath.get(absPath);
+    const fragment = fragmentsByPath.get(fragmentKey(absPath, entry.sha256));
 
     const status = ((): FileStatus => {
       if (existing === undefined) return "missing";

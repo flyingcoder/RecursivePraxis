@@ -34,7 +34,8 @@ function foreignSkillsSignal(ctx: HostContext, absPath: string, display: string)
 export class CodexAdapter extends HostAdapter {
   readonly id: HostId = "codex";
   readonly label = "Codex CLI";
-  readonly verifiedAgainst = "Codex CLI skills discovery (.agents/skills), 2026-08";
+  readonly verifiedAgainst =
+    "Codex CLI skills discovery (.agents/skills) 2026-08; Codex CLI hooks (.codex/hooks.json) 2026-09";
 
   /**
    * `AGENTS.md` is deliberately absent from these probes. It is a
@@ -62,6 +63,17 @@ export class CodexAdapter extends HostAdapter {
     const root = scope === "global" ? ctx.home : ctx.projectRoot;
     return new StandaloneLayout(root, ".agents", {
       skill: { at: (slug) => path.join("skills", praxisPrefixed(slug), "SKILL.md"), nameAs: praxisPrefixed },
+      // Hooks are the one Codex surface that is not under `.agents/`: they live
+      // in `.codex/hooks.json`, which is why this is a fragment with an absolute
+      // path rather than a placement inside the layout root. No `eventAs` or
+      // `render` — Codex names the event `PreToolUse`, matches on the tool name,
+      // wraps handlers in a matcher group, and blocks on exit 2, which is the
+      // vocabulary `HOOK_EVENTS` and `Hook.toMatcherEntry` already speak. The
+      // file is the user's own, so our entry is appended, never written over.
+      hooksFragment: {
+        absPath: path.join(root, ".codex", "hooks.json"),
+        pointer: ["hooks"],
+      },
     });
   }
 

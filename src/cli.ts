@@ -37,9 +37,11 @@ import { runAnalyze } from "./cli-commands/analyze.js";
 import { runCompile } from "./cli-commands/compile.js";
 import { runSolve } from "./cli-commands/solve.js";
 import { runDiagnose, listDiagnoseProblems } from "./cli-commands/diagnose.js";
+import { runTaskTemplate, listTaskTemplates } from "./cli-commands/task.js";
 import { runHalira } from "./cli-commands/halira.js";
 import { runBind } from "./cli-commands/bind.js";
 import { runIr } from "./cli-commands/ir.js";
+import { runGate } from "./cli-commands/gate.js";
 import { runMcp } from "./cli-commands/mcp.js";
 import { runInit } from "./cli-commands/init.js";
 import { runDoctor } from "./cli-commands/doctor.js";
@@ -107,6 +109,7 @@ function printHelp(): void {
     "  lambda compile <Op[,Op…]> [--bindings <file>] [--json]",
     "  lambda solve --initial D,C --target D,C [--beam-width N] [--json]",
     "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating|spiraling|scattered|defensive>] [--json]",
+    "  lambda task [<git-commit|documentation|meta-prompting|mindset|code-review>] [--json]",
     "  lambda halira start|next|status [--json]",
     "  lambda bind [--json]",
     "  lambda ir [--json]",
@@ -145,9 +148,14 @@ function printHelp(): void {
     "               model-authored domain bindings)",
     "  solve      — beam search from --initial to --target D,C",
     "  diagnose   — canned problem templates (run with no argument to list them)",
+    "  task       — canned task templates for recurring work: git commits, docs,",
+    "               meta-prompting, coding mindset (run with no argument to list)",
     "  halira     — Mode-2 escalation step machine (start | next | status)",
     "  bind       — finalize the session; fails closed without an anomaly artifact",
     "  ir         — print the current turn's instruction surface (legalNext only)",
+    "  gate       — PreToolUse hook body: reads a hook payload from stdin,",
+    "               blocks a `lambda step --op <Op>` shell call outside",
+    "               legalNext. Not normally run by hand.",
     "",
     "MCP server:",
     "  mcp        — speak MCP over stdio, exposing the intent-derivation tools",
@@ -543,6 +551,16 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
+  if (first === "task") {
+    const { json, rest: taskArgs } = extractJsonFlag(rest);
+    if (taskArgs.length === 0) {
+      listTaskTemplates(json);
+    } else {
+      runTaskTemplate(taskArgs[0]!, json);
+    }
+    return;
+  }
+
   if (first === "halira") {
     const { json, rest: haliraArgs } = extractJsonFlag(rest);
     await runHalira(haliraArgs[0], SESSION_BASE_DIR, json);
@@ -558,6 +576,13 @@ async function main(argv: string[]): Promise<void> {
   if (first === "ir") {
     const { json } = extractJsonFlag(rest);
     await runIr(SESSION_BASE_DIR, json);
+    return;
+  }
+
+  // No --json flag: reads a PreToolUse hook payload from stdin and exits
+  // 0 (allow) or 2 (block) for the host's hook runner, not a human.
+  if (first === "gate") {
+    await runGate(SESSION_BASE_DIR);
     return;
   }
 

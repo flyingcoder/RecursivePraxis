@@ -13,6 +13,7 @@ import {
   mergeManaged,
   renderManagedHead,
 } from "../src/render/managed-block.js";
+import { applyFragment } from "../src/init/json-fragment.js";
 import { fakeContext } from "./support/fake-host-context.js";
 
 const registry = HostRegistry.default();
@@ -63,6 +64,60 @@ describe("render fixed point", () => {
     const first = host.pipeline("project").render(ASSETS.skills()[0]!, target);
     const second = host.pipeline("project").render(ASSETS.skills()[0]!, target);
     assert.equal(second, first);
+  });
+});
+
+// --- the same fixed point, for the kinds that are JSON rather than Markdown -------
+
+/**
+ * `everyRenderedFile` skips the JSON kinds because every assertion it feeds is
+ * a property of Markdown. They still need the idempotency property, though —
+ * a `hooks.json` or a spliced `settings.json` that did not survive being
+ * re-serialized would make every `lambda init` report drift it had caused
+ * itself. The Markdown analogue of `restringify` is parse-then-serialize, so
+ * that is what is asserted here.
+ */
+function restringifyJson(text: string): string {
+  return `${JSON.stringify(JSON.parse(text), null, 2)}\n`;
+}
+
+describe("JSON configuration fixed point", () => {
+  it("render(w) === restringify(render(w)) for every whole-file JSON config", () => {
+    for (const scope of SCOPES) {
+      for (const host of registry.all()) {
+        for (const file of host.plan(ASSETS, ctx, scope, { version: "9.9.9" })) {
+          if (isManagedMarkdown(file.kind) || file.fragment !== undefined) continue;
+          assert.equal(
+            restringifyJson(file.content),
+            file.content,
+            `not a fixed point: ${host.id}/${scope}/${file.relPath}`,
+          );
+        }
+      }
+    }
+  });
+
+  it("applying a spliced entry to a document that already has it changes nothing", () => {
+    let spliced = 0;
+    for (const scope of SCOPES) {
+      for (const host of registry.all()) {
+        for (const file of host.plan(ASSETS, ctx, scope, { version: "9.9.9" })) {
+          if (file.fragment === undefined) continue;
+          spliced += 1;
+          const label = `${host.id}/${scope}/${file.relPath}`;
+
+          const first = applyFragment(null, file.fragment);
+          if (first.kind !== "updated") assert.fail(`first splice was not a write: ${label}`);
+          assert.equal(restringifyJson(first.text), first.text, `not a fixed point: ${label}`);
+
+          const second = applyFragment(first.text, file.fragment);
+          assert.equal(second.kind, "unchanged", `re-splicing rewrote the file: ${label}`);
+        }
+      }
+    }
+    // Guards the loop itself: a placement table that stopped producing
+    // fragments would otherwise make this test pass by iterating nothing.
+    assert.ok(spliced > 0, "no host plans a spliced entry any more");
   });
 });
 
