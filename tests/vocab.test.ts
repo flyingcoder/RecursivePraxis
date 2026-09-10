@@ -53,13 +53,27 @@ test("operators list exits 0 and names all twenty CORE operators", () => {
   assert.doesNotMatch(out, /cost breakdown/i);
 });
 
-test("operators show Ana exits 0 with class and authored λ", () => {
+test("operators show Ana returns JSON with class, meaning, and effect", () => {
   const result = runLambda("operators", "show", "Ana");
   assert.equal(result.status, 0);
-  const out = combined(result);
-  assert.match(out, /\bAna\b/);
-  assert.match(out, /Disruptive/);
-  assert.match(out, /authored/i);
+  const parsed = JSON.parse(result.stdout) as Array<{
+    name: string;
+    class: string;
+    meaning: string;
+    effect: string;
+  }>;
+  assert.equal(parsed.length, 1);
+  assert.equal(parsed[0]?.name, "Ana");
+  assert.match(parsed[0]?.class ?? "", /Disruptive/);
+  assert.ok(parsed[0]?.meaning);
+  assert.ok(parsed[0]?.effect);
+});
+
+test("operators show accepts multiple operators, in order", () => {
+  const result = runLambda("operators", "show", "Ana", "Kata");
+  assert.equal(result.status, 0);
+  const parsed = JSON.parse(result.stdout) as Array<{ name: string }>;
+  assert.deepEqual(parsed.map((op) => op.name), ["Ana", "Kata"]);
 });
 
 test("operators show unknown exits non-zero", () => {

@@ -5,9 +5,34 @@ export {
   operatorClass,
   operatorMeaning,
   operatorSymbol,
+  operatorIndex,
+  operatorName,
+  operatorEffectNote,
+  operatorIdempotence,
+  operatorClassProfile,
+  attractorProfile,
   allOperators,
+  PHASE_PORTRAIT_ALPHA,
+  PHASE_PORTRAIT_STABILITY_THRESHOLD,
+  formalismAttractorPenalty,
+  formalismTransitionOperators,
+  type OperatorIdempotence,
+  type OperatorClassProfile,
+  type AttractorProfile,
 } from "./formalism.js";
 export { commutatorMagnitude, commutatorPairCount } from "./commutator.js";
+
+export {
+  ALGEBRA,
+  OperatorAlgebra,
+  RelationParser,
+  type OperatorRelation,
+  type RelationFamily,
+  type RelationForm,
+  type RelationMatch,
+  type RelationOperand,
+  type RelationResult,
+} from "./algebra.js";
 
 export {
   lambdaPairwise,
@@ -22,17 +47,49 @@ export {
 export {
   LYAPUNOV_ALPHA,
   STABILITY_THRESHOLD,
+  // Needed by anything that solves the label -> (D, C) inequality rather than
+  // hardcoding a band, since ALPHA and the thresholds load from formalism.json
+  // and a change there moves the bands underneath the caller.
+  VOID_D_THRESHOLD,
+  VOID_C_THRESHOLD,
   lyapunov,
   classifyAttractor,
   applyOperator,
   operatorEffect,
   attractorPenalty,
+  canTransition,
+  analyzeBasinStructure,
   simulateTrajectory,
   suggestTransitionOperators,
   DEFAULT_OPERATOR_EFFECTS,
   type OperatorEffects,
   type TrajectoryStep,
+  type BasinStructure,
 } from "./phasePortrait.js";
+
+export {
+  DERIVE_C_INTERCEPT,
+  DERIVE_CONTRADICTION_WEIGHT,
+  DERIVE_D_INTERCEPT,
+  DERIVE_FAILED_CHECK_WEIGHT,
+  DERIVE_UNCERTAINTY_WEIGHT,
+  DERIVE_UNRESOLVED_CLAIM_WEIGHT,
+  STABLE_TARGET_DISSIPATION,
+  deriveInitialDissipation,
+  type IntentSignals,
+} from "./derive.js";
+
+export {
+  ARC_BEAM_WIDTH,
+  BAND_MARGIN,
+  numbersForLabel,
+  operatorsNamedIn,
+  planArc,
+  verifyArc,
+  type ArcPlan,
+  type ArcVerification,
+  type VerifyArcInput,
+} from "./intentArc.js";
 
 export {
   MAX_CONSECUTIVE_META,

@@ -122,7 +122,7 @@ buy fan-out and a mandatory refutation pass, while `Telo` (0.25) and `Latch`
 and starts controlling spend.
 
 Per-step budget uses `lambdaIntrinsic`; the whole-program budget uses
-`lambdaEffective` — for the §9 example, 0.654, i.e. mid band overall.
+`lambdaEffective` — for the §9 example, 0.640, i.e. mid band overall.
 
 ---
 
@@ -219,7 +219,7 @@ Human input from the flow doc: *"…100% automated with zero-touch delivery…
 under five minutes. But… a senior engineer and a security specialist must
 manually review and sign off on every single change."*
 
-Hand-picked sequence (grammar-accepted, λ_eff = 0.654, mid band):
+Hand-picked sequence (grammar-accepted, λ_eff = 0.640, mid band):
 
 ```sh
 $ lambda check Axis Crux Ana Meta Para Weave Kata Bind

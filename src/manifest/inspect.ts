@@ -1,0 +1,187 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { hasManagedMarkers } from "../render/managed-block.js";
+import { isManagedMarkdown } from "../hosts/types.js";
+import { fragmentMatches, fragmentPresent } from "../init/json-fragment.js";
+import type { JsonFragment } from "../hosts/layouts.js";
+import { contentHash, type InstallManifest, type ManifestFileEntry } from "./InstallManifest.js";
+import type { HostRegistry } from "../hosts/HostRegistry.js";
+import type { HostContext } from "../detect/context.js";
+import type { PlannedFile } from "../hosts/HostAdapter.js";
+import type { HostId } from "../hosts/types.js";
+import type { AssetRegistry } from "../init/assets/AssetRegistry.js";
+import type { Confidence } from "../detect/signals.js";
+
+/**
+ * What the manifest claims, checked against what is on disk and against what
+ * this version of the CLI would write now.
+ *
+ * `doctor`, `sync`, and `uninstall` all need the same four facts — drift,
+ * orphans, a stale manifest, and a host whose files remain after the host
+ * itself has gone — so they are computed once here rather than three times
+ * with three chances to disagree.
+ */
+
+/** Identity of one spliced entry: which file it is in, and which entry it is. */
+function fragmentKey(absPath: string, sha256: string): string {
+  return `${absPath}\u0000${sha256}`;
+}
+
+export type FileStatus = "managed" | "drifted" | "missing" | "orphaned" | "foreign";
+
+export const STATUS_NOTE: Record<FileStatus, string> = {
+  managed: "up to date",
+  drifted: "managed region edited by hand — `lambda sync` will overwrite",
+  missing: "recorded but not on disk — `lambda sync` will recreate",
+  orphaned: "written by an earlier version; not planned by this one — `lambda uninstall --prune`",
+  foreign: "no managed markers — not ours, left untouched",
+};
+
+export interface FileFinding {
+  readonly hostId: HostId;
+  readonly absPath: string;
+  readonly displayPath: string;
+  readonly status: FileStatus;
+  readonly entry: ManifestFileEntry;
+  /**
+   * Set when only one key of this file is ours. `uninstall` needs it to remove
+   * that key instead of the file, which belongs to the user.
+   */
+  readonly fragment?: JsonFragment | undefined;
+}
+
+export interface HostFinding {
+  readonly hostId: HostId;
+  readonly label: string;
+  readonly recordedAs: Confidence;
+  readonly currentConfidence: Confidence;
+  /** Files are installed but the host now shows no signal at all. */
+  readonly vanished: boolean;
+  /** The vendor release this adapter's paths were checked against. */
+  readonly verifiedAgainst: string;
+  /** True when the layout the adapter names does not exist on disk. */
+  readonly layoutMissing: boolean;
+}
+
+export interface InstallInspection {
+  readonly manifestPath: string;
+  readonly recordedVersion: string;
+  readonly currentVersion: string;
+  readonly versionStale: boolean;
+  readonly hosts: readonly HostFinding[];
+  readonly files: readonly FileFinding[];
+  readonly counts: Readonly<Record<FileStatus, number>>;
+  /** Every file this build would write now, for the manifest's hosts and scope. */
+  readonly planned: readonly PlannedFile[];
+  /** Whether anything here should make a CI check fail. */
+  readonly healthy: boolean;
+}
+
+async function readIfExists(absPath: string): Promise<string | undefined> {
+  try {
+    return await readFile(absPath, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw error;
+  }
+}
+
+export async function inspectInstall(
+  manifest: InstallManifest,
+  registry: HostRegistry,
+  ctx: HostContext,
+  assets: AssetRegistry,
+  currentVersion: string,
+): Promise<InstallInspection> {
+  const scope = manifest.data.scope;
+
+  const planned: PlannedFile[] = [];
+  const hosts: HostFinding[] = [];
+
+  for (const recorded of manifest.data.hosts) {
+    const adapter = registry.get(recorded.id);
+    if (adapter === undefined) continue;
+
+    planned.push(...adapter.plan(assets, ctx, scope, { version: currentVersion }));
+
+    const detection = adapter.detect(ctx, assets);
+    hosts.push({
+      hostId: adapter.id,
+      label: adapter.label,
+      recordedAs: recorded.detectedAs,
+      currentConfidence: detection.confidence,
+      vanished: detection.confidence === "absent",
+      verifiedAgainst: adapter.verifiedAgainst,
+      layoutMissing: !ctx.exists(adapter.layout(ctx, scope).root),
+    });
+  }
+
+  const plannedPaths = new Set(planned.map((file) => file.absPath));
+
+  // Keyed by path *and* content hash, not by path alone: one shared file can
+  // legitimately hold several of our entries — two MCP servers in one
+  // `.mcp.json`, or Cursor's `version` key beside its hook — and a
+  // path-keyed map would check every manifest entry against whichever
+  // fragment happened to be planned last, reporting the rest as permanent
+  // drift. The manifest already records each entry's hash, and a fragment's
+  // recorded content is its own value, so the pair identifies it exactly.
+  const fragmentsByPath = new Map<string, JsonFragment>();
+  for (const file of planned) {
+    if (file.fragment === undefined) continue;
+    fragmentsByPath.set(fragmentKey(file.absPath, contentHash(file.content)), file.fragment);
+  }
+  const files: FileFinding[] = [];
+
+  for (const { host, entry, absPath } of manifest.entries()) {
+    const displayPath = path.join(host.root, entry.path);
+    const existing = await readIfExists(absPath);
+    const fragment = fragmentsByPath.get(fragmentKey(absPath, entry.sha256));
+
+    const status = ((): FileStatus => {
+      if (existing === undefined) return "missing";
+      if (!plannedPaths.has(absPath)) return "orphaned";
+      if (isManagedMarkdown(entry.kind) && !hasManagedMarkers(existing)) return "foreign";
+
+      // A shared file: the question is only ever about our own entry. Hashing
+      // the whole document would report a user's unrelated edit — another MCP
+      // server, a changed setting — as drift in our install.
+      if (fragment !== undefined) {
+        if (!fragmentPresent(existing, fragment)) return "missing";
+        return fragmentMatches(existing, fragment) ? "managed" : "drifted";
+      }
+
+      return contentHash(existing) === entry.sha256 ? "managed" : "drifted";
+    })();
+
+    files.push({ hostId: host.id, absPath, displayPath, status, entry, fragment });
+  }
+
+  const counts: Record<FileStatus, number> = {
+    managed: 0,
+    drifted: 0,
+    missing: 0,
+    orphaned: 0,
+    foreign: 0,
+  };
+  for (const file of files) counts[file.status] += 1;
+
+  const versionStale = manifest.data.lambdaVersion !== currentVersion;
+  const healthy =
+    counts.drifted === 0 &&
+    counts.orphaned === 0 &&
+    counts.missing === 0 &&
+    !versionStale &&
+    hosts.every((host) => !host.vanished);
+
+  return {
+    manifestPath: manifest.filePath,
+    recordedVersion: manifest.data.lambdaVersion,
+    currentVersion,
+    versionStale,
+    hosts,
+    files,
+    counts,
+    planned,
+    healthy,
+  };
+}

@@ -1,0 +1,50 @@
+{
+  "stuck": {
+    "description": "Stuck in infinite loop / analysis paralysis",
+    "initial": { "D": 0.85, "C": 0.75 },
+    "target": { "D": 0.3, "C": 0.35 },
+    "diagnosis": "Meta ∘ Meta loop (infinite reflection)"
+  },
+  "overwhelmed": {
+    "description": "Overwhelmed by complexity",
+    "initial": { "D": 0.8, "C": 0.8 },
+    "target": { "D": 0.2, "C": 0.15 },
+    "diagnosis": "Excessive Ana without Kata (no compression)"
+  },
+  "rigid": {
+    "description": "Too rigid / overthinking correctness",
+    "initial": { "D": 0.15, "C": 0.1 },
+    "target": { "D": 0.5, "C": 0.5 },
+    "diagnosis": "Excessive Ortho (over-correction)"
+  },
+  "collapsed": {
+    "description": "Burned out / collapsed",
+    "initial": { "D": 0.95, "C": 0.9 },
+    "target": { "D": 0.4, "C": 0.45 },
+    "diagnosis": "In the Void (∅), need rescue operators"
+  },
+  "procrastinating": {
+    "description": "Procrastinating / avoiding action",
+    "initial": { "D": 0.6, "C": 0.5 },
+    "target": { "D": 0.25, "C": 0.2 },
+    "diagnosis": "Need Telo (goal orientation) + Kata (concrete action)"
+  },
+  "spiraling": {
+    "description": "Anxious rumination without resolution",
+    "initial": { "D": 0.7, "C": 0.85 },
+    "target": { "D": 0.2, "C": 0.2 },
+    "diagnosis": "Excessive Retro without Telo (rumination, no forward resolution)"
+  },
+  "scattered": {
+    "description": "Scattered across contexts, no follow-through",
+    "initial": { "D": 0.55, "C": 0.75 },
+    "target": { "D": 0.15, "C": 0.25 },
+    "diagnosis": "Excessive Bind without Crux (no focal commitment)"
+  },
+  "defensive": {
+    "description": "Defensive / rationalizing instead of correcting",
+    "initial": { "D": 0.2, "C": 0.15 },
+    "target": { "D": 0.55, "C": 0.55 },
+    "diagnosis": "Excessive Echo without Ortho (self-justification without correction)"
+  }
+}

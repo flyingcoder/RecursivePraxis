@@ -9,11 +9,27 @@ import {
   type OperatorEffects,
 } from "./phasePortrait.js";
 import { violatesHardConstraint } from "./constraints.js";
+import {
+  DISTANCE_THRESHOLD,
+  MAX_PATH_LENGTH,
+  SOLVER_BETA,
+  SOLVER_GAMMA,
+} from "./formalism.js";
 
-export const SOLVER_BETA = 0.7;
-export const SOLVER_GAMMA = 1.1;
-export const DISTANCE_THRESHOLD = 0.12;
-export const MAX_PATH_LENGTH = 14;
+/**
+ * Read from `formalism.json`'s `inverse_solver` block rather than restated
+ * here, so a change to the objective's weights or the stopping rule moves the
+ * solver. Re-exported under these names because that is what callers and tests
+ * already import.
+ */
+export {
+  SOLVER_BETA,
+  SOLVER_GAMMA,
+  DISTANCE_THRESHOLD,
+  MAX_PATH_LENGTH,
+} from "./formalism.js";
+
+/** Not stated by the formalism — a search parameter of this implementation. */
 export const DEFAULT_BEAM_WIDTH = 5;
 const MAX_ITERATIONS = 1000;
 

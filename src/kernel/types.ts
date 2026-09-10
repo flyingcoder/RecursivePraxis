@@ -1,3 +1,5 @@
+import type { OperatorEffects } from "./phasePortrait.js";
+
 export const OPERATORS = [
   "Ana",
   "Kata",
@@ -43,6 +45,13 @@ export type AttractorLabel = "J=0" | "S*" | "∅";
 
 export type LambdaBand = "low" | "mid" | "high";
 
+/**
+ * An operator's idempotence as the formalism states it: `true` for X² = X,
+ * `"semi"` for X² = c·X, `false` for operators that never collapse under
+ * repetition.
+ */
+export type Idempotence = true | "semi" | false;
+
 export type HaliraStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export interface AnomalyArtifact {
@@ -60,6 +69,9 @@ export interface Session {
   readonly metaUsedInStep3: boolean;
   readonly orthoUsedInStep6: boolean;
   readonly bound: boolean;
+  /** Optional so persisted sessions created before alternate physics existed
+   * remain readable; when present, `step` applies this same table. */
+  readonly effects?: OperatorEffects;
 }
 
 export interface KernelResult<T> {
@@ -76,7 +88,7 @@ export function fail<T>(value: T, error: string): KernelResult<T> {
   return { ok: false, value, error };
 }
 
-export function createInitialSession(state: DissipationState): Session {
+export function createInitialSession(state: DissipationState, effects?: OperatorEffects): Session {
   return {
     sequence: [],
     state,
@@ -87,5 +99,6 @@ export function createInitialSession(state: DissipationState): Session {
     metaUsedInStep3: false,
     orthoUsedInStep6: false,
     bound: false,
+    ...(effects === undefined ? {} : { effects }),
   };
 }

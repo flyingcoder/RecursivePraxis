@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createInitialSession, OPERATORS } from "../../src/kernel/types.js";
+import type { OperatorEffects } from "../../src/kernel/phasePortrait.js";
 import {
   bind,
   haliraNext,
@@ -38,6 +39,15 @@ describe("step (fail-closed)", () => {
     expect(result.value.sequence).toEqual(["Kata"]);
     expect(result.value.state.D).toBeCloseTo(0.3, 10);
     expect(result.value.state.C).toBeCloseTo(0.35, 10);
+  });
+
+  it("keeps alternate effects with the session so subsequent steps use its physics", () => {
+    const flat = Object.fromEntries(OPERATORS.map((op) => [op, [0, 0] as const])) as OperatorEffects;
+    const session = createInitialSession(START_STATE, flat);
+    const result = step(session, "Kata");
+    expect(result.ok).toBe(true);
+    expect(result.value.state).toEqual(START_STATE);
+    expect(result.value.effects).toBe(flat);
   });
 
   it("records an anomaly artifact on Non", () => {

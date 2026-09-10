@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_OPERATOR_EFFECTS,
+  LYAPUNOV_ALPHA,
+  STABILITY_THRESHOLD,
+  analyzeBasinStructure,
   applyOperator,
   attractorPenalty,
+  canTransition,
   classifyAttractor,
   lyapunov,
   operatorEffect,
@@ -11,12 +15,22 @@ import {
   type OperatorEffects,
 } from "../../src/kernel/phasePortrait.js";
 import { OPERATORS, type AttractorLabel } from "../../src/kernel/types.js";
+import {
+  PHASE_PORTRAIT_ALPHA,
+  PHASE_PORTRAIT_STABILITY_THRESHOLD,
+  formalismAttractorPenalty,
+} from "../../src/kernel/formalism.js";
 import { solve } from "../../src/kernel/solver.js";
 
 describe("lyapunov", () => {
   it("computes V = D + 0.4*C", () => {
     expect(lyapunov(0.5, 0.5)).toBeCloseTo(0.7, 10);
     expect(lyapunov(0.1, 0.1)).toBeCloseTo(0.14, 10);
+  });
+
+  it("uses the alpha loaded from the formalism", () => {
+    expect(LYAPUNOV_ALPHA).toBe(PHASE_PORTRAIT_ALPHA);
+    expect(STABILITY_THRESHOLD).toBe(PHASE_PORTRAIT_STABILITY_THRESHOLD);
   });
 });
 
@@ -68,6 +82,23 @@ describe("attractorPenalty", () => {
     expect(attractorPenalty("S*")).toBeCloseTo(0.3, 10);
     expect(attractorPenalty("∅")).toBeCloseTo(1.0, 10);
   });
+
+  it("is sourced through formalism.ts rather than a duplicate table", () => {
+    for (const attractor of ["J=0", "S*", "∅"] as const) {
+      expect(attractorPenalty(attractor)).toBe(formalismAttractorPenalty(attractor));
+    }
+  });
+});
+
+describe("canTransition", () => {
+  it("ports the formalism-backed all-required-operators rule", () => {
+    expect(canTransition("S*", "J=0", ["Kata"])).toBe(false);
+    expect(canTransition("S*", "J=0", ["Telo", "Kata", "Seed"])).toBe(true);
+  });
+
+  it("has no formalism transition for J=0 to void", () => {
+    expect(canTransition("J=0", "∅", ["Non", "Vale", "Flux"])).toBe(false);
+  });
 });
 
 describe("simulateTrajectory", () => {
@@ -77,6 +108,16 @@ describe("simulateTrajectory", () => {
     expect(traj[0]!.operator).toBeNull();
     expect(traj[0]!.D).toBeCloseTo(0.5, 10);
     expect(traj[1]!.operator).toBe("Kata");
+  });
+});
+
+describe("analyzeBasinStructure", () => {
+  it("produces reproducible normalized basin counts with an injected sampler", () => {
+    const samples = [0.1, 0.1, 0.9, 0.1];
+    let index = 0;
+    const report = analyzeBasinStructure(2, undefined, () => samples[index++]!);
+    expect(report.basinSizes).toEqual({ "J=0": 0.5, "S*": 0, "∅": 0.5 });
+    expect(report.transitionCounts).toEqual({});
   });
 });
 

@@ -1,10 +1,12 @@
 import {
+  attractorProfile,
   classifyAttractor,
   lambdaEffective,
   legalNext,
   lyapunov,
   operatorMeaning,
   type AttractorLabel,
+  type AttractorProfile,
   type LambdaBand,
   type Session,
 } from "../kernel/index.js";
@@ -19,6 +21,11 @@ export interface StatusPayload {
   readonly state: { readonly D: number; readonly C: number };
   readonly V: number;
   readonly attractor: AttractorLabel;
+  /** What that label means, from the formalism — including, for the void, the
+   * operators it states as the way out. Carried on the payload so every command
+   * built on it (`status`, `sense`, `step`, `halira`) reports the state in
+   * words, not only as a glyph. */
+  readonly attractorProfile: AttractorProfile;
   readonly lambdaEffective: number;
   readonly lambdaBand: LambdaBand;
   readonly mode: 1 | 2;
@@ -36,6 +43,7 @@ export function statusPayload(session: Session): StatusPayload {
     state: session.state,
     V: lyapunov(session.state.D, session.state.C),
     attractor,
+    attractorProfile: attractorProfile(attractor),
     lambdaEffective: lambdaEff,
     lambdaBand: lambdaBand(lambdaEff),
     mode: session.mode,

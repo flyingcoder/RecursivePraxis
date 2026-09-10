@@ -45,7 +45,7 @@ export function step(session: Session, op: Operator): KernelResult<Session> {
     return fail(session, `${op} is not in legalNext for the current session`);
   }
 
-  const newState = applyOperator(session.state, op);
+  const newState = applyOperator(session.state, op, session.effects);
   const newSequence = [...session.sequence, op];
   const anomalyArtifact = nextAnomalyArtifact(session, op);
 

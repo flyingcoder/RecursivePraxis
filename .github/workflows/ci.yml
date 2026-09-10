@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ["20", "22"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  init-is-idempotent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+
+      # A second `init` over unchanged inputs must report every file as
+      # preserved, and `sync --check` must find nothing to do. If rendering
+      # ever stops being a fixed point, `init` becomes a churning operation
+      # and `doctor` starts reporting permanent, meaningless drift — this
+      # catches that at the CLI level, where a user would actually meet it.
+      - name: A repeated init changes nothing
+        run: |
+          work="$(mktemp -d)"
+          cd "$work"
+          node "$GITHUB_WORKSPACE/dist/cli.js" init --tools all --json > /dev/null
+          node "$GITHUB_WORKSPACE/dist/cli.js" init --tools all --json > second.json
+          node -e '
+            const files = JSON.parse(require("fs").readFileSync("second.json", "utf8")).files;
+            const churned = files.filter((f) => f.action !== "preserved");
+            if (churned.length > 0) {
+              console.error("init is not idempotent; these changed on a no-op re-run:");
+              for (const f of churned) console.error(`  ${f.action} ${f.relPath}`);
+              process.exit(1);
+            }
+            console.log(`${files.length} files, all preserved`);
+          '
+          node "$GITHUB_WORKSPACE/dist/cli.js" sync --check

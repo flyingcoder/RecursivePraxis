@@ -11,10 +11,11 @@ carried here.
 ## 0. The finding in one line
 
 The formalism is an **algebra over operators** (composition, absorption,
-idempotence). The engine is a **dynamical system over states** (additive
-`(ΔD, ΔC)` displacement, summed transition costs). Neither is wrong. What was
-missing was a specified relationship between them — and three things that
-looked like bugs were that seam showing through.
+idempotence) and the source of the phase portrait's α, stability threshold,
+attractor penalties, and required transition operators. The engine is a
+**dynamical system over states** (additive `(ΔD, ΔC)` displacement, summed
+transition costs). What remains unspecified is a relationship from algebraic
+composition to displacement effects.
 
 ## 1. Two decisions that ground everything below
 
@@ -67,10 +68,10 @@ Pinned by `tests/kernel/solver.test.ts`.
 ### The suggestion table (`src/kernel/phasePortrait.ts`)
 
 `suggestTransitionOperators` is ported from `phase_portrait.py`, restoring the
-`Suggested operators:` line to `lambda diagnose`. Two upstream tables disagreed;
-the Python one is a strict superset and the one the upstream CLI actually read,
-so `formalism.json` → `phase_portrait.transitions` is labelled superseded rather
-than authoritative (`src/assets/NOTICE.md` item 7).
+`Suggested operators:` line to `lambda diagnose`. It remains separate from
+`canTransition`: the formalism's five transition lists define operators that
+must all be present, while the richer Python six-list table defines advisory
+suggestions (`src/assets/NOTICE.md` item 7).
 
 ### The injection seams (`SolveOptions`)
 
@@ -79,11 +80,10 @@ operator alphabet the search expands. Both default to today's behaviour and
 nothing in the engine passes either. They exist so a replacement physics or a
 replacement selection rule is an experiment rather than an edit to the kernel.
 
-The `effects` seam reaches the search only. `session.ts` `step` and the
-`analyze` command still advance state with the default table, so a sequence
-solved under an injected table will not be *stepped* under it. Widening it to
-those call sites is unbuilt: a session whose physics can be swapped per call is
-a different design question.
+The `effects` seam reaches the search and sessions. Pass a table to
+`createInitialSession`; its persisted session context ensures every later
+`step` uses the same physics. The `analyze` command remains a report of default
+physics because it accepts no alternative-effects input.
 
 ## 4. Degeneracy — what the effects table can distinguish
 
@@ -129,15 +129,24 @@ initial→target pair — and scores both by the unchanged J.
 
 | Case | Full | Restricted | Verdict |
 |---|---|---|---|
+| rigid | `Non Crux` | `Para Para` | worse, +11.2% |
 | nearly done | `Weave` | `Latch` | worse, +10.3% |
 | collapsed | `Kata Weave Latch` | `Weave ×3` | worse, +8.1% |
-| rigid | `Non Crux` | `Para Para` | worse, +7.0% |
 | stuck | `Axis Telo Telo` | `Seed ×3` | worse, +4.9% |
 | typical polish | `Weave Latch` | `Latch Latch` | worse, +3.7% |
 | rough draft | `Weave Latch Latch` | `Latch ×3` | worse, +2.3% |
 | python parity | `Kata Kata` | `Kata Kata` | identical |
 | overwhelmed | `Axis Telo ×6 Flux` | `Kata Latch ×3` | **never arrives** |
 | procrastinating | `Kata Kata` | — | unmapped (S\* → S\*) |
+
+`rigid`'s penalty moved from +7.0% to +11.2% when `commutatorMagnitude` switched
+from a binary sign read to the skeleton's extraction magnitude (NOTICE.md
+item 5): the restricted path's `Para Para` step reads the `Para,Para`
+self-commutator, one of the pairs where a sign of `0` (architecturally
+"commuting") carries a nonzero measured magnitude (`0.335`), so that step now
+costs something it used to cost nothing. The other rows were untouched — their
+sequences don't pass through any of the 16 pairs where sign and magnitude
+disagree.
 
 **Decision: the table is not wired into selection.** It never wins. Two things
 make that more than a scoreboard:
@@ -180,6 +189,22 @@ Pinned by `tests/kernel/selectionStudy.test.ts`.
   first place.
 - **Sequence length is not in the objective**, deliberately. `overwhelmed` gets
   *longer* under the corrected ranking (7 → 8 operators) while scoring better.
-- **`algebra_relations` is not enforced** and should not be — see §2.
-- **The upstream inconsistencies in `src/assets/NOTICE.md` are not corrected.**
-  They are pinned by characterization test on purpose.
+- **`algebra_relations` is not enforced** and should not be — see §2. It is now
+  *read*, which is a different thing: `src/kernel/algebra.ts` parses the block
+  into queryable relations and `src/ir/chainReading.ts` reports the ones that
+  apply to a chain's adjacent pairs, through `lambda analyze` and the
+  `read_chain_algebra` MCP tool. Every rendering carries a caveat naming §2, and
+  nothing downstream rewrites, shortens or reorders a chain from a relation.
+  Two details worth keeping: the reading matches `A ∘ B` in the repo's own
+  left-to-right display order rather than the right-to-left reading of function
+  composition (nothing applies the rewrite, so the convention decides what is
+  *shown*), and it crosses each commutator statement against the skeleton's
+  measured `|η|` — which is how `[Telo, Para] = 0` now reports its disagreement
+  with the skeleton's `0.335` instead of the two claims sitting in separate
+  files. `algebra_relations.idempotence` stays unread: the per-operator
+  `idempotent` / `idempotence_rule` fields already carry it.
+- **The upstream inconsistencies in `src/assets/NOTICE.md` are not yet
+  corrected**, but as of 2026-09-02 that is no longer policy — see the "upstream
+  is inspiration, not a constraint" note there. They remain pinned by a
+  characterization test only until someone changes the behaviour, not on
+  principle.

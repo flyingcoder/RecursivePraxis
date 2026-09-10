@@ -37,23 +37,81 @@ function reject(constraint: ConstraintId, reason: string): CheckReject {
   return { accepted: false, constraint, reason };
 }
 
+const VALE_STABILIZER_REASON = "reject: Vale lacks a following stabilizer (Kata, Ortho, or Telo)";
+
+/** One rule broken, and where. `index` is the position of the operator that
+ * breaks it; end-of-sequence rules report the last position. */
+export interface SequenceViolation {
+  readonly index: number;
+  readonly operator: Operator;
+  readonly constraint: ConstraintId;
+  readonly reason: string;
+}
+
 /** Names the specific sequence-grammar rule behind a kernel violatesHardConstraint()
  * rejection, so the CLI can report a stable constraint id and reason. */
-function namedStepRejection(prefix: readonly Operator[], cur: Operator): CheckReject {
+function namedStepViolation(
+  index: number,
+  prefix: readonly Operator[],
+  cur: Operator,
+): SequenceViolation {
+  const at = { index, operator: cur };
   if (cur === "Meta" && trailingRunLength(prefix, "Meta") >= MAX_CONSECUTIVE_META) {
-    return reject(CONSTRAINT.META_MAX_TWO, "reject: at most two consecutive Meta");
+    return { ...at, constraint: CONSTRAINT.META_MAX_TWO, reason: "reject: at most two consecutive Meta" };
   }
   const prev = prefix.length > 0 ? prefix[prefix.length - 1] : undefined;
   if (prev === "Meta" && cur === "Non") {
-    return reject(CONSTRAINT.META_THEN_NON, "reject: Non immediately after Meta");
+    return { ...at, constraint: CONSTRAINT.META_THEN_NON, reason: "reject: Non immediately after Meta" };
   }
   if (prev === "Non" && cur === "Para") {
-    return reject(CONSTRAINT.NON_THEN_PARA, "reject: Para immediately after Non");
+    return { ...at, constraint: CONSTRAINT.NON_THEN_PARA, reason: "reject: Para immediately after Non" };
   }
-  return reject(
-    CONSTRAINT.VALE_STABILIZER,
-    "reject: Vale lacks a following stabilizer (Kata, Ortho, or Telo)",
-  );
+  return { ...at, constraint: CONSTRAINT.VALE_STABILIZER, reason: VALE_STABILIZER_REASON };
+}
+
+/**
+ * Every grammar rule the sequence breaks, in position order.
+ *
+ * `checkForbiddenSequence` reports the first of these and stops, which is the
+ * right shape for a gate. A *report* — `lambda analyze`, the chain reading —
+ * wants all of them, and used to get there by re-implementing the pair scan
+ * against its own copy of the rules. This is the one scan both use.
+ *
+ * An empty sequence has no violations to enumerate; rejecting it is a property
+ * of the gate below, not of the grammar.
+ */
+export function sequenceViolations(ops: readonly string[]): readonly SequenceViolation[] {
+  const sequence = ops as readonly Operator[];
+  const violations: SequenceViolation[] = [];
+
+  for (let i = 0; i < sequence.length; i++) {
+    const cur = sequence[i]!;
+    const prefix = sequence.slice(0, i);
+    if (violatesHardConstraint(prefix, cur)) {
+      violations.push(namedStepViolation(i, prefix, cur));
+    }
+  }
+
+  const lastIndex = sequence.length - 1;
+  const last = lastIndex >= 0 ? sequence[lastIndex]! : undefined;
+  if (last !== undefined && violatesSequenceEndConstraint(sequence)) {
+    violations.push({
+      index: lastIndex,
+      operator: last,
+      constraint: CONSTRAINT.END_ON_ANA,
+      reason: "reject: ending on Ana",
+    });
+  }
+  if (last === "Vale") {
+    violations.push({
+      index: lastIndex,
+      operator: last,
+      constraint: CONSTRAINT.VALE_STABILIZER,
+      reason: VALE_STABILIZER_REASON,
+    });
+  }
+
+  return violations;
 }
 
 /**
@@ -65,25 +123,6 @@ export function checkForbiddenSequence(ops: readonly string[]): CheckResult {
     return reject(CONSTRAINT.END_ON_ANA, "reject: empty sequence");
   }
 
-  const sequence = ops as readonly Operator[];
-
-  for (let i = 0; i < sequence.length; i++) {
-    const cur = sequence[i]!;
-    const prefix = sequence.slice(0, i);
-    if (violatesHardConstraint(prefix, cur)) {
-      return namedStepRejection(prefix, cur);
-    }
-  }
-
-  if (violatesSequenceEndConstraint(sequence)) {
-    return reject(CONSTRAINT.END_ON_ANA, "reject: ending on Ana");
-  }
-  if (sequence[sequence.length - 1] === "Vale") {
-    return reject(
-      CONSTRAINT.VALE_STABILIZER,
-      "reject: Vale lacks a following stabilizer (Kata, Ortho, or Telo)",
-    );
-  }
-
-  return { accepted: true };
+  const first = sequenceViolations(ops)[0];
+  return first === undefined ? { accepted: true } : reject(first.constraint, first.reason);
 }

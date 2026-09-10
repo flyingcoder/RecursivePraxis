@@ -15,6 +15,7 @@
       "meaning": "Break apart, raise conceptual level",
       "class": "B-Disruptive",
       "lambda_intrinsic": 0.75,
+      "effect_vector": [0.15, 0.1],
       "effect": "increases entropy",
       "idempotent": false
     },
@@ -25,6 +26,7 @@
       "meaning": "Compress, concretize, decrease entropy",
       "class": "A-Constructive",
       "lambda_intrinsic": 0.35,
+      "effect_vector": [-0.2, -0.15],
       "effect": "decreases entropy",
       "idempotent": true,
       "idempotence_rule": "Kata² = Kata"
@@ -36,6 +38,7 @@
       "meaning": "Reflection, recursive drag",
       "class": "C-Reflexive",
       "lambda_intrinsic": 0.80,
+      "effect_vector": [0.1, 0.05],
       "effect": "recursive overhead",
       "idempotent": "semi",
       "idempotence_rule": "Meta² = 0.6·Meta"
@@ -47,6 +50,7 @@
       "meaning": "Deviation, injects instability",
       "class": "B-Disruptive",
       "lambda_intrinsic": 0.65,
+      "effect_vector": [0.12, 0.18],
       "effect": "injects instability",
       "idempotent": false
     },
@@ -57,6 +61,7 @@
       "meaning": "Negation, structural rupture",
       "class": "B-Disruptive",
       "lambda_intrinsic": 0.90,
+      "effect_vector": [0.25, 0.2],
       "effect": "structural rupture",
       "idempotent": false
     },
@@ -67,6 +72,7 @@
       "meaning": "Goal projection, stabilizing",
       "class": "A-Constructive",
       "lambda_intrinsic": 0.25,
+      "effect_vector": [-0.18, -0.1],
       "effect": "stabilizes toward goal",
       "idempotent": true,
       "idempotence_rule": "Telo² = Telo",
@@ -79,6 +85,7 @@
       "meaning": "Backtracking, reverse causality",
       "class": "C-Reflexive",
       "lambda_intrinsic": 0.40,
+      "effect_vector": [-0.05, 0.0],
       "effect": "path shortening",
       "idempotent": false
     },
@@ -89,6 +96,7 @@
       "meaning": "Correction, entropy removal",
       "class": "A-Constructive",
       "lambda_intrinsic": 0.30,
+      "effect_vector": [-0.15, -0.12],
       "effect": "aligns with truth",
       "idempotent": true,
       "idempotence_rule": "Ortho² = Ortho"
@@ -100,10 +108,10 @@
       "meaning": "Forward propagation, identity proxy",
       "class": "A-Constructive",
       "lambda_intrinsic": 0.50,
+      "effect_vector": [0.05, 0.02],
       "effect": "neutral advancement",
       "idempotent": "semi",
-      "idempotence_rule": "Pro² = 0.5·Pro",
-      "identity": "Pro = I (identity element)"
+      "idempotence_rule": "Pro² = 0.5·Pro"
     },
     "Echo": {
       "index": 10,
@@ -112,6 +120,7 @@
       "meaning": "Echo, replicate signal",
       "class": "C-Reflexive",
       "lambda_intrinsic": 0.45,
+      "effect_vector": [0.08, 0.06],
       "effect": "signal replication",
       "idempotent": "semi",
       "idempotence_rule": "Echo² = 0.8·Echo"
@@ -123,6 +132,7 @@
       "meaning": "Braid, entangle structures",
       "class": "C-Reflexive",
       "lambda_intrinsic": 0.55,
+      "effect_vector": [0.1, 0.12],
       "effect": "structural entanglement",
       "idempotent": false
     },
@@ -133,6 +143,7 @@
       "meaning": "Fold, compactify (disruptive)",
       "class": "B-Disruptive",
       "lambda_intrinsic": 0.70,
+      "effect_vector": [0.18, 0.14],
       "effect": "compactification",
       "idempotent": false
     },
@@ -143,6 +154,7 @@
       "meaning": "Instantiation, genesis",
       "class": "C-Reflexive",
       "lambda_intrinsic": 0.28,
+      "effect_vector": [-0.17, -0.11],
       "effect": "genesis/instantiation",
       "idempotent": false
     },
@@ -153,6 +165,7 @@
       "meaning": "Core pivot, hinge",
       "class": "D-Structural",
       "lambda_intrinsic": 0.42,
+      "effect_vector": [0.07, 0.09],
       "effect": "pivot point",
       "idempotent": false
     },
@@ -163,6 +176,7 @@
       "meaning": "Weave, integrate patterns",
       "class": "D-Structural",
       "lambda_intrinsic": 0.33,
+      "effect_vector": [-0.16, -0.13],
       "effect": "pattern integration",
       "idempotent": false
     },
@@ -173,6 +187,7 @@
       "meaning": "Bind, glue (mediator)",
       "class": "D-Structural",
       "lambda_intrinsic": 0.38,
+      "effect_vector": [-0.14, -0.1],
       "effect": "structural binding",
       "idempotent": false
     },
@@ -183,6 +198,7 @@
       "meaning": "Orienting axis, framing",
       "class": "D-Structural",
       "lambda_intrinsic": 0.31,
+      "effect_vector": [-0.16, -0.12],
       "effect": "framing/orientation",
       "idempotent": false
     },
@@ -193,6 +209,7 @@
       "meaning": "Vacuum, void operator (collapse proxy)",
       "class": "D-Structural",
       "lambda_intrinsic": 0.88,
+      "effect_vector": [0.22, 0.18],
       "effect": "void/collapse proxy",
       "idempotent": false,
       "note": "Vale amplifies against constructive ops"
@@ -204,6 +221,7 @@
       "meaning": "Continuous perturbation",
       "class": "B-Disruptive",
       "lambda_intrinsic": 0.60,
+      "effect_vector": [0.14, 0.11],
       "effect": "continuous perturbation",
       "idempotent": false
     },
@@ -214,6 +232,7 @@
       "meaning": "Locking stabilization",
       "class": "A-Constructive",
       "lambda_intrinsic": 0.29,
+      "effect_vector": [-0.17, -0.12],
       "effect": "locking/stabilization",
       "idempotent": true,
       "idempotence_rule": "Latch² = Latch"
@@ -281,9 +300,7 @@
 
     "neutral_commutations": [
       "[Telo, Para] = 0",
-      "[Pro, Kata] = 0",
-      "[Bind, Weave] = 0",
-      "[Seed, Crux] = 0"
+      "[Pro, Kata] = 0"
     ],
 
     "anti_symmetry_exceptions": [
@@ -300,7 +317,6 @@
     ],
 
     "identity_and_null": {
-      "identity": "Pro = I",
       "null": "Non ∘ Non = 0",
       "projections": {
         "J=0": "Telo = proj_{J=0}",
@@ -312,7 +328,7 @@
   "dissipation_rules": {
     "pairwise_interaction_coefficient": 0.15,
     "max_interaction_magnitude": 0.4,
-    "formula": "λ(i→j) = λ_j_intrinsic + c·min(0.4, |η_{ij}|)",
+    "formula": "λ(i→j) = λ_j_intrinsic + min(c·|η_{ij}|, max_interaction_magnitude)",
     "decay_law": "D(t+1) = D(t)·exp(-λ_eff)",
     "effective_lambda": "λ_eff = mean(λ(k_t→k_{t+1}))",
     "note": "This is the ∂/∂t dissipation law for cognitive bootloader"
@@ -325,6 +341,7 @@
         "description": "Low-dissipation, stable, coherent - but sterile",
         "basin": "narrow, stable (10.6% of phase space)",
         "reached_by": ["Kata", "Ortho", "Telo", "Latch"],
+        "characteristics": "low dissipation, sterile stability",
         "lyapunov_threshold": 0.3,
         "phase_state_label": "coherent_stable"
       },
@@ -341,6 +358,7 @@
         "description": "Deep collapse, system failure, absorbing",
         "basin": "deep, absorbing (28.8% of phase space)",
         "reached_by": ["repeated Meta", "repeated Non", "Vale"],
+        "characteristics": "deep collapse, absorbing failure state",
         "escape_requires": ["Telo", "Ortho", "Pro"],
         "phase_state_label": "collapse_void"
       }

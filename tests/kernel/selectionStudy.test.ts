@@ -69,7 +69,7 @@ describe("compareTransitionFilter — mechanics", () => {
  * better operators than vector-fit does within the degenerate clusters the
  * degeneracy report measures. Run as a candidate filter and scored by the
  * unchanged objective J, it does not: it never wins, once strands the search
- * short of the target, and otherwise costs 2–10% of J.
+ * short of the target, and otherwise costs 2–11% of J.
  *
  * This suite adopts nothing. It records the measurement so a later proposal to
  * wire the table into selection has to beat these numbers rather than restate
@@ -185,7 +185,7 @@ describe("compareTransitionFilter — the table as a candidate filter", () => {
     expect(verdicts).not.toContain("filter-rescued");
   });
 
-  it("costs at most 10.3% of J where both searches arrive", () => {
+  it("costs at most 11.2% of J where both searches arrive", () => {
     const penalties = cases
       .map((c) =>
         compareTransitionFilter({
@@ -198,7 +198,7 @@ describe("compareTransitionFilter — the table as a candidate filter", () => {
       .map((c) => c.deltaJ! / c.unfiltered.cost);
 
     expect(penalties).toHaveLength(7);
-    expect(Math.max(...penalties)).toBeCloseTo(0.1033, 3);
+    expect(Math.max(...penalties)).toBeCloseTo(0.1117, 3);
     expect(Math.min(...penalties)).toBe(0);
   });
 

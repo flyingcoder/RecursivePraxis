@@ -61,7 +61,7 @@ describe("compileExecutionProgram — the §9 example sequence", () => {
 
   it("carries the kernel's λ_eff and band for the whole program", () => {
     const program = compileExecutionProgram(EXAMPLE);
-    expect(program.lambdaEffective).toBeCloseTo(0.654, 3);
+    expect(program.lambdaEffective).toBeCloseTo(0.64, 3);
     expect(program.programBand).toBe("mid");
     expect(program.programBudget).toEqual({
       band: "mid",

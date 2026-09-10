@@ -1,11 +1,8 @@
 #!/usr/bin/env node
 
-import {
-  allOperatorNames,
-  formatAuthoredLambda,
-  lookupOperator,
-} from "./vocab/operators.js";
+import { allOperatorNames, lookupOperator } from "./vocab/operators.js";
 import { checkForbiddenSequence } from "./vocab/grammar.js";
+import { ALGEBRA, operatorClassProfile } from "./kernel/index.js";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -40,10 +37,16 @@ import { runAnalyze } from "./cli-commands/analyze.js";
 import { runCompile } from "./cli-commands/compile.js";
 import { runSolve } from "./cli-commands/solve.js";
 import { runDiagnose, listDiagnoseProblems } from "./cli-commands/diagnose.js";
+import { runTaskTemplate, listTaskTemplates } from "./cli-commands/task.js";
 import { runHalira } from "./cli-commands/halira.js";
 import { runBind } from "./cli-commands/bind.js";
 import { runIr } from "./cli-commands/ir.js";
+import { runGate } from "./cli-commands/gate.js";
+import { runMcp } from "./cli-commands/mcp.js";
 import { runInit } from "./cli-commands/init.js";
+import { runDoctor } from "./cli-commands/doctor.js";
+import { runSync } from "./cli-commands/sync.js";
+import { runUninstall } from "./cli-commands/uninstall.js";
 import { record } from "./record/index.js";
 import { validate } from "./validate/index.js";
 import { score } from "./score/index.js";
@@ -91,7 +94,7 @@ function printHelp(): void {
     "  lambda --help | -h",
     "  lambda --version | -v",
     "  lambda operators list",
-    "  lambda operators show <Op>",
+    "  lambda operators show <Op> [<Op>…]",
     "  lambda check <Op> [<Op>…]",
     "  lambda plan <task>",
     "  lambda run [--host ollama|fake|anthropic|cursor|claude-ide] <task>",
@@ -105,17 +108,24 @@ function printHelp(): void {
     "  lambda analyze <Op[,Op…]> [--json]",
     "  lambda compile <Op[,Op…]> [--bindings <file>] [--json]",
     "  lambda solve --initial D,C --target D,C [--beam-width N] [--json]",
-    "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating>] [--json]",
+    "  lambda diagnose [<stuck|overwhelmed|rigid|collapsed|procrastinating|spiraling|scattered|defensive>] [--json]",
+    "  lambda task [<git-commit|documentation|meta-prompting|mindset|code-review>] [--json]",
     "  lambda halira start|next|status [--json]",
     "  lambda bind [--json]",
     "  lambda ir [--json]",
-    "  lambda init --tools claude,cursor,codex | all | none",
+    "  lambda mcp",
+    "  lambda init [--tools claude,cursor,codex,opencode | all | none]",
+    "              [--scope project|global]",
     "              [--host ollama|fake|anthropic|cursor|claude-ide]",
     "              [--model <name>] [--ollama-url <url>] [--json]",
+    "  lambda doctor [--scope project|global] [--json]",
+    "  lambda sync [--scope project|global] [--check] [--json]",
+    "  lambda uninstall [--scope project|global] [--tools <ids>] [--prune] [--json]",
     "  lambda <verb>",
     "",
     "Vocabulary:",
-    "  operators  — list / show the operator alphabet (authored λ)",
+    "  operators  — list the operator alphabet, or show name/class/meaning/effect",
+    "               for one or more operators as JSON",
     "  check      — hard-reject forbidden operator sequences",
     "  plan       — build a deterministic, budgeted operator plan",
     "  run        — execute through the capability-gated model host",
@@ -130,23 +140,47 @@ function printHelp(): void {
     "  status     — attractor, V, D/C, λ_eff, mode, legalNext for the current session",
     "  sense      — set the session's D/C state directly",
     "  step       — apply one operator to the session (auto-picks if --op omitted)",
-    "  analyze    — λ_eff / trajectory / warnings for an arbitrary sequence",
+    "  analyze    — λ_eff / trajectory / warnings for an arbitrary sequence,",
+    "               plus what the formalism's algebra states about its pairs",
+    "               (descriptive — it never rewrites the sequence)",
     "  compile    — compile a sequence into a cognitive execution program",
     "               (capability + budget per step; --bindings attaches the",
     "               model-authored domain bindings)",
     "  solve      — beam search from --initial to --target D,C",
     "  diagnose   — canned problem templates (run with no argument to list them)",
+    "  task       — canned task templates for recurring work: git commits, docs,",
+    "               meta-prompting, coding mindset (run with no argument to list)",
     "  halira     — Mode-2 escalation step machine (start | next | status)",
     "  bind       — finalize the session; fails closed without an anomaly artifact",
     "  ir         — print the current turn's instruction surface (legalNext only)",
+    "  gate       — PreToolUse hook body: reads a hook payload from stdin,",
+    "               blocks a `lambda step --op <Op>` shell call outside",
+    "               legalNext. Not normally run by hand.",
+    "",
+    "MCP server:",
+    "  mcp        — speak MCP over stdio, exposing the intent-derivation tools",
+    "               (derive_initial_state, plan_arc, numbers_for_label,",
+    "               verify_arc) and the chain reader (read_chain_algebra).",
+    "               Installed into host agents by `lambda init`; not normally",
+    "               run by hand.",
     "",
     "Agent integrations:",
-    "  init       — install: generate host-native Claude Code / Cursor / Codex",
-    "               skill and command files that teach agents to call this CLI",
-    "               (cognition only — no OpenSpec, no delivery workflow, no new",
-    "               runtime), and record the model host / model settings in",
+    "  init       — install: detect host agents, ask which to configure and at",
+    "               which scope, then generate host-native Claude Code / Cursor /",
+    "               Codex / opencode skill and command files that teach agents to",
+    "               call this CLI (cognition only — no OpenSpec, no delivery",
+    "               workflow, no new runtime). Four questions on a terminal;",
+    "               --tools/--scope pre-answer them and it prompts for nothing.",
+    "               Also records the model host / model settings in",
     "               .recursive-praxis/config.json. These settings are chosen",
     "               here and nowhere else; API keys stay in the environment.",
+    "  doctor     — verify an install: drift, orphans, a manifest older than the",
+    "               CLI, and hosts that have since disappeared. Exits non-zero on",
+    "               any of them, so it works as a CI check.",
+    "  sync       — regenerate every managed file from the install manifest.",
+    "               (alias: update — note it refreshes generated FILES, not the",
+    "               `lambda` binary; upgrade that with npm i -g or install.sh)",
+    "  uninstall  — remove what init wrote. Keeps any file you appended to.",
     "",
     "Reserved verbs (not implemented):",
     "  record    — not implemented",
@@ -198,27 +232,50 @@ function runOperators(args: string[]): void {
   }
 
   if (action === "show") {
-    if (!name || rest.length > 0) {
-      console.error("usage: lambda operators show <Op>");
+    const requested = name === undefined ? [] : [name, ...rest];
+    if (requested.length === 0) {
+      console.error("usage: lambda operators show <Op> [<Op>…]");
       process.exit(1);
     }
-    const op = lookupOperator(name);
-    if (!op) {
-      console.error(`unknown operator: ${name}`);
-      process.exit(1);
+
+    const shown: Array<{
+      name: string;
+      class: string;
+      classCharacteristics: string;
+      commutationBias: string;
+      meaning: string;
+      effect: string;
+      projectsOnto?: string;
+      relations: string[];
+    }> = [];
+    for (const raw of requested) {
+      const op = lookupOperator(raw);
+      if (!op) {
+        console.error(`unknown operator: ${raw}`);
+        process.exit(1);
+      }
+      // The class prose and the algebra statements are read from formalism.json
+      // rather than restated here; `relations` is descriptive, not a rewrite
+      // rule — see src/ir/chainReading.ts.
+      const profile = operatorClassProfile(op.className);
+      const projection = ALGEBRA.projectionFor(op.name);
+      shown.push({
+        name: op.name,
+        class: op.className,
+        classCharacteristics: profile.characteristics,
+        commutationBias: profile.commutationBias,
+        meaning: op.meaning,
+        effect: op.effect,
+        ...(projection === undefined ? {} : { projectsOnto: projection }),
+        relations: ALGEBRA.relationsNaming(op.name).map((relation) => relation.statement),
+      });
     }
-    console.log(
-      [
-        `name: ${op.name}`,
-        `symbol: ${op.symbol}`,
-        `class: ${op.className}`,
-        formatAuthoredLambda(op),
-      ].join("\n"),
-    );
+
+    console.log(JSON.stringify(shown, null, 2));
     process.exit(0);
   }
 
-  console.error("usage: lambda operators list | show <Op>");
+  console.error("usage: lambda operators list | show <Op> [<Op>…]");
   process.exit(1);
 }
 
@@ -477,6 +534,7 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
+
   if (first === "solve") {
     const { json, rest: solveArgs } = extractJsonFlag(rest);
     runSolve(solveArgs, json);
@@ -489,6 +547,16 @@ async function main(argv: string[]): Promise<void> {
       listDiagnoseProblems(json);
     } else {
       runDiagnose(diagnoseArgs[0]!, json);
+    }
+    return;
+  }
+
+  if (first === "task") {
+    const { json, rest: taskArgs } = extractJsonFlag(rest);
+    if (taskArgs.length === 0) {
+      listTaskTemplates(json);
+    } else {
+      runTaskTemplate(taskArgs[0]!, json);
     }
     return;
   }
@@ -511,9 +579,45 @@ async function main(argv: string[]): Promise<void> {
     return;
   }
 
+  // No --json flag: reads a PreToolUse hook payload from stdin and exits
+  // 0 (allow) or 2 (block) for the host's hook runner, not a human.
+  if (first === "gate") {
+    await runGate(SESSION_BASE_DIR);
+    return;
+  }
+
+  // No --json flag: this command's entire stdout is the MCP protocol, and it
+  // does not return until the client disconnects.
+  if (first === "mcp") {
+    await runMcp(VERSION);
+    return;
+  }
+
   if (first === "init") {
     const { json, rest: initArgs } = extractJsonFlag(rest);
-    await runInit(initArgs, process.cwd(), SESSION_BASE_DIR, json);
+    await runInit(initArgs, process.cwd(), SESSION_BASE_DIR, json, VERSION);
+    return;
+  }
+
+  if (first === "doctor") {
+    const { json, rest: doctorArgs } = extractJsonFlag(rest);
+    await runDoctor(doctorArgs, process.cwd(), SESSION_BASE_DIR, json, VERSION);
+    return;
+  }
+
+  // `update` is an alias, never a self-update: upgrading the binary is
+  // `npm i -g recursive-praxis` or a re-run of install.sh. A CLI that
+  // rewrites its own executable is a much larger security surface than one
+  // that only regenerates the files it already declared.
+  if (first === "sync" || first === "update") {
+    const { json, rest: syncArgs } = extractJsonFlag(rest);
+    await runSync(syncArgs, process.cwd(), json, VERSION);
+    return;
+  }
+
+  if (first === "uninstall") {
+    const { json, rest: uninstallArgs } = extractJsonFlag(rest);
+    await runUninstall(uninstallArgs, process.cwd(), json, VERSION);
     return;
   }
 
