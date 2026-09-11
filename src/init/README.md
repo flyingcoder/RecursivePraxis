@@ -26,17 +26,17 @@ Two steps, always:
 2. Add it to that directory's `index.ts`.
 
 ```ts
-// src/init/skills/replay.ts
+// src/init/skills/inject.ts
 import { Skill } from "../assets/ProseAsset.js";
 import { EPISTEMIC_FOOTER } from "../shared/epistemic-footer.js";
 
 export default new Skill({
-  slug: "replay",
-  title: "RecursivePraxis: replay",
-  description: "Replay a recorded trace deterministically with `lambda replay`.",
+  slug: "inject",
+  title: "RecursivePraxis: inject",
+  description: "Read the session briefing `lambda inject` prepends to each turn.",
   footers: [EPISTEMIC_FOOTER],
   body: `
-# RecursivePraxis: replay
+# RecursivePraxis: inject
 
 …markdown…
 `,

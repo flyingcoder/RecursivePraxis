@@ -167,7 +167,7 @@ below); the rest are either genuinely open or, on inspection, not bugs at all.
    interaction at 0.06 and 0.15 respectively, so this was not cosmetic.
 
    The implementation is the sound reading and both prose statements were
-   wrong. `docs/inspirations/20-controlled-rupture-operators.md` records that
+   wrong. `docs/20_CONTROLLED_RUPTURE_OPERATORS.md` records that
    upstream's `DissipationCalculator.lambda_pairwise` implements
    `λ_j_intrinsic + min(c · |η_ij|, max_interaction)` and — in that document's
    words — "does not use the formula string in `formalism.json`": the

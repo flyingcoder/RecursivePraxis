@@ -7,12 +7,12 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D20-2dd4bf?style=flat-square&logo=node.js&logoColor=white)](package.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)](tsconfig.json)
 [![Tested with Vitest](https://img.shields.io/badge/tested%20with-vitest-6E9F18?style=flat-square&logo=vitest&logoColor=white)](vitest.config.ts)
-![Status](https://img.shields.io/badge/status-experimental-f59e0b?style=flat-square)
+![Status](https://img.shields.io/badge/status-dev-blue)
 
 </div>
 
 <p align="center">
-  <strong>RecursivePraxis</strong> is an experimental agentic cognitive runtime for governing how an AI agent reasons and acts.
+  <strong>RecursivePraxis</strong> is an agentic cognitive runtime for governing how an AI agent reasons and acts.
   Instead of accepting an opaque chain of model responses, it represents execution as legal sequences of
   named cognitive operators over an explicit abstract state.
 </p>
@@ -29,25 +29,24 @@ It is designed to make agent control flow **coherent**, **bounded**, **auditable
 |---|---|
 | ⚖️ **Deterministic legality** | Operator legality and sequencing are checked deterministically at every step. |
 | 📉 **D / C state tracking** | Dissipation (`D`) and contradiction (`C`) are tracked continuously across a session. |
-| 🛡️ **Layered gates** | Budget, capability, typed-output, and evidence-reference gates constrain every action. |
+| 🧭 **Context injection** | Every turn is briefed with the session's mode, attractor, and legal next operators — not left to the agent to remember. |
 | 🔁 **Bounded recovery** | The HALIRA Mode-2 program recovers a stalled session with discipline, not retries-until-luck. |
-| 🗃️ **Redacted local traces** | Runs are recorded as hashes/metadata and replayed deterministically, not stored as raw content. |
 
-> This is a runtime for controlling **observable** agent execution — the model calls an agent makes, the
-> tools it requests, and the evidence it cites. It does **not** claim to expose hidden model
+> This is a runtime for controlling **observable** agent reasoning — the operator sequence an agent moves
+> through, and the abstract state that sequence produces. It does **not** claim to expose hidden model
 > chain-of-thought, or empirically prove that the abstract state is a measure of truth.
 
 **Agentic means governed, not autonomous.** RecursivePraxis is a control plane *for* an agent, not an
 agent framework: it ships no planner library, no tool catalog, and no cross-run memory, and it never
 starts work on its own. A host agent — Claude Code, Cursor, or Codex via `lambda init` — or you at the
-CLI drives every step, and the runtime decides which steps are legal, what they may spend, which tools
-they may touch, and whether the session may be bound.
+CLI drives every step, and the runtime decides which steps are legal and whether the session may be
+bound, briefing the agent's context with that state on every turn.
 
 <br />
 
 ## Status
 
-The core kernel, orchestrator, CLI, trace replay, and integration initializer are implemented and tested.
+The core kernel, CLI, context-injection hook, and integration initializer are implemented and tested.
 The reserved `record`, `validate`, `score`, and `revise` verbs intentionally **fail closed** and are not
 capabilities yet.
 
@@ -131,18 +130,16 @@ npm run build
 node dist/cli.js --help
 ```
 
-Try the deterministic fake host without credentials:
+Try the kernel directly, no credentials needed:
 
 ```sh
-node dist/cli.js plan "Repair a parser regression"
-node dist/cli.js run --host fake "Repair a parser regression"
+node dist/cli.js operators list
+node dist/cli.js step --op Seed
+node dist/cli.js status
 ```
 
-`run` prints a task ID and a path under `.recursive-praxis/traces/`. Replay it with:
-
-```sh
-node dist/cli.js replay <task-id>
-```
+`step` prints the resulting attractor. `status` prints the full session — `D`/`C`, mode, and the legal
+next operators — which is the same data `lambda inject` briefs a host agent's context with every turn.
 
 > For installed package use, the binary name is `lambda`.
 
@@ -168,20 +165,6 @@ The binary is `lambda` (`node dist/cli.js` in a checkout). Full flags and exampl
 | `lambda operators show <Op> [<Op>…]` | Print name, class, meaning, and effect for one or more operators, as JSON. |
 | `lambda check <Op> [<Op>…]` | Hard-reject forbidden operator sequences. |
 
-**Planning and execution** — model-facing task runtime
-
-| Command | Purpose |
-|---|---|
-| `lambda plan <task>` | Build a deterministic, budgeted operator plan. Calls no model. |
-| `lambda run [--host <id>] <task>` | Execute through the capability-gated model host and save a redacted trace. |
-| `lambda inspect <task-id>` | Print a saved, redacted task trace. |
-| `lambda replay <task-id>` | Verify trace integrity and reproduce its plan. Exits non-zero when not reproducible. |
-| `lambda eval [--host <id>]` | Run the grounded multi-domain capability benchmark. |
-| `lambda promote <policy.json> <benchmark.json>` | Promote an experimental policy from grounded results. |
-
-`<id>` is one of `ollama`, `fake`, `anthropic`, `cursor`, `claude-ide`. With `--host` omitted, the host
-recorded by `lambda init` is used — out of the box, a local Ollama server.
-
 **Kernel** — the dissipation solver over `.recursive-praxis/session.json`
 
 | Command | Purpose |
@@ -202,7 +185,7 @@ recorded by `lambda init` is used — out of the box, a local Ollama server.
 
 | Command | Purpose |
 |---|---|
-| `lambda init [--tools claude,cursor,codex,opencode \| all \| none] [--scope project\|global] [--host <id>] [--model <name>] [--ollama-url <url>] [--json]` | Detect host agents, ask which to configure and at which scope, then generate host-native skill and command files that teach agents to call this CLI. Also records the model host settings in `.recursive-praxis/config.json`. Four questions on a terminal; the flags pre-answer them. |
+| `lambda init [--tools claude,cursor,codex,opencode \| all \| none] [--scope project\|global] [--context-injection on\|off] [--json]` | Detect host agents, ask which to configure and at which scope, then generate host-native skill, command, and hook files that teach agents to call this CLI and brief their context every turn. Also records the context-injection setting in `.recursive-praxis/config.json`. Four questions on a terminal; the flags pre-answer them. |
 | `lambda doctor [--scope project\|global] [--json]` | Verify an install: drift, orphans left by an earlier version, a manifest older than the CLI, and hosts that have since disappeared. Exits non-zero on any of them, so it works as a CI check. |
 | `lambda sync [--scope project\|global] [--check] [--json]` | Regenerate every managed file from the install manifest. `--check` exits non-zero if anything would change, without writing. Alias: `lambda update` — note it refreshes generated **files**, not the `lambda` binary. |
 | `lambda uninstall [--scope project\|global] [--tools <ids>] [--prune] [--json]` | Remove what `init` wrote. A file you appended to after the END marker is kept, and reported as kept. |
@@ -226,8 +209,8 @@ contains a recorded anomaly artifact, and — when recovery is active — has re
 Normal planning uses a deterministic beam solver toward the stable target `{ D: 0.1, C: 0.1 }`.
 
 ```text
-1st failed validation  → deterministic replan
-2nd failed validation  → HALIRA Mode-2
+1st failed `lambda bind` in Mode 1  → mode1FailureCount + 1
+2nd failed `lambda bind` in Mode 1  → HALIRA Mode-2 becomes available
 
 Seed → Axis → Meta → Weave → Retro → Ortho → bind @ Recognition
 ```
@@ -236,13 +219,15 @@ Seed → Axis → Meta → Weave → Retro → Ortho → bind @ Recognition
 
 ## Safety and auditability
 
-At runtime, RecursivePraxis validates model/router output, checks resource budgets, restricts tool
-requests by both capability and per-operator allowlists, and records only hashes/metadata — rather than
-raw task content — in its traces.
+Enforcement is a `PreToolUse` hook, not a request to the agent: `lambda init` installs a hook that shells
+out to `lambda gate` before every `Bash` call, which refuses a `lambda step --op <Op>` naming an operator
+outside the current `legalNext` — the kernel's own `step()` enforces the same rule fail-closed, so the
+hook is a latency optimization on an already-fail-closed check, not the only thing standing between the
+agent and an illegal sequence.
 
-`lambda replay` first checks trace integrity, then replays the recorded operator transitions and verifies
-the final dissipation state, attractor, recovery mode, and binding result. It verifies the **abstract
-execution** — not remote model calls, tool side effects, or the truth of unavailable evidence.
+A second hook, `lambda inject`, runs on every turn and briefs the agent's context with the session's mode,
+attractor, and legal next operators — the mechanism that makes the sequence something the agent is told,
+not something it has to remember or infer. It never blocks; refusing an illegal step is the gate's job.
 
 <br />
 

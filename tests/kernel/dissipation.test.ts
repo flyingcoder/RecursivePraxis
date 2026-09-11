@@ -32,7 +32,7 @@ describe("formalism/commutator ground truth", () => {
  * `λ_j + min(c·|η|, max)` — a transposition that changes the interaction term
  * on every pair with `|η| > 0.4`, capping it at 0.06 rather than 0.15. The
  * implementation was the sound one: upstream's calculator clamps the scaled
- * term (docs/inspirations/20-controlled-rupture-operators.md), and this port
+ * term (docs/20_CONTROLLED_RUPTURE_OPERATORS.md), and this port
  * follows it. Both prose statements were corrected, and these tests are what
  * stop them drifting apart again.
  */

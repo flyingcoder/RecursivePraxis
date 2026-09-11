@@ -31,7 +31,7 @@ export interface SequenceAnalysis {
  * `|η| > 0.4` — the two readings cap the interaction at 0.15 and at 0.06
  * respectively. The implementation was right and both prose statements were
  * wrong: upstream's calculator implements the clamp this way and, as
- * `docs/inspirations/20-controlled-rupture-operators.md` records, does not read
+ * `docs/20_CONTROLLED_RUPTURE_OPERATORS.md` records, does not read
  * its own formula string either. Pinned by the dissipation tests so the prose
  * cannot drift from the code again.
  *

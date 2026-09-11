@@ -7,26 +7,7 @@ npm run build
 node dist/cli.js --help
 ```
 
-Most kernel commands persist one session at `.recursive-praxis/session.json` under the current working directory. `run` persists redacted task traces at `.recursive-praxis/traces/`.
-
-## Planning and execution
-
-| Command | Purpose |
-| --- | --- |
-| `lambda plan <task>` | Build a deterministic, budgeted operator plan without calling a model. |
-| `lambda run [--host fake\|anthropic\|cursor\|claude-ide] <task>` | Execute a task through the selected model host and save a redacted trace. `fake` is the default. |
-| `lambda inspect <task-id>` | Print a saved task trace. |
-| `lambda replay <task-id>` | Check trace hash and semantic replay. Exits non-zero when not reproducible. |
-| `lambda eval [--host ...]` | Run the authored three-domain capability benchmark. |
-| `lambda promote <experimental-policy.json> <benchmark.json>` | Promote an experimental policy only when benchmark requirements are met. |
-
-Example:
-
-```sh
-lambda run --host fake "Summarize the test failures"
-lambda inspect <task-id>
-lambda replay <task-id>
-```
+Most kernel commands persist one session at `.recursive-praxis/session.json` under the current working directory.
 
 ## Operator vocabulary and grammar
 
@@ -53,6 +34,7 @@ lambda replay <task-id>
 | `lambda bind [--json]` | Attempt formal completion. `--force` is rejected by design. |
 | `lambda ir [--json]` | Render the current session’s instruction surface. |
 | `lambda gate` | PreToolUse hook body, not normally run by hand: reads a hook payload from stdin and, for a `lambda step --op <Op>` shell call, exits `2` (block) if `<Op>` is outside `legalNext` or the session is already bound, `0` (allow) otherwise. Every other shell command, and any payload it cannot parse, is allowed through unexamined — this is enforcement layered on `step()`'s own fail-closed check (`src/kernel/session.ts`), not a replacement for it. Installed as the `legality-gate` hook by `lambda init`. |
+| `lambda inject` | UserPromptSubmit hook body, not normally run by hand: reads a hook payload from stdin and prints a briefing of the session's mode, attractor, λ_eff, and legal next operators for the host to prepend to the turn. Never blocks — `continue` is always `true`. Switch it off with `lambda init --context-injection off`. Installed as the `context-injection` hook by `lambda init`. |
 
 Examples:
 
@@ -195,6 +177,24 @@ there would mean generating executable JavaScript rather than a config entry.
 That is a different kind of artifact from anything `init` writes today, so it is
 not attempted rather than guessed at.
 
+**Context injection.** `init` also installs `lambda inject` as a `UserPromptSubmit`
+hook, so a host agent's context is briefed with the session's mode, attractor,
+and legal next operators on every turn, rather than left to be remembered. Two
+of the four hosts get it:
+
+| Host | Where | Event | Entry |
+| --- | --- | --- | --- |
+| Claude Code | plugin `hooks/hooks.json` (global) · `.claude/settings.json` (project) | `UserPromptSubmit` | matcher group, no `matcher` (the event has no tool-name axis) |
+| Codex CLI | `.codex/hooks.json` | `UserPromptSubmit` | matcher group, no `matcher` — identical to Claude Code's |
+
+**Cursor and opencode get no context-injection hook.** Cursor's equivalent event,
+`beforeSubmitPrompt`, supports only `continue`/`user_message` in its current hook
+schema — `user_message` is shown only when the hook blocks the turn, and there is
+no field for prepending context to an allowed one. Rather than force a briefing
+through a mechanism built for refusal, the hook is simply not installed there —
+the same "a host with no place for a hook kind gets none" posture the gate
+section above documents for opencode. Both hosts still get the gate.
+
 Writes cannot clobber: a file carrying the managed markers has only that region
 replaced, anything appended after the END marker survives, and a file without
 the markers is reported `skipped` and left untouched. A shared JSON file —
@@ -292,12 +292,6 @@ as a tool; it never means *only*.
 | `operators list` | CLI-only | Static reference list a human reads; a reasoning agent already gets per-operator meaning through `legalNext` in `status` and through `read_chain_algebra` for whatever chain is actually in play. |
 | `operators show <Op…>` | **MCP-worthy** | Pure, stateless, JSON-shaped exactly like the existing derive tools. No reason a host agent should shell out and parse text for this. |
 | `check <Op…>` | **MCP-worthy** | Pure grammar validation, same class as `read_chain_algebra`. Lets an agent validate a chain it is composing before it ever reaches `step`. |
-| `plan <task>` | **MCP-worthy** | `runPlan` ([cli.ts](../src/cli.ts)) calls no model host and touches no filesystem — deterministic in, deterministic out, same as `plan_arc`. |
-| `run [--host …] <task>` | CLI-only | Invokes an external model host and writes a redacted trace to disk. Wrapping this as a tool would mean a reasoning agent's tool call triggers *another* model call — a layering inversion of the stage-3/stage-4 split this project's own design documents draw (see [suggestions/commands-and-skills-split.md](suggestions/commands-and-skills-split.md) §Frame). Needs host credentials resolved from the local environment, not from a tool payload. |
-| `inspect <task-id>` | CLI-only | Reads one local trace file by id. Audit/debug utility over history the calling agent already saw once, when `run` printed it — nothing left to learn mid-task. |
-| `replay <task-id>` | CLI-only | Reproducibility check over a local trace, the CI/audit use case `lambda doctor` and `sync --check` already exemplify. Not a mid-task lookup. |
-| `eval [--host …]` | CLI-only | Runs the full model host over the benchmark — heavy, side-effecting, a dev/CI workflow, never something a task's own reasoning would trigger on itself. |
-| `promote <policy.json> <benchmark.json>` | CLI-only | `promoteExperimentalPolicy` is a pure computation, but promotion is a governance decision, reserved-adjacent to `record`/`validate`/`score`/`revise`. A reasoning agent should not be able to promote its own policy via a tool call it controls. |
 | `status [--json]` | **MCP-worthy** | Read-only over the session file, no side effects. Every shipped skill's first instruction is "run `lambda status --json`" ([suggestions/commands-and-skills-split.md](suggestions/commands-and-skills-split.md) §7.2) — this is the hottest path in the whole surface, and today it costs a subprocess plus stdout parsing per call. |
 | `sense --d/--c \| --from` | **MCP-worthy** | Writes the session file directly, but deterministically — the natural write-back partner to `derive_initial_state`, which only computes the pair and never persists it. |
 | `step [--op] [--json]` | **MCP-worthy** | Mutates the session, but legality is enforced *inside* `step()` itself, fail-closed ([src/kernel/session.ts](../src/kernel/session.ts)) — the `gate` hook is a second layer on top of the shell route specifically, not the source of truth (see above). An MCP tool call reaches that same fail-closed check directly, with one enforcement point valid for every host — including opencode, which the hook table above documents as receiving *no* hook at all today. |
@@ -310,6 +304,7 @@ as a tool; it never means *only*.
 | `bind [--json]` | **MCP-worthy** | Same argument as `step`/`halira` — finalization is checked inside the kernel (anomaly artifact, legal ending, Mode-2 recognition), so a direct tool call is no less safe than the CLI route and removes a subprocess from the one path every task ends on. |
 | `ir [--json]` | **MCP-worthy** | Read-only render of `legalNext` over the session. Cheap, safe, no reason to shell out for it. |
 | `gate` | CLI-only, structurally | Not reachable through tool-calling at all — it is invoked *by* a host's own hook runner (`PreToolUse` / `beforeShellExecution`) as a subprocess, before the model ever gets a turn. There is no "MCP" form of a pre-execution hook body. |
+| `inject` | CLI-only, structurally | Same argument as `gate`: invoked *by* a host's own hook runner (`UserPromptSubmit`), before the model sees the turn it is briefing. An MCP tool call happens mid-task, after the model already has a turn — it cannot inject context ahead of one. |
 | `mcp` | CLI-only, structurally | This is the command that *starts* the MCP server. It cannot also be one of the tools it serves. |
 | `init [--tools …] [--scope …]` | CLI-only | Interactive wizard / scripted install that writes skill, command, and hook files across up to four hosts and two scopes. Administrative, run once per setup, needs TTY-or-flags handling a tool call gains nothing from replicating. |
 | `doctor [--scope …] [--json]` | CLI-only | CI-style drift/orphan check against the install manifest. No reasoning-time value; belongs next to `sync --check` in a pipeline, not in a task's tool list. |
@@ -321,12 +316,11 @@ as a tool; it never means *only*.
 and enforces its own legality — `status`, `sense`, `step`, `analyze`, `compile`,
 `solve`, `diagnose`, `halira`, `bind`, `ir` — is MCP-worthy, because the kernel's
 fail-closed checks live inside the functions these commands call, not in the
-CLI layer or the `gate` hook wrapped around it. Everything that touches a model
-host, the filesystem outside the session file, or governs the install itself —
-`run`, `eval`, `promote`, `inspect`, `replay`, `init`, `doctor`, `sync`,
-`uninstall`, `gate`, `mcp` — is CLI-only, because it is either administrative,
-externally side-effecting, or structurally incapable of being invoked through
-tool-calling in the first place.
+CLI layer or the `gate` hook wrapped around it. Everything that governs the
+install itself, or is structurally invoked by a host's own hook runner rather
+than by tool-calling — `init`, `doctor`, `sync`, `uninstall`, `gate`, `inject`,
+`mcp` — is CLI-only, because it is either administrative, or incapable of being
+reached through a tool call in the first place.
 
 ## JSON output
 

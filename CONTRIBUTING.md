@@ -40,8 +40,7 @@ and copying would put macOS binaries inside the Linux tarball.
 ## Repository map
 
 - `src/kernel/`: formal operator model, constraints, state transitions, solver, and HALIRA state machine.
-- `src/engine/`: planning, execution orchestration, traces/replay, and evaluation/promotion.
-- `src/adapters/`: structured model transports and deterministic fake host.
+- `src/adapters/`: the structured-output schema for a translator model's instruction bindings (`src/ir/execution.ts`'s domain).
 - `src/cli-commands/` and `src/cli-support/`: CLI interfaces and persisted session support.
 - `src/hosts/`: one class per host agent (Claude Code, Cursor, Codex CLI, opencode) carrying its detection probes, per-scope layout, render pipeline, and invocation syntax; plus the layouts and the registry. Adding a fifth host is one new file and one line in `HostRegistry.default()` — nothing else enumerates hosts.
 - `src/detect/`: detection signals, the single confidence ladder that ranks them, and `HostContext` (the injected view of env, home, filesystem, and PATH that makes detection testable against a synthetic machine).
@@ -75,11 +74,12 @@ npm test
 git diff --check
 ```
 
-For changes to `lambda run` or trace handling, also execute a fake-host round trip:
+For changes to `lambda step`, `lambda gate`, or `lambda inject`, also exercise the session/hook round trip:
 
 ```sh
-node dist/cli.js run --host fake "Verify trace behavior"
-node dist/cli.js replay <task-id>
+node dist/cli.js sense --d 0.5 --c 0.5
+node dist/cli.js step --op Non
+echo '{"hook_event_name":"UserPromptSubmit","prompt":"test"}' | node dist/cli.js inject
 ```
 
 ## Documentation language
