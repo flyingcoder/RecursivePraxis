@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { test } from "vitest";
 import os from "node:os";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { test } from "vitest";
 
 const cliPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -41,70 +41,22 @@ test("lambda score exits non-zero and states not implemented", () => {
   assert.doesNotMatch(out, /\b\d+\.\d+\b/);
 });
 
-test("plan emits a deterministic provider-neutral plan", () => {
-  const first = runLambda("plan", "Fix", "the", "parser");
-  const second = runLambda("plan", "Fix", "the", "parser");
-  assert.equal(first.status, 0);
-  assert.equal(first.stdout, second.stdout);
-  const plan = JSON.parse(first.stdout) as { id: string; steps: unknown[] };
-  assert.ok(plan.id);
-  assert.ok(plan.steps.length > 0);
-});
-
-test("run, inspect, and replay form a redacted local vertical slice", () => {
-  const cwd = mkdtempSync(path.join(os.tmpdir(), "praxis-cli-"));
+test("inject emits a UserPromptSubmit envelope reflecting a fresh session", () => {
+  const cwd = mkdtempSync(path.join(os.tmpdir(), "praxis-inject-"));
   try {
-    const run = spawnSync(process.execPath, [cliPath, "run", "--host", "fake", "Handle", "private", "task"], {
+    const result = spawnSync(process.execPath, [cliPath, "inject"], {
       encoding: "utf8",
       cwd,
+      input: JSON.stringify({ hook_event_name: "UserPromptSubmit", prompt: "test" }),
     });
-    assert.equal(run.status, 0);
-    const output = JSON.parse(run.stdout) as { taskId: string };
-    const inspect = spawnSync(process.execPath, [cliPath, "inspect", output.taskId], {
-      encoding: "utf8",
-      cwd,
-    });
-    assert.equal(inspect.status, 0);
-    assert.doesNotMatch(inspect.stdout, /Handle private task/);
-    const replay = spawnSync(process.execPath, [cliPath, "replay", output.taskId], {
-      encoding: "utf8",
-      cwd,
-    });
-    assert.equal(replay.status, 0);
-    assert.match(replay.stdout, /"reproducible": true/);
-  } finally {
-    rmSync(cwd, { recursive: true, force: true });
-  }
-});
-
-test("eval runs all benchmark domains", () => {
-  const result = runLambda("eval", "--host", "fake");
-  assert.equal(result.status, 0);
-  for (const domain of ["software-engineering", "research-synthesis", "general-reasoning"]) {
-    assert.match(result.stdout, new RegExp(domain));
-  }
-});
-
-test("run defaults to the locally configured Ollama host", () => {
-  const cwd = mkdtempSync(path.join(os.tmpdir(), "praxis-host-"));
-  try {
-    mkdirSync(path.join(cwd, ".recursive-praxis"), { recursive: true });
-    writeFileSync(
-      path.join(cwd, ".recursive-praxis", "config.json"),
-      JSON.stringify({ ollamaBaseUrl: "http://127.0.0.1:1" }),
-      "utf8",
-    );
-
-    // No --host flag: the host configured by `lambda init` is used, and an
-    // unreachable local server fails closed with an actionable message.
-    const run = spawnSync(process.execPath, [cliPath, "run", "Do", "the", "thing"], {
-      encoding: "utf8",
-      cwd,
-    });
-
-    assert.equal(run.status, 1);
-    assert.match(run.stderr, /cannot reach the local Ollama server at http:\/\/127\.0\.0\.1:1/);
-    assert.match(run.stderr, /ollama serve/);
+    assert.equal(result.status, 0);
+    const payload = JSON.parse(result.stdout) as {
+      continue: boolean;
+      hookSpecificOutput: { hookEventName: string; additionalContext: string };
+    };
+    assert.equal(payload.continue, true);
+    assert.equal(payload.hookSpecificOutput.hookEventName, "UserPromptSubmit");
+    assert.match(payload.hookSpecificOutput.additionalContext, /mode 1/);
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }

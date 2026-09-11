@@ -31,6 +31,11 @@ const GATE_ENTRY = {
   hooks: [{ type: "command", command: "lambda gate" }],
 };
 
+/** `context-injection` has no matcher, so its entry carries no `matcher` key. */
+const INJECT_ENTRY = {
+  hooks: [{ type: "command", command: "lambda inject" }],
+};
+
 function planFor(scope: Scope): readonly PlannedFile[] {
   return registry.require("claude").plan(ASSETS, ctx, scope, { version: "9.9.9" });
 }
@@ -67,21 +72,29 @@ describe("Claude Code hook placement", () => {
     assert.equal(file.relPath, ".claude/skills/recursive-praxis/hooks/hooks.json");
     // A file inside our plugin is ours outright, so it is written whole.
     assert.equal(file.fragment, undefined);
-    assert.deepEqual(JSON.parse(file.content), { hooks: { PreToolUse: [GATE_ENTRY] } });
+    assert.deepEqual(JSON.parse(file.content), {
+      hooks: { PreToolUse: [GATE_ENTRY], UserPromptSubmit: [INJECT_ENTRY] },
+    });
   });
 
   it("plans a spliced entry into the user's .claude/settings.json at project scope", () => {
     const files = hookFiles("project");
-    assert.equal(files.length, 1);
-    const file = files[0];
-    assert.ok(file !== undefined);
-    assert.equal(file.absPath, path.join(FAKE_PROJECT, ".claude", "settings.json"));
+    assert.equal(files.length, 2);
+    const gate = files.find((file) => file.fragment?.pointer.at(-1) === "PreToolUse");
+    assert.ok(gate !== undefined);
+    assert.equal(gate.absPath, path.join(FAKE_PROJECT, ".claude", "settings.json"));
     // Their settings file, so an append — never a whole-file write.
-    assert.equal(file.fragment?.merge, "append");
-    assert.deepEqual(file.fragment?.pointer, ["hooks", "PreToolUse"]);
-    assert.deepEqual(file.fragment?.value, GATE_ENTRY);
-  });
+    assert.equal(gate.fragment?.merge, "append");
+    assert.deepEqual(gate.fragment?.pointer, ["hooks", "PreToolUse"]);
+    assert.deepEqual(gate.fragment?.value, GATE_ENTRY);
 
+    const inject = files.find((file) => file.fragment?.pointer.at(-1) === "UserPromptSubmit");
+    assert.ok(inject !== undefined);
+    assert.equal(inject.absPath, path.join(FAKE_PROJECT, ".claude", "settings.json"));
+    assert.equal(inject.fragment?.merge, "append");
+    assert.deepEqual(inject.fragment?.pointer, ["hooks", "UserPromptSubmit"]);
+    assert.deepEqual(inject.fragment?.value, INJECT_ENTRY);
+  });
 });
 
 // --- Codex CLI: the same vocabulary, its own file --------------------------------
@@ -94,20 +107,25 @@ describe("Codex CLI hook placement", () => {
       .filter((file) => file.kind === "hook");
   }
 
-  it("splices the Claude-shaped entry into .codex/hooks.json, outside the .agents root", () => {
+  it("splices both the gate and the injection entry into .codex/hooks.json, outside the .agents root", () => {
     for (const [scope, root] of [
       ["project", FAKE_PROJECT],
       ["global", FAKE_HOME],
     ] as const) {
       const files = codexHooks(scope);
-      assert.equal(files.length, 1, `${scope} planned ${files.length} hook files`);
-      const file = files[0];
-      assert.ok(file !== undefined);
-      assert.equal(file.absPath, path.join(root, ".codex", "hooks.json"));
+      assert.equal(files.length, 2, `${scope} planned ${files.length} hook files`);
+      for (const file of files) {
+        assert.equal(file.absPath, path.join(root, ".codex", "hooks.json"));
+        assert.equal(file.fragment?.merge, "append");
+      }
       // Codex agrees with Claude Code name for name, so it renders identically.
-      assert.equal(file.fragment?.merge, "append");
-      assert.deepEqual(file.fragment?.pointer, ["hooks", "PreToolUse"]);
-      assert.deepEqual(file.fragment?.value, GATE_ENTRY);
+      const gate = files.find((file) => file.fragment?.pointer.at(-1) === "PreToolUse");
+      assert.deepEqual(gate?.fragment?.pointer, ["hooks", "PreToolUse"]);
+      assert.deepEqual(gate?.fragment?.value, GATE_ENTRY);
+
+      const inject = files.find((file) => file.fragment?.pointer.at(-1) === "UserPromptSubmit");
+      assert.deepEqual(inject?.fragment?.pointer, ["hooks", "UserPromptSubmit"]);
+      assert.deepEqual(inject?.fragment?.value, INJECT_ENTRY);
     }
   });
 });
@@ -181,6 +199,14 @@ describe("Cursor hook placement", () => {
     const entry = cursorHooks("global").find((file) => file.fragment?.merge === "append");
     assert.ok(entry !== undefined);
     assert.equal(entry.absPath, path.join(FAKE_HOME, ".cursor", "hooks.json"));
+  });
+
+  it("omits context-injection: beforeSubmitPrompt has no additive-context field to target", () => {
+    for (const scope of ["project", "global"] as const) {
+      const appended = cursorHooks(scope).filter((file) => file.fragment?.merge === "append");
+      assert.equal(appended.length, 1, `${scope} planned ${appended.length} appended hook entries`);
+      assert.deepEqual(appended[0]?.fragment?.pointer, ["hooks", "beforeShellExecution"]);
+    }
   });
 });
 
@@ -273,12 +299,15 @@ describe("appending a hook to a shared settings.json", () => {
 // --- end to end, through the built CLI --------------------------------------------
 
 describe("lambda init --tools claude installs the gate", () => {
-  it("writes a PreToolUse Bash entry running `lambda gate` verbatim", () => {
+  it("writes a PreToolUse Bash entry running `lambda gate` verbatim, plus the injection hook", () => {
     withTempProject((cwd) => {
       assert.equal(runLambda(cwd, "init", "--tools", "claude").status, 0);
 
       const settings = readJson(path.join(cwd, ".claude", "settings.json"));
-      assert.deepEqual(settings.hooks, { PreToolUse: [GATE_ENTRY] });
+      assert.deepEqual(settings.hooks, {
+        PreToolUse: [GATE_ENTRY],
+        UserPromptSubmit: [INJECT_ENTRY],
+      });
     });
   });
 
@@ -309,7 +338,11 @@ describe("lambda init --tools claude installs the gate", () => {
       const after = readJson(settingsPath);
       assert.equal(after.model, "opus");
       assert.deepEqual(after.permissions, { allow: ["Bash(npm run test)"] });
-      assert.deepEqual(after.hooks, { PostToolUse: [theirs], PreToolUse: [GATE_ENTRY] });
+      assert.deepEqual(after.hooks, {
+        PostToolUse: [theirs],
+        PreToolUse: [GATE_ENTRY],
+        UserPromptSubmit: [INJECT_ENTRY],
+      });
 
       const second = runLambda(cwd, "init", "--tools", "claude", "--json");
       assert.equal(second.status, 0);
@@ -320,13 +353,15 @@ describe("lambda init --tools claude installs the gate", () => {
     });
   });
 
-  it("installs the gate for Codex CLI and Cursor in each host's own dialect", () => {
+  it("installs the gate and the injection hook for Codex CLI, and only the gate for Cursor", () => {
     withTempProject((cwd) => {
       assert.equal(runLambda(cwd, "init", "--tools", "codex,cursor").status, 0);
 
       assert.deepEqual(readJson(path.join(cwd, ".codex", "hooks.json")), {
-        hooks: { PreToolUse: [GATE_ENTRY] },
+        hooks: { PreToolUse: [GATE_ENTRY], UserPromptSubmit: [INJECT_ENTRY] },
       });
+      // Cursor has no additive-context field for beforeSubmitPrompt, so it
+      // gets only the gate — see the "omits context-injection" test above.
       assert.deepEqual(readJson(path.join(cwd, ".cursor", "hooks.json")), {
         version: 1,
         hooks: {

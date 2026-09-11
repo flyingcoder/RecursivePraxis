@@ -43,7 +43,16 @@ describe("InitWizard", () => {
         report.hosts.map((host) => host.hostId),
         ["claude"],
       );
-      assert.ok(report.files.every((file) => file.action === "created"));
+      // .claude/settings.json takes two spliced fragments (the gate and the
+      // context-injection hook), so its second entry lands as "refreshed" —
+      // still a first-write, just recorded against an already-created file.
+      assert.ok(
+        report.files.every(
+          (file) =>
+            file.action === "created" ||
+            (file.relPath === ".claude/settings.json" && file.action === "refreshed"),
+        ),
+      );
       assert.ok(existsSync(path.join(box.projectRoot, ".claude/skills/recursive-praxis-status/SKILL.md")));
     } finally {
       box.dispose();
@@ -102,8 +111,9 @@ describe("InitWizard", () => {
       assert.equal(manifest.lambdaVersion, "9.9.9");
       assert.equal(manifest.scope, "project");
       assert.deepEqual(manifest.hosts.map((h) => h.id), ["codex"]);
-      // Codex takes the skill surface plus one spliced hook entry.
-      assert.equal(manifest.hosts[0]!.files.length, ASSETS.skills().length + 1);
+      // Codex takes the skill surface plus two spliced hook entries (the
+      // gate and the context-injection hook).
+      assert.equal(manifest.hosts[0]!.files.length, ASSETS.skills().length + 2);
       assert.ok(manifest.hosts[0]!.files.every((file) => /^[0-9a-f]{64}$/.test(file.sha256)));
     } finally {
       box.dispose();

@@ -53,8 +53,15 @@ describe("lambda init: idempotent re-run", () => {
     try {
       const first = runLambda(["init", "--tools", "claude", "--json"], cwd);
       assert.equal(first.status, 0);
-      const firstSummary = JSON.parse(first.stdout) as { files: { action: string }[] };
-      assert.ok(firstSummary.files.every((f) => f.action === "created"));
+      const firstSummary = JSON.parse(first.stdout) as { files: { relPath: string; action: string }[] };
+      // .claude/settings.json takes two spliced fragments (the gate and the
+      // context-injection hook), so its second entry lands as "refreshed" —
+      // still a first-write, just recorded against an already-created file.
+      assert.ok(
+        firstSummary.files.every(
+          (f) => f.action === "created" || (f.relPath === ".claude/settings.json" && f.action === "refreshed"),
+        ),
+      );
 
       const second = runLambda(["init", "--tools", "claude", "--json"], cwd);
       assert.equal(second.status, 0);
@@ -221,18 +228,18 @@ describe("lambda --help mentions init", () => {
 // --- init as the configuration surface -------------------------------------------
 
 describe("lambda init configuration", () => {
-  it("writes the chosen host and model to .recursive-praxis/config.json", () => {
+  it("writes the chosen context-injection setting to .recursive-praxis/config.json", () => {
     const cwd = tmpProject();
-    const result = runLambda(["init", "--tools", "none", "--host", "ollama", "--model", "qwen3"], cwd);
+    const result = runLambda(["init", "--tools", "none", "--context-injection", "off"], cwd);
 
     assert.equal(result.status, 0);
     const written = JSON.parse(
       readFileSync(path.join(cwd, ".recursive-praxis", "config.json"), "utf8"),
     ) as Record<string, string>;
-    assert.deepEqual(written, { defaultHost: "ollama", ollamaModel: "qwen3" });
+    assert.deepEqual(written, { contextInjection: "off" });
   });
 
-  it("reports local Ollama defaults without writing when no config flag is passed", () => {
+  it("reports the on-by-default setting without writing when no config flag is passed", () => {
     const cwd = tmpProject();
     const result = runLambda(["init", "--tools", "none", "--json"], cwd);
     const payload = JSON.parse(result.stdout) as {
@@ -240,42 +247,32 @@ describe("lambda init configuration", () => {
     };
 
     assert.equal(payload.config.written, false);
-    assert.equal(payload.config.settings.defaultHost, "ollama");
-    assert.equal(payload.config.settings.ollamaBaseUrl, "http://127.0.0.1:11434");
-    assert.equal(payload.config.sources.defaultHost, "default");
+    assert.equal(payload.config.settings.contextInjection, "on");
+    assert.equal(payload.config.sources.contextInjection, "default");
     assert.equal(existsSync(path.join(cwd, ".recursive-praxis", "config.json")), false);
   });
 
-  it("keeps earlier choices when a later init changes only one setting", () => {
+  it("keeps earlier choices when a later init re-affirms the same setting", () => {
     const cwd = tmpProject();
-    runLambda(["init", "--tools", "none", "--ollama-url", "http://127.0.0.1:9999"], cwd);
-    runLambda(["init", "--tools", "none", "--model", "qwen3"], cwd);
+    runLambda(["init", "--tools", "none", "--context-injection", "off"], cwd);
+    runLambda(["init", "--tools", "none"], cwd);
 
     const written = JSON.parse(
       readFileSync(path.join(cwd, ".recursive-praxis", "config.json"), "utf8"),
     ) as Record<string, string>;
-    assert.deepEqual(written, { ollamaBaseUrl: "http://127.0.0.1:9999", ollamaModel: "qwen3" });
+    assert.deepEqual(written, { contextInjection: "off" });
   });
 
-  it("rejects an unknown host without writing a config file", () => {
+  it("rejects an unknown context-injection value without writing a config file", () => {
     const cwd = tmpProject();
-    const result = runLambda(["init", "--tools", "none", "--host", "gpt"], cwd);
-
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /unknown host: gpt/);
-    assert.equal(existsSync(path.join(cwd, ".recursive-praxis", "config.json")), false);
-  });
-
-  it("rejects an invalid ollama url without writing a config file", () => {
-    const cwd = tmpProject();
-    const result = runLambda(["init", "--tools", "none", "--ollama-url", "nope"], cwd);
+    const result = runLambda(["init", "--tools", "none", "--context-injection", "maybe"], cwd);
 
     assert.equal(result.status, 1);
     assert.equal(existsSync(path.join(cwd, ".recursive-praxis", "config.json")), false);
   });
 
   it("still requires --tools", () => {
-    const result = runLambda(["init", "--host", "ollama"], tmpProject());
+    const result = runLambda(["init", "--context-injection", "off"], tmpProject());
     assert.equal(result.status, 1);
     assert.match(result.stderr, /requires --tools/);
   });

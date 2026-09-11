@@ -45,11 +45,12 @@ describe("project-scope layouts", () => {
     for (const id of SLUGS) {
       assert.ok(files.some((f) => f.relPath === `.agents/skills/recursive-praxis-${id}/SKILL.md`));
     }
-    // Codex has no command or MCP surface here; the hook is the one file of its
-    // own that lives outside `.agents/`.
+    // Codex has no command or MCP surface here; the gate and inject hooks are
+    // the only files of its own that live outside `.agents/`, both spliced
+    // into the same hooks.json.
     assert.deepEqual(
       files.filter((f) => f.kind === "hook").map((f) => f.relPath),
-      [".codex/hooks.json"],
+      [".codex/hooks.json", ".codex/hooks.json"],
     );
   });
 
@@ -99,7 +100,7 @@ describe("global-scope layouts", () => {
     // the mistake this test exists to catch, and it stays caught.
     assert.deepEqual(
       paths.filter((p) => p.startsWith(".codex/")),
-      [".codex/hooks.json"],
+      [".codex/hooks.json", ".codex/hooks.json"],
     );
   });
 
