@@ -4,6 +4,7 @@ dist/
 coverage/
 .DS_Store
 release/
+.ua/
 
 # Captured `lambda init` output committed as documentation, not session state.
 !docs/suggestions/**/.recursive-praxis/
