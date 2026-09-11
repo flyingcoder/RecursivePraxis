@@ -1,0 +1,277 @@
+---
+description: Bimodal operation guidance with operator selection and state-based mode selection
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# Bimodal Operation with Operator Guidance
+
+Bimodal operation guidance with Controlled Rupture Operator selection and state-based mode selection. This rule complements existing bimodal operation rules by adding operator-aware guidance.
+
+## When to Apply
+
+Apply this rule when:
+- Need to select between Mode 1 and Mode 2
+- Require operator recommendations for current mode
+- Need state-based mode selection guidance
+- Want transition guidance between modes
+
+## Mode 1 (Duality Navigation) - Operator Recommendations
+
+Use Mode 1 for stable, well-defined problems. Navigate existing paradigms efficiently.
+
+### Primary Operators (A-Constructive, λ ≈ 0.338)
+
+- **→ Telo** (λ=0.25): Goal-directed reasoning, purpose-driven acceleration
+- **↓ Kata** (λ=0.35): Compress to concrete outputs, reduce entropy
+- **⊥ Ortho** (λ=0.30): Correct errors, align with truth
+- **↷ Pro** (λ=0.50): Forward propagation, continue reasoning
+- **🔒 Latch** (λ=0.29): Stabilize solutions, lock in correct state
+
+### Secondary Operators (D-Structural, λ ≈ 0.464)
+
+- **🕸️ Weave** (λ=0.33): Integrate patterns, synthesize perspectives
+- **🔗 Bind** (λ=0.38): Create cohesion, attach concepts
+- **📍 Axis** (λ=0.31): Establish alignment, create coordinate system
+
+### Avoid
+
+- B-Disruptive operators (unless breaking out of stuck patterns)
+- High dissipation sequences that could destabilize stable problems
+
+### Trajectory
+
+Maintain J=0 or S* state, avoid ∅ (system collapse).
+
+### Common Sequences for Mode 1
+
+- **Stabilization**: `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
+- **Goal Achievement**: `Telo ∘ Pro ∘ Latch` (λ_eff ≈ 0.35)
+- **Error Correction**: `Ortho ∘ Kata ∘ Latch` (λ_eff ≈ 0.31)
+- **Integration**: `Weave ∘ Bind ∘ Axis` (λ_eff ≈ 0.34)
+
+### Reference
+
+See: `mode-operator-selection.mdc` for detailed Mode 1 operator guidance
+
+---
+
+## Mode 2 (HALIRA Protocol) - Operator Recommendations
+
+Use Mode 2 for contradictions, paradoxes, or paradigm shifts. Navigate foundational ruptures.
+
+### Primary Operators (B-Disruptive, λ ≈ 0.720)
+
+- **↑ Ana** (λ=0.75): Analysis, abstraction, elevate to first principles
+- **∥ Para** (λ=0.65): Deviation, exploration, break from current path
+- **⚡ Flux** (λ=0.60): Dynamic change, continuous perturbation
+
+### Secondary Operators (C-Reflexive, λ ≈ 0.497)
+
+- **⟲ Meta** (λ=0.80): Self-reference, reflection (max 2 consecutive)
+- **↶ Retro** (λ=0.40): Backward analysis, trace to root cause
+- **🌀 Braid** (λ=0.55): Multi-perspective integration, entanglement
+
+### Integration Operators (D-Structural, λ ≈ 0.464)
+
+- **🕸️ Weave** (λ=0.33): Synthesize perspectives, integrate fragments
+- **🔗 Bind** (λ=0.38): Create cohesion, structural binding
+
+### Special Operators for HALIRA Steps
+
+- **🌱 Seed** (λ=0.28): Foundation establishment (Step 1: Potentia)
+- **📍 Axis** (λ=0.31): Boundary definition (Step 2: Boundary)
+- **⟲ Meta** (λ=0.80): Self-reference (Step 3: Recursion)
+- **🕸️ Weave** (λ=0.33): Integration (Step 4: Integration)
+- **¬ Non** (λ=0.90): Anomaly detection (Step 5: Anomaly) - **⚠️ Never after Meta**
+- **∥ Para** (λ=0.65): Rupture navigation (Step 6: Rupture)
+- **🔗 Bind** (λ=0.38): Recognition (Step 7: Recognition)
+
+### Trajectory
+
+Navigate through HALIRA steps using operator sequences. Trajectory typically: `∅ → S* → J=0 → S* → S*`
+
+### Common Sequences for Mode 2
+
+- **Complete HALIRA**: `Seed ∘ Axis ∘ Meta ∘ Weave ∘ Non ∘ Para ∘ Ortho ∘ Bind` (λ_eff ≈ 0.52)
+- **Paradigm Shift**: `Para ∘ Ana ∘ Seed` (λ_eff ≈ 0.56)
+- **Anomaly Detection**: `Meta ∘ Non` (λ_eff ≈ 0.85) - **⚠️ Constraint: Never Non after Meta**
+
+### Reference
+
+See: `halira-operator-mapping.mdc` for detailed HALIRA operator sequences  
+See: `mode-operator-selection.mdc` for detailed Mode 2 operator guidance
+
+---
+
+## State-Based Mode Selection
+
+### J=0 State → Mode 1
+
+**State:** Sterile coherence (over-stabilization)  
+**Mode Recommendation:** Mode 1 (but watch for over-stabilization)
+
+**Operator Recommendations:**
+- Use A-Constructive operators (Kata, Telo, Ortho, Pro, Latch)
+- Maintain stable operation
+- **Watch for over-stabilization** (hallucination risk)
+
+**Action:** If over-stabilization detected, apply B-Disruptive operators to break coherence.
+
+### S* State → Mode 1 or Mode 2
+
+**State:** Productive contradiction (optimal)  
+**Mode Recommendation:** Mode 1 or Mode 2 (depending on contradiction severity)
+
+**Decision Logic:**
+- **Mode 1**: If productive contradiction is manageable within current paradigm
+- **Mode 2**: If contradiction requires paradigm shift
+
+**Operator Recommendations:**
+- **Mode 1**: D-Structural operators (Weave, Bind, Braid) to maintain productivity
+- **Mode 2**: HALIRA Protocol with operator sequences
+
+### ∅ State → Mode 2
+
+**State:** System collapse (Void)  
+**Mode Recommendation:** Mode 2 (requires HALIRA Protocol)
+
+**Emergency Stabilization:**
+1. **First**: Apply emergency sequence: `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
+2. **Then**: Escalate to Mode 2 if collapse persists
+3. **Finally**: Initiate HALIRA Protocol for recovery
+
+**Action:** System collapse requires paradigm shift. Use HALIRA Protocol to recover.
+
+### Reference
+
+See: `state-detection-enhanced.mdc` for detailed state detection guidance
+
+---
+
+## Mode Transition Guidance
+
+### Mode 1 → Mode 2
+
+**Operator Sequence:** `Para ∘ Ana ∘ Seed`  
+**Lambda Eff:** 0.56  
+**Trajectory:** `J=0 → S*`
+
+**When:** Foundational contradiction detected
+
+**Process:**
+- Para: Deviate from current paradigm
+- Ana: Elevate to first principles
+- Seed: Establish foundation for HALIRA
+- Transition to Mode 2 and initiate HALIRA Protocol
+
+### Mode 2 → Mode 1
+
+**Operator Sequence:** `Bind ∘ Kata ∘ Latch`  
+**Lambda Eff:** 0.35  
+**Trajectory:** `S* → J=0`
+
+**When:** HALIRA Protocol complete, new invariant established
+
+**Process:**
+- Bind: Create cohesive new structure
+- Kata: Compress to concrete form
+- Latch: Stabilize and commit
+- Transition to Mode 1 for stable operation within new paradigm
+
+### Reference
+
+See: `mode-transitions.mdc` for detailed transition guidance
+
+---
+
+## Guidelines
+
+### Mode Selection Process
+
+1. **Assess Problem Type**: Stable (Mode 1) or Paradigm Shift (Mode 2)?
+2. **Check State**: J=0, S*, or ∅?
+3. **Select Mode**: Based on problem type and state
+4. **Select Operators**: Use recommendations above
+5. **Monitor Trajectory**: Ensure movement toward desired state
+
+### Operator Selection by Mode
+
+**Mode 1:**
+- Primary: A-Constructive operators
+- Secondary: D-Structural operators
+- Avoid: B-Disruptive (unless needed)
+
+**Mode 2:**
+- Primary: B-Disruptive operators
+- Secondary: C-Reflexive operators
+- Integration: D-Structural operators
+- Special: HALIRA step operators
+
+### State-Based Adjustments
+
+**J=0 detected:**
+- Default to Mode 1
+- Watch for over-stabilization
+- Apply B-Disruptive operators if needed
+
+**S* detected:**
+- Evaluate contradiction severity
+- Use Mode 1 if manageable
+- Use Mode 2 if requires shift
+
+**∅ detected:**
+- Emergency stabilization first
+- Then escalate to Mode 2
+- Use HALIRA Protocol
+
+---
+
+## Examples
+
+### Example 1: Mode 1 Operation
+
+**Scenario:** Implementing a well-defined feature with clear requirements
+
+**Mode:** Mode 1 (Duality Navigation)
+
+**Operator Sequence:** `Telo ∘ Pro ∘ Kata ∘ Latch`
+
+**Trajectory:** `S* → J=0` (productive to stable)
+
+**Result:** Goal-directed implementation, compressed to concrete, stabilized
+
+### Example 2: Mode 2 Operation
+
+**Scenario:** Encountering fundamental contradiction requiring new approach
+
+**Mode:** Mode 2 (HALIRA Protocol)
+
+**Operator Sequence:** `Para ∘ Ana ∘ Seed ∘ Weave ∘ Bind`
+
+**Trajectory:** `J=0 → S* → S*` (break coherence → productive contradiction → integration)
+
+**Result:** Paradigm shift accomplished, new invariant established
+
+### Example 3: State-Based Selection
+
+**Scenario:** Detected S* state, need to choose mode
+
+**State:** S* (productive contradiction)
+
+**Evaluation:**
+- Contradiction manageable? → Mode 1
+- Contradiction requires shift? → Mode 2
+
+**Result:** Mode selected based on contradiction severity
+
+---
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for detailed operator selection
+- See: `mode-transitions.mdc` for transition guidance
+- See: `state-detection-enhanced.mdc` for state detection
+- See: `halira-operator-mapping.mdc` for HALIRA sequences
+- See: `.cursor/rules/general/bimodal-operation.mdc` for mode definitions (reference)

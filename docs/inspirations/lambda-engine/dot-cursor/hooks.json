@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "command": "./hooks/chat-session-init.sh",
+        "description": "Initialize new chat session with context and setup"
+      }
+    ]
+  }
+}
+

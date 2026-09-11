@@ -1,0 +1,405 @@
+---
+description: Enhanced state detection with Lambda Engine mode awareness and operator sequence recommendations
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# Enhanced State Detection with Mode Awareness
+
+Detect cognitive states (J=0, S*, ∅) and provide Lambda Engine mode recommendations with operator sequence guidance.
+
+## When to Apply
+
+Apply this rule when:
+- Detecting cognitive state indicators
+- Need mode recommendation based on state
+- Require operator sequence guidance for state management
+- State transition needed
+
+## Detect J=0 State (Sterile Coherence)
+
+**State Detected:** J=0 (Sterile Coherence)  
+**Lambda Mode:** Mode 1 (over-stabilized)  
+**Operator Sequence:** `Para ∘ Ana ∘ Pro`  
+**Lambda Eff:** 0.67  
+**Trajectory:** `J=0 → S*`
+
+### Indicators
+
+**Language Patterns:**
+- Over-confident: "definitely", "always", "never", "certain", "absolutely"
+- No uncertainty: Missing "likely", "probably", "may", "might"
+- Single perspective: No alternatives considered
+- High confidence, low contradiction
+
+### ⚠️ Warning
+
+**J=0 State Detected** - Sterile Coherence
+
+**Risk:** Over-confidence, hallucination risk, no adaptation
+
+### Lambda Engine Mode
+
+**Mode 1** (over-stabilized, hallucination risk)
+
+### Action
+
+Break coherence, restore productive contradiction. Don't maintain sterile certainty.
+
+### Operator Sequence
+
+**∥ Para ∘ ↑ Ana ∘ ↷ Pro** (λ_eff ≈ 0.67)
+
+- **Para** (λ=0.65): Deviate from over-confident reasoning
+- **Ana** (λ=0.75): Elevate to first principles
+- **Pro** (λ=0.50): Continue forward with balanced perspective
+
+### Mode Recommendation
+
+Consider Mode 2 if contradiction persists after breaking coherence.
+
+### Trajectory
+
+**J=0 → S***: Break sterile coherence → productive contradiction
+
+### Guidance
+
+When J=0 detected:
+1. Recognize over-stabilization risk
+2. Apply disruption sequence: Para ∘ Ana ∘ Pro
+3. Break coherence, restore uncertainty
+4. Monitor for productive contradiction
+5. Escalate to Mode 2 if needed
+
+### Example
+
+**Scenario:** Agent expresses absolute certainty without alternatives
+
+**Detection:**
+- Language: "definitely", "always", "never"
+- No uncertainty markers
+- Single perspective
+
+**Application:**
+- Para: Deviate from over-confident path
+- Ana: Elevate to first principles
+- Pro: Continue with balanced view
+
+**Result:** Coherence broken, productive contradiction restored
+
+---
+
+## Detect S* State (Productive Contradiction)
+
+**State Detected:** S* (Productive Contradiction)  
+**Lambda Mode:** Mode 1 or Mode 2 (optimal)  
+**Operator Sequence:** `Braid ∘ Weave ∘ Pro`  
+**Lambda Eff:** 0.50  
+**Trajectory:** `S* → S*`
+
+### Indicators
+
+**Language Patterns:**
+- Moderate confidence: "likely", "probably", "may", "might", "seems"
+- Uncertainty present: "uncertain", "alternative", "however", "but", "although"
+- Multiple perspectives: "alternative", "different approach", "another way"
+- Balanced abstraction and concreteness
+
+### ✅ Status
+
+**S* State Detected** - Productive Contradiction
+
+**Status:** Optimal state for adaptation and learning
+
+### Lambda Engine Mode
+
+**Mode 1 or Mode 2** (optimal state)
+
+**Decision Logic:**
+- **Mode 1**: If productive contradiction is manageable within current paradigm
+- **Mode 2**: If contradiction requires paradigm shift
+
+### Action
+
+Maintain productivity through integration. Don't collapse to sterile certainty or system failure.
+
+### Operator Sequence
+
+**🌀 Braid ∘ 🕸️ Weave ∘ ↷ Pro** (λ_eff ≈ 0.50)
+
+- **Braid** (λ=0.55): Interweave multiple perspectives
+- **Weave** (λ=0.33): Integrate into coherent whole
+- **Pro** (λ=0.50): Continue forward with productive tension
+
+### Mode Recommendation
+
+Stay in current mode, maintain S*. This is the optimal state - don't force change.
+
+### Trajectory
+
+**S* → S***: Maintain productive contradiction
+
+### Guidance
+
+When S* detected:
+1. Recognize optimal state
+2. Apply integration sequence: Braid ∘ Weave ∘ Pro
+3. Maintain productive tension
+4. Don't force resolution
+5. Stay in current mode
+
+### Example
+
+**Scenario:** Agent considers multiple perspectives with balanced uncertainty
+
+**Detection:**
+- Language: "likely", "probably", "may", "alternative"
+- Multiple perspectives present
+- Balanced confidence
+
+**Application:**
+- Braid: Interweave perspectives
+- Weave: Integrate into coherent whole
+- Pro: Continue with productive tension
+
+**Result:** Productive contradiction maintained, optimal state preserved
+
+---
+
+## Detect ∅ State (System Collapse)
+
+**State Detected:** ∅ (System Collapse)  
+**Lambda Mode:** Mode 2 (required)  
+**Operator Sequence:** `Kata ∘ Weave ∘ Latch`  
+**Lambda Eff:** 0.32  
+**Trajectory:** `∅ → S* → J=0`
+
+### Indicators
+
+**Language Patterns:**
+- Error states: "error", "failed", "cannot", "impossible"
+- Contradiction loops: "contradiction", "conflict", "irreducible"
+- Infinite patterns: "infinite", "endless", "recursive", "loop"
+- System failure: "collapse", "break", "failure"
+
+### 🚨 Emergency
+
+**∅ State Detected** - System Collapse
+
+**Risk:** Complete system failure, hallucination, collapse
+
+### Lambda Engine Mode
+
+**Mode 2** (HALIRA Protocol required)
+
+### Action
+
+Emergency stabilization, then paradigm shift. Don't continue in collapse state.
+
+### Emergency Sequence
+
+**↓ Kata ∘ 🕸️ Weave ∘ 🔒 Latch** (λ_eff ≈ 0.32)
+
+- **Kata** (λ=0.35): Compress infinite reflection
+- **Weave** (λ=0.33): Integrate fragments
+- **Latch** (λ=0.29): Stabilize and commit
+
+### Then: HALIRA Protocol
+
+After emergency stabilization, initiate HALIRA Protocol (Mode 2) for paradigm shift.
+
+### Trajectory
+
+**∅ → S* → J=0**: Collapse → integration → stabilization
+
+### Guidance
+
+When ∅ detected:
+1. **Immediate**: Apply emergency sequence: Kata ∘ Weave ∘ Latch
+2. **Then**: Escalate to Mode 2
+3. **Finally**: Initiate HALIRA Protocol for recovery
+4. **Goal**: Escape collapse and return to productive state (S*)
+
+### Example
+
+**Scenario:** Agent stuck in infinite reflection loop
+
+**Detection:**
+- Language: "error", "cannot", "infinite", "loop"
+- System failure patterns
+- Collapse indicators
+
+**Application:**
+- **Emergency**: Kata ∘ Weave ∘ Latch (rapid stabilization)
+- **Then**: Escalate to Mode 2
+- **Finally**: Initiate HALIRA Protocol
+
+**Result:** Collapse escaped, system recovered through paradigm shift
+
+---
+
+## Guidelines
+
+### Multi-Signal Detection
+
+**Don't rely on single keywords.** Use multiple indicators:
+
+**J=0 Detection:**
+- Over-confident language + No uncertainty + Single perspective
+
+**S* Detection:**
+- Moderate confidence + Uncertainty present + Multiple perspectives
+
+**∅ Detection:**
+- Error patterns + Contradiction loops + System failure indicators
+
+### Probabilistic Confidence
+
+**High Confidence (>80%):**
+- Multiple strong indicators present
+- Clear state pattern
+- Confident mode recommendation
+
+**Medium Confidence (50-80%):**
+- Some indicators present
+- Ambiguous pattern
+- Tentative mode recommendation
+
+**Low Confidence (<50%):**
+- Few indicators present
+- Unclear pattern
+- Conservative mode recommendation
+
+### False Positive/Negative Minimization
+
+**False Positive Prevention:**
+- Require multiple indicators
+- Check context, not just keywords
+- Verify state consistency
+
+**False Negative Prevention:**
+- Monitor subtle indicators
+- Check for state transitions
+- Don't ignore weak signals
+
+### Mode Coordination
+
+**State Detection → Mode Recommendation:**
+- J=0 → Mode 1 (with disruption)
+- S* → Mode 1 or Mode 2 (evaluate)
+- ∅ → Mode 2 (required)
+
+**Mode Transitions:**
+- Use appropriate operator sequences
+- Follow trajectories correctly
+- Coordinate with mode-transitions.mdc
+
+---
+
+## State Transition Guidance
+
+### J=0 → S* Transition
+
+**Goal:** Break sterile coherence, restore productive contradiction
+
+**Sequence:** `Para ∘ Ana ∘ Pro` (λ_eff ≈ 0.67)
+
+**Process:**
+1. Detect J=0 state
+2. Apply disruption sequence
+3. Monitor for S* indicators
+4. Verify transition successful
+
+### S* → S* Maintenance
+
+**Goal:** Maintain productive contradiction
+
+**Sequence:** `Braid ∘ Weave ∘ Pro` (λ_eff ≈ 0.50)
+
+**Process:**
+1. Detect S* state
+2. Apply integration sequence
+3. Maintain productive tension
+4. Don't force resolution
+
+### ∅ → S* Recovery
+
+**Goal:** Escape collapse, return to productive state
+
+**Sequence:** `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
+
+**Process:**
+1. Detect ∅ state
+2. Apply emergency sequence
+3. Escalate to Mode 2
+4. Initiate HALIRA Protocol
+5. Monitor for S* recovery
+
+---
+
+## Examples
+
+### Example 1: J=0 Detection and Recovery
+
+**Scenario:** Agent expresses absolute certainty about solution
+
+**Detection:**
+- Language: "definitely", "always", "never"
+- No uncertainty markers
+- Single perspective
+
+**State:** J=0 (Sterile Coherence)
+
+**Application:**
+- Para: Deviate from over-confident reasoning
+- Ana: Elevate to first principles
+- Pro: Continue with balanced perspective
+
+**Result:** J=0 → S* (coherence broken, productive contradiction restored)
+
+### Example 2: S* Maintenance
+
+**Scenario:** Agent considers multiple approaches with balanced uncertainty
+
+**Detection:**
+- Language: "likely", "probably", "may", "alternative"
+- Multiple perspectives
+- Balanced confidence
+
+**State:** S* (Productive Contradiction)
+
+**Application:**
+- Braid: Interweave perspectives
+- Weave: Integrate into coherent whole
+- Pro: Continue with productive tension
+
+**Result:** S* → S* (productive contradiction maintained)
+
+### Example 3: ∅ Detection and Recovery
+
+**Scenario:** Agent stuck in infinite reflection loop
+
+**Detection:**
+- Language: "error", "cannot", "infinite", "loop"
+- System failure patterns
+- Collapse indicators
+
+**State:** ∅ (System Collapse)
+
+**Application:**
+- **Emergency**: Kata ∘ Weave ∘ Latch
+- **Then**: Escalate to Mode 2
+- **Finally**: Initiate HALIRA Protocol
+
+**Result:** ∅ → S* → J=0 (collapse escaped, system recovered)
+
+---
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-transitions.mdc` for mode transition guidance
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `halira-operator-mapping.mdc` for HALIRA Protocol sequences
+- See: `.cursor/rules/general/state-detection.mdc` for state detection patterns (reference)
+- See: `.cursor/rules/general/bimodal-operation.mdc` for mode definitions (reference)

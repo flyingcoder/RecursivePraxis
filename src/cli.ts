@@ -3,33 +3,8 @@
 import { allOperatorNames, lookupOperator } from "./vocab/operators.js";
 import { checkForbiddenSequence } from "./vocab/grammar.js";
 import { ALGEBRA, operatorClassProfile } from "./kernel/index.js";
-import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
-import {
-  TRUSTED_POLICY,
-  createTaskState,
-  planTask,
-  type PolicyProfile,
-} from "./engine/core.js";
-import {
-  FileTraceRepository,
-  runTask,
-  verifyReplay,
-  type ModelHost,
-  type TaskTrace,
-} from "./engine/orchestrator.js";
-import { DeterministicFakeModelHost } from "./adapters/model-hosts.js";
-import { createAnthropicHost } from "./adapters/anthropic-transport.js";
-import { createCursorHost } from "./adapters/cursor-transport.js";
-import { createClaudeIdeHost } from "./adapters/claude-ide-transport.js";
-import { createOllamaHost } from "./adapters/ollama-transport.js";
-import { MODEL_HOST_IDS, Settings } from "./config/settings.js";
-import {
-  promoteExperimentalPolicy,
-  runCapabilityBenchmark,
-  type BenchmarkResult,
-} from "./engine/evaluation.js";
 import { runSense } from "./cli-commands/sense.js";
 import { runStep } from "./cli-commands/step.js";
 import { runStatus } from "./cli-commands/status.js";
@@ -42,6 +17,7 @@ import { runHalira } from "./cli-commands/halira.js";
 import { runBind } from "./cli-commands/bind.js";
 import { runIr } from "./cli-commands/ir.js";
 import { runGate } from "./cli-commands/gate.js";
+import { runInject } from "./cli-commands/inject.js";
 import { runMcp } from "./cli-commands/mcp.js";
 import { runInit } from "./cli-commands/init.js";
 import { runDoctor } from "./cli-commands/doctor.js";
@@ -94,12 +70,6 @@ function printHelp(): void {
     "  lambda operators list",
     "  lambda operators show <Op> [<Op>…]",
     "  lambda check <Op> [<Op>…]",
-    "  lambda plan <task>",
-    "  lambda run [--host ollama|fake|anthropic|cursor|claude-ide] <task>",
-    "  lambda inspect <task-id>",
-    "  lambda replay <task-id>",
-    "  lambda eval [--host ollama|fake|anthropic|cursor|claude-ide]",
-    "  lambda promote <experimental-policy.json> <benchmark.json>",
     "  lambda status [--json]",
     "  lambda sense --d <n> --c <n> | --from <json> [--json]",
     "  lambda step [--op <Op>] [--json]",
@@ -114,8 +84,7 @@ function printHelp(): void {
     "  lambda mcp",
     "  lambda init [--tools claude,cursor,codex,opencode | all | none]",
     "              [--scope project|global]",
-    "              [--host ollama|fake|anthropic|cursor|claude-ide]",
-    "              [--model <name>] [--ollama-url <url>] [--json]",
+    "              [--context-injection on|off] [--json]",
     "  lambda doctor [--scope project|global] [--json]",
     "  lambda sync [--scope project|global] [--check] [--json]",
     "  lambda uninstall [--scope project|global] [--tools <ids>] [--prune] [--json]",
@@ -125,14 +94,6 @@ function printHelp(): void {
     "  operators  — list the operator alphabet, or show name/class/meaning/effect",
     "               for one or more operators as JSON",
     "  check      — hard-reject forbidden operator sequences",
-    "  plan       — build a deterministic, budgeted operator plan",
-    "  run        — execute through the capability-gated model host",
-    "               (defaults to the host configured by `lambda init`;",
-    "               out of the box that is a local Ollama server)",
-    "  inspect    — inspect a redacted local task trace",
-    "  replay     — verify trace integrity and reproduce its plan",
-    "  eval       — run the grounded multi-domain benchmark",
-    "  promote    — promote an experimental policy from grounded results",
     "",
     "Kernel (dissipation solver, .recursive-praxis/session.json):",
     "  status     — attractor, V, D/C, λ_eff, mode, legalNext for the current session",
@@ -154,6 +115,12 @@ function printHelp(): void {
     "  gate       — PreToolUse hook body: reads a hook payload from stdin,",
     "               blocks a `lambda step --op <Op>` shell call outside",
     "               legalNext. Not normally run by hand.",
+    "  inject     — UserPromptSubmit hook body: reads a hook payload from",
+    "               stdin, prints the session briefing (mode, attractor,",
+    "               λ_eff, legalNext) for the host to prepend to the turn.",
+    "               Never blocks; switch it off with",
+    "               `lambda init --context-injection off`. Not normally run",
+    "               by hand.",
     "",
     "MCP server:",
     "  mcp        — speak MCP over stdio, exposing the intent-derivation tools",
@@ -169,9 +136,9 @@ function printHelp(): void {
     "               call this CLI (cognition only — no OpenSpec, no delivery",
     "               workflow, no new runtime). Four questions on a terminal;",
     "               --tools/--scope pre-answer them and it prompts for nothing.",
-    "               Also records the model host / model settings in",
-    "               .recursive-praxis/config.json. These settings are chosen",
-    "               here and nowhere else; API keys stay in the environment.",
+    "               Also records the context-injection toggle in",
+    "               .recursive-praxis/config.json. This setting is chosen",
+    "               here and nowhere else.",
     "  doctor     — verify an install: drift, orphans, a manifest older than the",
     "               CLI, and hosts that have since disappeared. Exits non-zero on",
     "               any of them, so it works as a CI check.",
@@ -303,141 +270,9 @@ function runCheck(rawOps: string[]): void {
   process.exit(1);
 }
 
-const traceRepository = new FileTraceRepository(
-  path.resolve(process.cwd(), ".recursive-praxis/traces"),
-);
-
-function taskFrom(args: string[], command: string): string {
-  const objective = args.join(" ").trim();
-  if (!objective) {
-    console.error(`usage: lambda ${command} <task>`);
-    process.exit(1);
-  }
-  return objective;
-}
-
-function extractHostFlag(args: string[]): { host?: string | undefined; rest: string[] } {
-  const rest: string[] = [];
-  let host: string | undefined;
-  for (let i = 0; i < args.length; i++) {
-    const value = args[i]!;
-    if (value === "--host") {
-      host = args[i + 1];
-      i += 1;
-      continue;
-    }
-    if (value.startsWith("--host=")) {
-      host = value.slice("--host=".length);
-      continue;
-    }
-    rest.push(value);
-  }
-  return { host, rest };
-}
-
 function extractJsonFlag(args: string[]): { json: boolean; rest: string[] } {
   const rest = args.filter((value) => value !== "--json");
   return { json: rest.length !== args.length, rest };
-}
-
-/**
- * Loads the init-scoped configuration written by `lambda init`, plus any
- * secrets from the environment. Out of the box this resolves to local Ollama.
- */
-async function loadSettings(): Promise<Settings> {
-  return Settings.load({ cwd: process.cwd(), baseDir: SESSION_BASE_DIR });
-}
-
-/**
- * `--host` overrides the configured default for a single run; with the flag
- * omitted, the host chosen at init time is used.
- */
-function resolveHost(host: string | undefined, settings: Settings): ModelHost {
-  const id = host ?? settings.host();
-  if (id === "ollama") return createOllamaHost(settings);
-  if (id === "fake") return new DeterministicFakeModelHost();
-  if (id === "anthropic") return createAnthropicHost(settings);
-  if (id === "cursor") return createCursorHost(settings);
-  if (id === "claude-ide") return createClaudeIdeHost(settings);
-  console.error(`unknown host: ${id} (expected ${MODEL_HOST_IDS.join(", ")})`);
-  process.exit(1);
-}
-
-function runPlan(args: string[]): void {
-  const state = createTaskState(taskFrom(args, "plan"));
-  const plan = planTask({
-    state,
-    capabilities: ["model", "read", "shell"],
-    privacy: "metadata-only",
-    policy: TRUSTED_POLICY,
-  });
-  console.log(JSON.stringify(plan, null, 2));
-}
-
-async function runExecution(args: string[]): Promise<void> {
-  const { host, rest } = extractHostFlag(args);
-  const settings = await loadSettings();
-  const state = createTaskState(taskFrom(rest, "run"));
-  const trace = await runTask({
-    state,
-    capabilities: ["model", "read", "shell"],
-    privacy: "metadata-only",
-    policy: TRUSTED_POLICY,
-    modelHost: resolveHost(host, settings),
-    useRouter: true,
-  });
-  const location = await traceRepository.save(trace);
-  console.log(
-    JSON.stringify(
-      { taskId: trace.taskId, status: trace.status, trace: location, usage: trace.finalUsage },
-      null,
-      2,
-    ),
-  );
-}
-
-async function runInspect(args: string[]): Promise<void> {
-  if (args.length !== 1) {
-    console.error("usage: lambda inspect <task-id>");
-    process.exit(1);
-  }
-  console.log(JSON.stringify(await traceRepository.load(args[0]!), null, 2));
-}
-
-async function runReplay(args: string[]): Promise<void> {
-  if (args.length !== 1) {
-    console.error("usage: lambda replay <task-id>");
-    process.exit(1);
-  }
-  const result = verifyReplay(await traceRepository.load(args[0]!));
-  console.log(JSON.stringify(result, null, 2));
-  if (!result.reproducible) process.exit(1);
-}
-
-async function runEval(args: string[]): Promise<void> {
-  const { host, rest } = extractHostFlag(args);
-  if (rest.length !== 0) {
-    console.error(`usage: lambda eval [--host ${MODEL_HOST_IDS.join("|")}]`);
-    process.exit(1);
-  }
-  const result = await runCapabilityBenchmark(resolveHost(host, await loadSettings()));
-  console.log(JSON.stringify(result, null, 2));
-}
-
-async function runPromote(args: string[]): Promise<void> {
-  if (args.length !== 2) {
-    console.error("usage: lambda promote <experimental-policy.json> <benchmark.json>");
-    process.exit(1);
-  }
-  const [policyText, benchmarkText] = await Promise.all([
-    readFile(path.resolve(args[0]!), "utf8"),
-    readFile(path.resolve(args[1]!), "utf8"),
-  ]);
-  const result = promoteExperimentalPolicy(
-    JSON.parse(policyText) as PolicyProfile,
-    JSON.parse(benchmarkText) as BenchmarkResult,
-  );
-  console.log(JSON.stringify(result, null, 2));
 }
 
 async function main(argv: string[]): Promise<void> {
@@ -466,36 +301,6 @@ async function main(argv: string[]): Promise<void> {
 
   if (first === "check") {
     runCheck(rest);
-  }
-
-  if (first === "plan") {
-    runPlan(rest);
-    return;
-  }
-
-  if (first === "run") {
-    await runExecution(rest);
-    return;
-  }
-
-  if (first === "inspect") {
-    await runInspect(rest);
-    return;
-  }
-
-  if (first === "replay") {
-    await runReplay(rest);
-    return;
-  }
-
-  if (first === "eval") {
-    await runEval(rest);
-    return;
-  }
-
-  if (first === "promote") {
-    await runPromote(rest);
-    return;
   }
 
   if (first === "status") {
@@ -581,6 +386,13 @@ async function main(argv: string[]): Promise<void> {
   // 0 (allow) or 2 (block) for the host's hook runner, not a human.
   if (first === "gate") {
     await runGate(SESSION_BASE_DIR);
+    return;
+  }
+
+  // No --json flag either: reads a UserPromptSubmit payload from stdin and
+  // prints the hook envelope the host prepends to the turn. Never blocks.
+  if (first === "inject") {
+    await runInject(SESSION_BASE_DIR);
     return;
   }
 

@@ -1,0 +1,270 @@
+---
+description: Retro-operators with Retro operator guidance for learning from history and working backward
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Retro-Operators with Lambda-Operators Integration
+
+Retro-operators for learning from history and working backward, guided by Controlled Rupture Operators (Retro operator).
+
+## When to Apply
+
+Apply this rule when:
+- Understanding old code or legacy systems
+- Debugging by working backward
+- Learning from past decisions
+- Tracing history or previous implementations
+- Need backward analysis
+
+## Lambda Engine Mode
+
+**Mode 1 (Duality Navigation)**: Use for stable backward analysis
+- Apply Retro operator for backward tracing
+- Use A-Constructive operators for stabilization
+
+**Mode 2 (HALIRA Protocol)**: Use when backward analysis reveals foundational contradictions
+- Apply Retro for backward analysis
+- Use HALIRA Protocol if contradictions found
+
+## Retro Operator Mapping
+
+**↶ Retro** (λ=0.40): Backward, backtracking
+- Path shortening, reverse causality
+- Never idempotent (always creates new state)
+- Commutator: [Meta, Retro] ≠ -[Retro, Meta] (anti-symmetry)
+- Triple relation: Retro ∘ Telo = Meta
+- Trajectory: S* → S* (backward analysis)
+
+## Retroactive: Apply Current Knowledge to Past
+
+### Pattern
+
+Apply current knowledge to understand past decisions.
+
+### Application
+
+**When to Apply:**
+- "Why was this done this way?"
+- Understanding old code with current patterns
+- Applying current constraints/knowledge to past
+
+**Operator Sequence**: `Retro ∘ Ana ∘ Weave` (λ_eff ≈ 0.49)
+- Backward → elevate → integrate
+
+**Process:**
+1. **Retro**: Work backward from current understanding
+2. **Ana**: Elevate to understand past context
+3. **Weave**: Integrate current knowledge with past decisions
+
+## Retrodeductive: Work Backward from Conclusions
+
+### Pattern
+
+Start from symptom → trace to root cause. Conclusion → derive axioms/premises.
+
+### Application
+
+**When to Apply:**
+- Debugging by working backward from error
+- Root cause analysis
+- Deriving premises from conclusions
+
+**Operator Sequence**: `Retro ∘ Non ∘ Weave` (λ_eff ≈ 0.65)
+- Backward → challenge → integrate
+
+**Process:**
+1. **Retro**: Trace backward from symptom
+2. **Non**: Challenge assumptions, find contradictions
+3. **Weave**: Integrate findings into root cause
+
+## Retrojection: Map Current Patterns onto Past
+
+### Pattern
+
+Apply patterns from past bugs to prevent new ones. Use historical patterns to inform current decisions.
+
+### Application
+
+**When to Apply:**
+- Learning from past mistakes
+- Applying historical patterns to current work
+- Preventing recurring issues
+
+**Operator Sequence**: `Retro ∘ Echo ∘ Weave` (λ_eff ≈ 0.39)
+- Backward → replicate → integrate
+
+**Process:**
+1. **Retro**: Look backward at past patterns
+2. **Echo**: Replicate successful patterns
+3. **Weave**: Integrate into current work
+
+## Retroagnostic: Recognize What Past Couldn't Know
+
+### Pattern
+
+"They couldn't have known X because Y didn't exist." Understand limitations of past context.
+
+### Application
+
+**When to Apply:**
+- Recognizing why old code lacks modern patterns
+- Understanding limitations of past context
+- Avoiding anachronistic judgments
+
+**Operator Sequence**: `Retro ∘ Ana ∘ Para` (λ_eff ≈ 0.60)
+- Backward → elevate → explore alternatives
+
+**Process:**
+1. **Retro**: Understand past context
+2. **Ana**: Elevate to understand constraints
+3. **Para**: Explore what alternatives existed then
+
+## Retrognostic: Formal Understanding of Prior State
+
+### Pattern
+
+Formal understanding of prior state. Understand what was known then. Formal reasoning about past decisions.
+
+### Application
+
+**When to Apply:**
+- Formal analysis of historical decisions
+- Understanding prior knowledge state
+- Formal reasoning about past
+
+**Operator Sequence**: `Retro ∘ Meta ∘ Weave` (λ_eff ≈ 0.51)
+- Backward → reflect → integrate
+
+**Process:**
+1. **Retro**: Work backward to prior state
+2. **Meta**: Reflect on what was known
+3. **Weave**: Integrate into formal understanding
+
+## Retrosynthesis: Backward Assembly
+
+### Pattern
+
+Backward assembly. Deconstruct to components. Break down complex past systems.
+
+### Application
+
+**When to Apply:**
+- Deconstructing complex legacy systems
+- Breaking down past implementations
+- Understanding system evolution
+
+**Operator Sequence**: `Retro ∘ Ana ∘ Kata` (λ_eff ≈ 0.50)
+- Backward → elevate → compress
+
+**Process:**
+1. **Retro**: Work backward through system
+2. **Ana**: Elevate to understand components
+3. **Kata**: Compress to essential components
+
+## Compound Retro-Operations
+
+### retro²(X) = retro(retro(X))
+
+Apply backward operation twice.
+
+**Application**: Deeper temporal reasoning
+**Operator Sequence**: `Retro ∘ Retro ∘ Weave` (λ_eff ≈ 0.40)
+- Double backward → integrate
+
+### retro-meta(X) = Apply Meta-Operation Backward
+
+Apply meta-operation backward.
+
+**Application**: Self-referential backward analysis
+**Operator Sequence**: `Retro ∘ Meta ∘ Weave` (λ_eff ≈ 0.51)
+- Backward → reflect → integrate
+
+**⚠️ Constraint**: Meta max 2 consecutive applications
+
+### meta-retro(X) = Make Backward-Operation Self-Referential
+
+Make backward-operation self-referential.
+
+**Application**: Self-referential backward operations
+**Operator Sequence**: `Meta ∘ Retro ∘ Weave` (λ_eff ≈ 0.51)
+- Reflect → backward → integrate
+
+**⚠️ Constraint**: Meta max 2 consecutive applications
+
+## Guidelines
+
+### When to Use Retro-Operators
+
+**Use Retro for:**
+- Understanding history
+- Debugging (backward from error)
+- Learning from past decisions
+- Root cause analysis
+- Historical pattern application
+
+### Operator Selection
+
+**For Backward Analysis:**
+- **Retro** (λ=0.40): Primary backward operator
+- **Ana** (λ=0.75): Elevate to understand context
+- **Weave** (λ=0.33): Integrate findings
+
+**For Root Cause:**
+- **Retro ∘ Non**: Backward + challenge
+- **Retro ∘ Ana**: Backward + elevate
+
+**For Pattern Learning:**
+- **Retro ∘ Echo**: Backward + replicate
+- **Retro ∘ Weave**: Backward + integrate
+
+### Mode Selection
+
+**Mode 1**: Use for stable backward analysis
+- Apply Retro for backward tracing
+- Use A-Constructive operators for stabilization
+
+**Mode 2**: Use when backward analysis reveals contradictions
+- Apply Retro for backward analysis
+- Use HALIRA Protocol if foundational contradictions found
+
+## Examples
+
+### Example 1: Retroactive Understanding
+
+**Scenario**: Understanding old code with current patterns
+
+**Application:**
+1. **Retro**: Work backward from current understanding
+2. **Ana**: Elevate to understand past context
+3. **Weave**: Integrate current knowledge with past decisions
+
+**Result**: Understanding why old code was structured that way
+
+### Example 2: Retrodeductive Debugging
+
+**Scenario**: Debugging by working backward from error
+
+**Application:**
+1. **Retro**: Trace backward from symptom
+2. **Non**: Challenge assumptions, find contradictions
+3. **Weave**: Integrate findings into root cause
+
+**Result**: Root cause identified through backward analysis
+
+### Example 3: Retrojection Pattern Learning
+
+**Scenario**: Learning from past mistakes to prevent new ones
+
+**Application:**
+1. **Retro**: Look backward at past patterns
+2. **Echo**: Replicate successful patterns
+3. **Weave**: Integrate into current work
+
+**Result**: Historical patterns applied to current work
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `.cursor/rules/general/retro-operators.mdc` for original rules (reference)

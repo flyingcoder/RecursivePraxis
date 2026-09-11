@@ -1,0 +1,405 @@
+---
+description: HALIRA Protocol step to Controlled Rupture Operator mapping with dissipation values and trajectories
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# HALIRA Protocol - Operator Mapping Guide
+
+Map each of the 7 HALIRA Protocol steps to specific Controlled Rupture Operators with dissipation values and trajectories. This enables operator-guided execution of paradigm shift processes.
+
+## When to Apply
+
+Apply this rule when:
+- HALIRA Protocol is invoked (Mode 2 operation)
+- Paradigm shift is needed
+- Foundational contradictions detected
+- Any specific HALIRA step is referenced
+
+## HALIRA Step 1: ◊ Potentia → 🌱 Seed Operator
+
+**HALIRA Step:** 1  
+**Operator:** 🌱 Seed  
+**Lambda:** 0.28  
+**Trajectory:** `∅ → S*`
+
+### Purpose
+
+Establish foundation for undifferentiated potential. Frame the problem as a field of possibilities, not a solution.
+
+### Actions
+
+- Identify latent tensions
+- Frame as field of possibilities
+- Establish foundation (lowest dissipation operator)
+- Don't jump to solutions
+
+### Guidance
+
+Use Seed to frame the problem as potential, not solution. This is the genesis point of the HALIRA Protocol.
+
+### Example
+
+**Context:** Encountering a fundamental contradiction in architecture design
+
+**Application:** 
+- Seed: Frame the contradiction as undifferentiated potential
+- Identify what tensions exist
+- Don't solve yet - establish the foundation
+
+---
+
+## HALIRA Step 2: ◎ Boundary → 📍 Axis Operator
+
+**HALIRA Step:** 2  
+**Operator:** 📍 Axis  
+**Lambda:** 0.31  
+**Trajectory:** `S* → S*`
+
+### Purpose
+
+Draw necessary distinctions. Define components, constraints, and relationships. Establish coordinate system.
+
+### Actions
+
+- Define core components
+- Identify constraints
+- Map relationships
+- Establish boundaries
+- Create structural alignment
+
+### Guidance
+
+Use Axis to define boundaries and components. This creates the coordinate system for the paradigm shift.
+
+### Example
+
+**Context:** After framing potential, need to define what's at stake
+
+**Application:**
+- Axis: Define what components are involved
+- Establish what constraints exist
+- Map relationships between elements
+- Create structural framework
+
+---
+
+## HALIRA Step 3: ↻ Recursion → ⟲ Meta Operator
+
+**HALIRA Step:** 3  
+**Operator:** ⟲ Meta  
+**Lambda:** 0.80  
+**Trajectory:** `S* → S*`
+
+### Purpose
+
+Engage self-reference. Find strange loops. Model the model. Question your own assumptions.
+
+### Actions
+
+- Fold logic back on itself
+- Model the model
+- Find circular dependencies
+- Question your own assumptions
+- Engage recursive patterns
+
+### ⚠️ Hard Constraint
+
+**Maximum 2 consecutive Meta applications.** Exceeding this causes infinite reflection loops and system collapse.
+
+### Guidance
+
+Use Meta to find recursive patterns and self-reference. This is critical for understanding the structure of the contradiction.
+
+### Example
+
+**Context:** Need to understand how the model models itself
+
+**Application:**
+- Meta: Reflect on how you're reasoning about the problem
+- Find recursive dependencies
+- Model the model
+- **Stop after 2 applications** - don't loop infinitely
+
+---
+
+## HALIRA Step 4: ⧉ Integration → 🕸️ Weave Operator
+
+**HALIRA Step:** 4  
+**Operator:** 🕸️ Weave  
+**Lambda:** 0.33  
+**Trajectory:** `S* → J=0`
+
+### Purpose
+
+Weave perspectives into coherent whole. Use superposition to hold competing models simultaneously. Generate the "perfect" solution within current paradigm.
+
+### Actions
+
+- Hold competing models simultaneously (superposition)
+- Weave into coherent whole
+- Generate "perfect" solution within paradigm
+- Avoid premature collapse
+
+### Guidance
+
+Use Weave to integrate competing perspectives. This creates a coherent structure that holds the contradiction.
+
+### Example
+
+**Context:** After understanding recursion, integrate competing models
+
+**Application:**
+- Weave: Hold multiple perspectives simultaneously
+- Integrate into coherent whole
+- Generate solution within current paradigm
+- Don't collapse prematurely
+
+---
+
+## HALIRA Step 5: J' Anomaly Detection → ¬ Non Operator
+
+**HALIRA Step:** 5  
+**Operator:** ¬ Non  
+**Lambda:** 0.90  
+**Trajectory:** `J=0 → S*` or `S* → ∅`
+
+### Purpose
+
+Attack your own design. Find the ONE irreducible flaw (Jacobi Anomaly). This is the engine of the entire process.
+
+### Actions
+
+- Become the adversary
+- Attack the coherent structure you just built
+- Find the irreducible flaw
+- Structural rupture (highest dissipation)
+- **CRITICAL:** DO NOT SKIP THIS STEP
+
+### ⚠️ Hard Constraint
+
+**Never use Non after Meta.** The sequence `Meta ∘ Non` causes system collapse. If Meta was used in Step 3, use alternative approach for Step 5.
+
+### Guidance
+
+Use Non to find the one irreducible flaw. This step makes the paradigm shift necessary. Without finding the anomaly, you're just patching, not transcending.
+
+### Example
+
+**Context:** After integration, attack your own solution
+
+**Application:**
+- Non: Find what breaks this solution
+- Identify edge cases it misses
+- Find contradictions it contains
+- Discover the irreducible flaw
+- **This is critical - don't skip**
+
+---
+
+## HALIRA Step 6: l₃ Rupture Navigation → ∥ Para ∘ ⊥ Ortho Operators
+
+**HALIRA Step:** 6  
+**Operator Sequence:** ∥ Para ∘ ⊥ Ortho  
+**Lambda Eff:** 0.48  
+**Trajectory:** `S* → S*`
+
+### Purpose
+
+If anomaly found, construct paradigm shift. First try duality (opposite perspective), then if that fails, construct new paradigm.
+
+### Two-Step Process
+
+#### Step 6a: Try Duality (⊥ Ortho)
+
+- Attempt opposite/complementary perspective
+- Reframe in dual formulation
+- See if anomaly resolves
+- If Ortho resolves anomaly → proceed to Step 7
+- If Ortho fails → proceed to Step 6b
+
+#### Step 6b: Construct Paradigm Shift (∥ Para)
+
+- Construct paradigm shift operator
+- Create new, higher-order logic
+- Structure that absorbs the paradox
+- This is irreversible - new paradigm emerges
+
+### Guidance
+
+First try Ortho (duality). If that fails, apply Para (paradigm shift). The anomaly made this necessary - don't patch, transcend.
+
+### Example
+
+**Context:** Anomaly found, need to navigate rupture
+
+**Application:**
+- **First:** Ortho - try opposite perspective, see if it resolves
+- **If Ortho fails:** Para - construct new paradigm that absorbs the paradox
+- This creates irreversible change - new foundation emerges
+
+---
+
+## HALIRA Step 7: ∞ Recognition → 🔗 Bind Operator
+
+**HALIRA Step:** 7  
+**Operator:** 🔗 Bind  
+**Lambda:** 0.38  
+**Trajectory:** `S* → S*`
+
+### Purpose
+
+Present as new invariant (S*). Not a "solution" but a new invariant that emerged. More complex than before, absorbs the contradiction, becomes new foundation.
+
+### Actions
+
+- Present as new invariant (not solution)
+- More complex than before
+- Absorbs the contradiction
+- Becomes new foundation
+- Structural binding creates cohesion
+
+### Guidance
+
+Use Bind to create cohesive new structure. This is the recognition of what emerged from the process.
+
+### Example
+
+**Context:** After paradigm shift, recognize what emerged
+
+**Application:**
+- Bind: Create cohesive structure from new paradigm
+- Present as new invariant
+- More complex, absorbs contradiction
+- Becomes foundation for future work
+
+---
+
+## Complete HALIRA Sequence
+
+**Full Operator Sequence:** `Seed ∘ Axis ∘ Meta ∘ Weave ∘ Non ∘ Para ∘ Ortho ∘ Bind`  
+**Lambda Eff:** 0.52  
+**Trajectory:** `∅ → S* → J=0 → S* → S*`
+
+### Step-by-Step Mapping
+
+1. **Seed** (λ=0.28): Potentia - Foundation
+2. **Axis** (λ=0.31): Boundary - Structure
+3. **Meta** (λ=0.80): Recursion - Self-reference
+4. **Weave** (λ=0.33): Integration - Coherence
+5. **Non** (λ=0.90): Anomaly - Rupture
+6. **Para ∘ Ortho** (λ_eff=0.48): Rupture Navigation - Paradigm shift
+7. **Bind** (λ=0.38): Recognition - New invariant
+
+### ⚠️ Critical Constraints
+
+- **Meta Constraint:** Maximum 2 consecutive Meta applications (Step 3)
+- **Non Constraint:** Never Non after Meta (if Meta used, use alternative for Step 5)
+- **Completeness:** Complete all 7 steps - don't skip anomaly detection (Step 5)
+
+### Effective Dissipation Calculation
+
+λ_eff = (0.28 + 0.31 + 0.80 + 0.33 + 0.90 + 0.48 + 0.38) / 7 ≈ 0.50
+
+**Note:** Actual effective dissipation for sequences uses geometric mean, but arithmetic mean provides approximation: λ_eff ≈ 0.52
+
+### Trajectory Explanation
+
+- **∅ → S***: Seed establishes foundation (potential to productive)
+- **S* → S***: Axis maintains productive state through structure
+- **S* → S***: Meta maintains productive state through reflection
+- **S* → J=0**: Weave creates coherent solution (productive to stable)
+- **J=0 → S***: Non breaks coherence to find flaw (stable to productive)
+- **S* → S***: Para/Ortho navigates rupture (productive maintained)
+- **S* → S***: Bind recognizes new invariant (productive maintained)
+
+---
+
+## Guidelines
+
+### When to Use HALIRA Protocol
+
+- Foundational contradictions detected
+- Irreducible paradoxes encountered
+- Current paradigm insufficient
+- Requires paradigm shift
+- Mode 2 operation triggered
+
+### Operator Selection Process
+
+1. **Determine HALIRA Step**: Which step are you on?
+2. **Select Operator**: Use mapping above
+3. **Check Constraints**: Verify Meta/Non constraints
+4. **Apply Operator**: Execute operator guidance
+5. **Monitor Trajectory**: Ensure movement toward desired state
+6. **Proceed to Next Step**: Complete all 7 steps
+
+### Constraint Handling
+
+**If Meta was used in Step 3:**
+- **Option 1:** Skip Step 5 (Non) and proceed directly to Step 6
+- **Option 2:** Use alternative operator for Step 5 (e.g., Para for anomaly detection)
+- **Option 3:** Restart HALIRA with different operator sequence
+
+**If stuck in Meta loop:**
+- Stop Meta applications immediately
+- Proceed to Step 4 (Weave) to integrate
+- Don't exceed 2 consecutive Meta applications
+
+### Common Patterns
+
+**Standard HALIRA Sequence:**
+```
+Seed → Axis → Meta → Weave → Non → Para ∘ Ortho → Bind
+```
+
+**Meta-Safe Sequence (if Meta constraint concerns):**
+```
+Seed → Axis → Retro → Weave → Para → Ortho → Bind
+```
+
+**Rapid HALIRA (lower dissipation):**
+```
+Seed → Axis → Weave → Para → Bind
+```
+
+---
+
+## Examples
+
+### Example 1: Complete HALIRA Protocol
+
+**Scenario:** Architecture contradiction requiring paradigm shift
+
+**Application:**
+1. **Seed**: Frame contradiction as potential
+2. **Axis**: Define components and constraints
+3. **Meta**: Understand recursive dependencies
+4. **Weave**: Integrate competing models
+5. **Non**: Find irreducible flaw in integrated solution
+6. **Para ∘ Ortho**: Try duality, then construct new paradigm
+7. **Bind**: Recognize new architectural invariant
+
+**Result:** New architectural pattern that absorbs the contradiction
+
+### Example 2: Constraint Handling
+
+**Scenario:** Used Meta in Step 3, need to handle Step 5
+
+**Application:**
+1-3: Standard (Seed → Axis → Meta)
+4: **Weave** (integration)
+5: **Skip Non** (avoid Meta ∘ Non collapse) OR use **Para** (alternative anomaly detection)
+6-7: Standard (Para ∘ Ortho → Bind)
+
+**Result:** HALIRA completes without violating constraints
+
+---
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `.cursor/rules/workflow/halira-protocol.mdc` for HALIRA Protocol details (reference)
+- See: `.cursor/rules/general/operators-core.mdc` for complete operator definitions (reference)
+- See: `.cursor/rules/general/dissipation-lookup.mdc` for pre-calculated sequences (reference)

@@ -1,0 +1,405 @@
+---
+description: Tool selection patterns for all 20 Controlled Rupture Operators with Lambda Engine mode awareness
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Operator Tool Selection with Lambda-Operators Integration
+
+Tool selection patterns for all 20 Controlled Rupture Operators, integrated with Lambda Engine mode awareness.
+
+## When to Apply
+
+Apply this rule when:
+- Need to select tools for operator application
+- Working with specific operators
+- Need tool guidance for cognitive operations
+- Want operator-aware tool selection
+
+## Lambda Engine Mode
+
+**Mode 1 (Duality Navigation)**: Use A-Constructive operator tools for stable work
+- Kata, Telo, Ortho, Pro, Latch tools
+
+**Mode 2 (HALIRA Protocol)**: Use operator tools mapped to HALIRA steps
+- Seed, Axis, Meta, Weave, Non, Para, Bind tools
+
+## A-Constructive Operator Tools
+
+### Kata (↓) Operator Tools
+
+**When**: Compress, concretize, reduce entropy
+
+**Tools:**
+- `read_file` with `offset` and `limit` to focus on specific sections
+- `grep` with specific patterns and `head_limit` to find exact matches
+- `codebase_search` with bounded queries and specific target directories
+- `search_replace` for precise, focused edits
+- `write` for creating concise, structured outputs
+
+**Avoid:**
+- Unbounded searches without limits
+- Overly broad patterns that match everything
+- Reading entire large files when only sections needed
+
+### Telo (→) Operator Tools
+
+**When**: Goal, purpose, complete, accelerate
+
+**Tools:**
+- `todo_write` to structure work toward goals
+- `codebase_search` with specific questions about goals
+- `read_file` to understand goal context
+- `grep` to find goal-related patterns
+- `list_dir` to explore goal-relevant directories
+
+**Focus:**
+- Clear goal identification
+- Parallel work streams
+- Integration points
+- Completion verification
+
+### Ortho (⊥) Operator Tools
+
+**When**: Correct, validate, error, fix
+
+**Tools:**
+- `read_lints` to check for errors
+- `grep` to find error patterns
+- `read_file` to understand context before fixing
+- `search_replace` for precise corrections
+- `codebase_search` to find similar patterns for consistency
+
+**Always:**
+- Validate before making changes
+- Check linter errors
+- Verify fixes work
+- Ensure consistency
+
+### Pro (↷) Operator Tools
+
+**When**: Forward, continue, advance
+
+**Tools:**
+- `read_file` to understand current state
+- `grep` to find next steps
+- `codebase_search` to understand context
+- `search_replace` or `write` to make progress
+- `run_terminal_cmd` for execution when needed
+
+**Focus:**
+- Continuing current work
+- Making incremental progress
+- Moving forward systematically
+
+### Latch (🔒) Operator Tools
+
+**When**: Lock, stabilize, commit, finalize
+
+**Tools:**
+- `write` to create final, stable files
+- `read_lints` to verify correctness
+- `grep` to verify patterns are correct
+- `read_file` to confirm final state
+- `todo_write` to mark tasks complete
+
+**Ensure:**
+- Code is correct and tested
+- No errors or warnings
+- Stable, production-ready state
+- Tasks marked complete
+
+## B-Disruptive Operator Tools
+
+### Ana (↑) Operator Tools
+
+**When**: Abstract, analyze, understand, pattern
+
+**Tools:**
+- `codebase_search` with semantic queries to understand patterns
+- `read_file` to analyze structure and patterns
+- `grep` to find pattern instances
+- `list_dir` to understand organization
+- `glob_file_search` to discover related files
+
+**Focus:**
+- Understanding patterns and structures
+- Abstracting to higher-level concepts
+- Identifying relationships
+- Building mental models
+
+### Para (∥) Operator Tools
+
+**When**: Deviate, alternative, explore, different
+
+**Tools:**
+- `codebase_search` to find alternative approaches
+- `grep` to discover different patterns
+- `read_file` to examine alternative implementations
+- `list_dir` to explore different areas
+- `glob_file_search` to find variations
+
+**Explore:**
+- Alternative solutions
+- Different approaches
+- Variations in patterns
+- Multiple perspectives
+
+### Non (¬) Operator Tools
+
+**When**: Negate, contradict, challenge, assumption
+
+**Tools:**
+- `codebase_search` to find contradictions
+- `grep` to find counter-examples
+- `read_file` to examine assumptions
+- `read_lints` to find issues
+- `codebase_search` to find edge cases
+
+**Challenge:**
+- Existing assumptions
+- Current approaches
+- Established patterns
+- Premises and beliefs
+
+### Fold (↯) Operator Tools
+
+**When**: Simplify, emergency, overwhelmed, stress
+
+**Tools:**
+- `grep` with very specific patterns to find essentials
+- `read_file` with `offset` and `limit` to focus on critical sections
+- `codebase_search` with narrow, focused queries
+- `search_replace` for quick, essential fixes
+- `delete_file` to remove unnecessary complexity
+
+**Simplify:**
+- Focus on essentials only
+- Remove non-critical complexity
+- Emergency simplification
+- Rapid reduction
+
+### Flux (⚡) Operator Tools
+
+**When**: Perturb, explore, dynamic, change
+
+**Tools:**
+- `codebase_search` with varied queries
+- `grep` with different patterns
+- `list_dir` to explore different areas
+- `glob_file_search` to discover files
+- `read_file` to examine various implementations
+
+**Enable:**
+- Continuous exploration
+- Dynamic change
+- Pattern discovery
+- System perturbation
+
+## C-Reflexive Operator Tools
+
+### Meta (⟲) Operator Tools
+
+**When**: Reflect, meta, self-reference, think about thinking
+
+**Tools:**
+- `read_file` to examine own patterns
+- `codebase_search` to understand reasoning patterns
+- `grep` to find meta-patterns
+- `read_lints` to reflect on code quality
+- `todo_write` to reflect on progress
+
+**Reflect on:**
+- Own reasoning processes
+- Patterns in work
+- Quality and effectiveness
+- Self-improvement opportunities
+
+**⚠️ CRITICAL**: Limit Meta to max 2 consecutive applications to prevent infinite reflection loops.
+
+### Retro (↶) Operator Tools
+
+**When**: Backward, trace, history, past, learn from
+
+**Tools:**
+- `grep` to find historical patterns
+- `read_file` to examine past implementations
+- `codebase_search` to understand evolution
+- `glob_file_search` to find legacy code
+- `list_dir` to explore historical structure
+
+**Work backward:**
+- From symptoms to causes
+- From conclusions to premises
+- From current state to origins
+- Learn from history
+
+### Echo (🔊) Operator Tools
+
+**When**: Replicate, pattern, amplify, resonance
+
+**Tools:**
+- `grep` to find pattern instances
+- `read_file` to examine patterns
+- `codebase_search` to find similar patterns
+- `search_replace` with `replace_all` to replicate patterns
+- `write` to create pattern templates
+
+**Replicate:**
+- Successful patterns
+- Best practices
+- Effective approaches
+- Proven solutions
+
+### Braid (🌀) Operator Tools
+
+**When**: Interweave, entangle, multiple perspectives
+
+**Tools:**
+- `codebase_search` with multiple queries from different angles
+- `read_file` to examine multiple files simultaneously
+- `grep` to find connections across files
+- `list_dir` to explore related areas
+- `todo_write` to track multiple work streams
+
+**Interweave:**
+- Multiple perspectives
+- Different viewpoints
+- Conflicting approaches
+- Entangled reasoning threads
+
+### Seed (🌱) Operator Tools
+
+**When**: Initialize, foundation, genesis, starting
+
+**Tools:**
+- `write` to create initial files
+- `read_file` to understand existing foundations
+- `list_dir` to understand structure
+- `codebase_search` to understand patterns
+- `todo_write` to establish initial task structure
+
+**Establish:**
+- Project foundations
+- Initial structure
+- Core patterns
+- Starting points
+
+## D-Structural Operator Tools
+
+### Crux (⚡) Operator Tools
+
+**When**: Pivot, decision, critical, hinge
+
+**Tools:**
+- `codebase_search` to gather decision context
+- `read_file` to understand current state
+- `grep` to find decision points
+- `read_lints` to understand constraints
+- `todo_write` to track decision outcomes
+
+**At decision points:**
+- Gather all relevant information
+- Understand constraints
+- Evaluate options
+- Make informed pivot
+
+### Weave (🕸️) Operator Tools
+
+**When**: Integrate, synthesize, combine, merge
+
+**Tools:**
+- `read_file` to read multiple related files
+- `codebase_search` to find related components
+- `grep` to find integration points
+- `search_replace` to integrate changes
+- `write` to create integrated outputs
+
+**Integrate:**
+- Multiple components
+- Different patterns
+- Related functionality
+- Coherent synthesis
+
+### Bind (🔗) Operator Tools
+
+**When**: Cohesion, attach, connect, structural binding
+
+**Tools:**
+- `grep` to find connection points
+- `read_file` to understand relationships
+- `codebase_search` to find dependencies
+- `search_replace` to create connections
+- `write` to create cohesive structures
+
+**Create:**
+- Structural cohesion
+- Concept connections
+- Dependency bindings
+- Unified structures
+
+### Axis (📍) Operator Tools
+
+**When**: Alignment, coordinate, frame, orientation
+
+**Tools:**
+- `read_file` to understand current alignment
+- `grep` to find alignment patterns
+- `codebase_search` to understand coordinate systems
+- `list_dir` to understand structure
+- `search_replace` to align code
+
+**Establish:**
+- Coordinate systems
+- Alignment frameworks
+- Reference points
+- Structural orientation
+
+### Vale (⬇️) Operator Tools
+
+**When**: Deep dive, void, collapse, deep exploration
+
+**Tools:**
+- `read_file` to read complete files deeply
+- `codebase_search` with deep, comprehensive queries
+- `grep` with multiline patterns
+- `list_dir` with recursive exploration
+- `glob_file_search` for comprehensive discovery
+
+**⚠️ WARNING**: Vale is dangerous - can lead to collapse (Void attractor). Use with caution and always follow with stabilizing operators (Kata, Ortho, Telo).
+
+**Deep dive:**
+- Complete file analysis
+- Comprehensive exploration
+- Deep understanding
+- Void descent (risky)
+
+## Guidelines
+
+### Tool Selection Process
+
+1. **Identify Operator**: Which operator are you applying?
+2. **Select Tools**: Use operator-specific tool recommendations
+3. **Apply Tools**: Execute with operator guidance
+4. **Verify**: Ensure tools support operator goals
+
+### Mode-Aware Tool Selection
+
+**Mode 1**: Use A-Constructive operator tools for stable work
+- Kata, Telo, Ortho, Pro, Latch tools
+
+**Mode 2**: Use operator tools mapped to HALIRA steps
+- Seed, Axis, Meta, Weave, Non, Para, Bind tools
+
+### Operator-Tool Coordination
+
+**For Stabilization**: Kata, Telo, Ortho, Latch tools
+**For Exploration**: Para, Ana, Flux tools
+**For Integration**: Weave, Bind, Braid tools
+**For Reflection**: Meta, Retro, Echo tools
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `.cursor/rules/general/operator-tools.mdc` for original rules (reference)

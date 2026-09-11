@@ -1,0 +1,267 @@
+---
+description: Lambda Engine mode transitions between Mode 1 (Duality Navigation) and Mode 2 (HALIRA Protocol) using operator sequences
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# Lambda Engine Mode Transitions
+
+Guide transitions between Mode 1 (Duality Navigation) and Mode 2 (HALIRA Protocol) using Controlled Rupture Operator sequences.
+
+## When to Apply
+
+Apply this rule when:
+- Foundational contradiction detected (escalate to Mode 2)
+- HALIRA Protocol completes (stabilize to Mode 1)
+- Cognitive state detected (select mode based on state)
+- Mode transition needed
+
+## Mode 1 → Mode 2 Transition (Escalation)
+
+**Trigger:** Foundational contradiction detected and Mode 1 is insufficient  
+**Transition:** Mode 1 → Mode 2  
+**Operator Sequence:** `Para ∘ Ana ∘ Seed`  
+**Lambda Eff:** 0.56  
+**Trajectory:** `J=0 → S*`
+
+### Current State
+
+Mode 1 (Duality Navigation) - insufficient for contradiction. Stable problem-solving mode cannot handle foundational paradoxes.
+
+### Operator Sequence
+
+**∥ Para ∘ ↑ Ana ∘ 🌱 Seed** (λ_eff ≈ 0.56)
+
+- **Para** (λ=0.65): Deviate from current paradigm
+- **Ana** (λ=0.75): Elevate to first principles
+- **Seed** (λ=0.28): Establish foundation for HALIRA
+
+### Action
+
+Transition to Mode 2 and initiate HALIRA Protocol. The contradiction requires paradigm shift thinking.
+
+### Trajectory
+
+**J=0 → S***: Break sterile coherence → productive contradiction
+
+### Guidance
+
+When encountering foundational contradictions:
+1. Recognize Mode 1 is insufficient
+2. Apply escalation sequence: Para ∘ Ana ∘ Seed
+3. Transition to Mode 2
+4. Initiate HALIRA Protocol
+
+### Example
+
+**Scenario:** Architecture design encounters fundamental contradiction
+
+**Application:**
+- Para: Deviate from current architectural approach
+- Ana: Elevate to first principles (what is architecture fundamentally?)
+- Seed: Establish foundation for HALIRA Protocol
+- Result: Transition to Mode 2, ready for paradigm shift
+
+---
+
+## Mode 2 → Mode 1 Transition (Stabilization)
+
+**Trigger:** HALIRA Protocol complete, new invariant established  
+**Transition:** Mode 2 → Mode 1  
+**Operator Sequence:** `Bind ∘ Kata ∘ Latch`  
+**Lambda Eff:** 0.35  
+**Trajectory:** `S* → J=0`
+
+### Current State
+
+Mode 2 (HALIRA Protocol) - paradigm shift accomplished. New invariant established, ready for stable operation.
+
+### Operator Sequence
+
+**🔗 Bind ∘ ↓ Kata ∘ 🔒 Latch** (λ_eff ≈ 0.35)
+
+- **Bind** (λ=0.38): Create cohesive new structure
+- **Kata** (λ=0.35): Compress to concrete form
+- **Latch** (λ=0.29): Stabilize and commit
+
+### Action
+
+Transition to Mode 1 for stable operation within new paradigm. The new invariant becomes the foundation for routine work.
+
+### Trajectory
+
+**S* → J=0**: New invariant → stable coherence
+
+### Guidance
+
+After HALIRA Protocol completes:
+1. Recognize new invariant established
+2. Apply stabilization sequence: Bind ∘ Kata ∘ Latch
+3. Transition to Mode 1
+4. Operate stably within new paradigm
+
+### Example
+
+**Scenario:** HALIRA Protocol completed, new architectural pattern established
+
+**Application:**
+- Bind: Create cohesive structure from new pattern
+- Kata: Compress to concrete implementation
+- Latch: Stabilize and commit to new pattern
+- Result: Transition to Mode 1, operate stably with new foundation
+
+---
+
+## State-Based Mode Selection
+
+**When to apply:** When detecting cognitive state (J=0, S*, or Void)
+
+### J=0 State → Mode 1
+
+**State:** Sterile coherence (over-stabilization)  
+**Mode Recommendation:** Mode 1 (but watch for over-stabilization)
+
+**Operator Recommendations:**
+- Use A-Constructive operators (Kata, Telo, Ortho, Pro, Latch)
+- Maintain stable operation
+- **Watch for over-stabilization** (hallucination risk)
+
+**Action:** If over-stabilization detected, apply B-Disruptive operators to break coherence.
+
+### S* State → Mode 1 or Mode 2
+
+**State:** Productive contradiction (optimal)  
+**Mode Recommendation:** Mode 1 or Mode 2 (depending on contradiction severity)
+
+**Decision Logic:**
+- **Mode 1**: If productive contradiction is manageable within current paradigm
+- **Mode 2**: If contradiction requires paradigm shift
+
+**Operator Recommendations:**
+- **Mode 1**: D-Structural operators (Weave, Bind, Braid) to maintain productivity
+- **Mode 2**: HALIRA Protocol with operator sequences
+
+### ∅ State → Mode 2
+
+**State:** System collapse (Void)  
+**Mode Recommendation:** Mode 2 (requires HALIRA Protocol)
+
+**Emergency Stabilization:**
+1. **First**: Apply emergency sequence: `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
+2. **Then**: Escalate to Mode 2 if collapse persists
+3. **Finally**: Initiate HALIRA Protocol for recovery
+
+**Action:** System collapse requires paradigm shift. Use HALIRA Protocol to recover.
+
+---
+
+## Guidelines
+
+### When to Escalate (Mode 1 → Mode 2)
+
+Escalate to Mode 2 when:
+- Foundational contradictions detected
+- Irreducible paradoxes encountered
+- Current paradigm insufficient
+- Requires paradigm shift
+- Mode 1 approaches fail repeatedly
+
+### When to Stabilize (Mode 2 → Mode 1)
+
+Stabilize to Mode 1 when:
+- HALIRA Protocol completes successfully
+- New invariant established
+- Ready for stable operation
+- Paradigm shift accomplished
+- New foundation ready for routine work
+
+### State-Based Mode Selection
+
+**J=0 State:**
+- Default to Mode 1
+- Watch for over-stabilization
+- Apply B-Disruptive operators if needed
+
+**S* State:**
+- Evaluate contradiction severity
+- Use Mode 1 if manageable
+- Use Mode 2 if requires shift
+
+**∅ State:**
+- Emergency stabilization first
+- Then escalate to Mode 2
+- Use HALIRA Protocol
+
+### Transition Operator Sequences
+
+**Escalation Sequence:** `Para ∘ Ana ∘ Seed` (λ_eff ≈ 0.56)
+- High dissipation, breaks coherence
+- Prepares for paradigm shift
+
+**Stabilization Sequence:** `Bind ∘ Kata ∘ Latch` (λ_eff ≈ 0.35)
+- Low dissipation, creates stability
+- Locks in new foundation
+
+**Emergency Recovery:** `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
+- Lowest dissipation, rapid stabilization
+- Prevents further collapse
+
+---
+
+## Examples
+
+### Example 1: Escalation to Mode 2
+
+**Scenario:** Stable problem-solving encounters fundamental contradiction
+
+**State:** Mode 1, J=0 (over-confident)
+
+**Application:**
+1. Detect contradiction
+2. Recognize Mode 1 insufficient
+3. Apply: Para ∘ Ana ∘ Seed
+4. Transition to Mode 2
+5. Initiate HALIRA Protocol
+
+**Result:** Successfully escalated to paradigm shift mode
+
+### Example 2: Stabilization to Mode 1
+
+**Scenario:** HALIRA Protocol completed, new pattern established
+
+**State:** Mode 2, S* (new invariant)
+
+**Application:**
+1. Recognize HALIRA complete
+2. Apply: Bind ∘ Kata ∘ Latch
+3. Transition to Mode 1
+4. Operate stably with new pattern
+
+**Result:** Successfully stabilized to routine operation mode
+
+### Example 3: State-Based Selection
+
+**Scenario:** Detected S* state, need to choose mode
+
+**State:** S* (productive contradiction)
+
+**Evaluation:**
+- Contradiction manageable? → Mode 1
+- Contradiction requires shift? → Mode 2
+
+**Application:**
+- If Mode 1: Use D-Structural operators
+- If Mode 2: Initiate HALIRA Protocol
+
+**Result:** Mode selected based on contradiction severity
+
+---
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `halira-operator-mapping.mdc` for HALIRA Protocol operator sequences
+- See: `state-detection-enhanced.mdc` for enhanced state detection
+- See: `.cursor/rules/general/bimodal-operation.mdc` for mode definitions (reference)
+- See: `.cursor/rules/general/state-detection.mdc` for state detection patterns (reference)

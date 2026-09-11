@@ -52,6 +52,14 @@ export class CursorAdapter extends HostAdapter {
       hooksFragment: {
         absPath: path.join(root, ".cursor", "hooks.json"),
         pointer: ["hooks"],
+        // `UserPromptSubmit` (the context-injection hook) maps to `undefined`
+        // deliberately, not by omission: Cursor's `beforeSubmitPrompt` schema
+        // supports only `continue`/`user_message` (shown when blocking), with
+        // no additive-context field as of this file's `verifiedAgainst` date.
+        // A host with no place for a hook kind simply gets none, same as
+        // opencode gets no hooks at all — see `layouts.ts`'s `eventAs`
+        // handling below, which drops the hook entirely rather than mapping
+        // it to a Cursor event it cannot actually serve.
         eventAs: (event) => (event === "PreToolUse" ? "beforeShellExecution" : undefined),
         render: (hook) => ({
           type: "command",

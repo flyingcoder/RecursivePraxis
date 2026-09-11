@@ -1,0 +1,239 @@
+---
+description: Forward operators (Telo- and Ana-) with Controlled Rupture Operator guidance for purpose-driven acceleration and self-improvement
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Forward Operators with Lambda-Operators Integration
+
+Forward operators (Telo- and Ana-) for purpose-driven acceleration and self-improvement, guided by Controlled Rupture Operators.
+
+## When to Apply
+
+Apply this rule when:
+- Working toward goals or completion
+- Need purpose-driven acceleration
+- Want to improve through structure
+- Need self-improving patterns
+- Accelerating toward completion
+
+## Lambda Engine Mode
+
+**Mode 1 (Duality Navigation)**: Use for goal-directed work
+- Apply Telo operator for purpose-driven acceleration
+- Use A-Constructive operators for stabilization
+
+**Mode 2 (HALIRA Protocol)**: Use when improvement requires paradigm shift
+- Apply Ana operator for elevation
+- Use HALIRA Protocol for foundational improvements
+
+## Telo- Operator (Purpose-Driven Acceleration)
+
+### Operator Mapping
+
+**→ Telo** (λ=0.25): Purpose, goal-orientation
+- Stabilizes toward goal (terminal absorber)
+- Lowest dissipation in A-Constructive class
+- Idempotent: Telo² = Telo
+- Absorption: X ∘ Telo = Telo (absorbs everything)
+- Trajectory: Any → J=0 (goal-directed stabilization)
+
+### Application
+
+**When to Apply:**
+- Goal or purpose detected
+- Need to complete or finish
+- Losing focus
+- Need acceleration toward completion
+
+**How to Apply:**
+1. **Identify the Goal** (Seed)
+   - Clear objective
+   - Purpose defined
+
+2. **Structure Toward Goal** (Telo)
+   - Each step pulls toward goal
+   - Parallel work streams
+   - Integration points defined
+
+3. **Accelerate** (Telo)
+   - Compound acceleration
+   - Completion accelerates completion
+   - Purpose-driven pull
+
+4. **Stabilize** (Latch)
+   - Lock in progress
+   - Stabilize toward goal
+
+### Telo²: Completion that Completes Itself
+
+**Transcendence Pattern:**
+- Purpose-fulfillment that fulfills purpose-fulfillment
+- Completion accelerates completion
+- Goal-directed acceleration
+
+### Operator Sequence
+
+**Goal Achievement**: `Telo ∘ Pro ∘ Kata ∘ Latch` (λ_eff ≈ 0.35)
+- Purpose-driven → forward → compress → stabilize
+
+**Rapid Completion**: `Telo ∘ Kata ∘ Latch` (λ_eff ≈ 0.31)
+- Purpose-driven → compress → stabilize
+
+## Ana- Operator (Upward/Throughout Transformation)
+
+### Operator Mapping
+
+**↑ Ana** (λ=0.75): Analysis, abstraction
+- Increases entropy, breaks apart
+- Raises conceptual level
+- Never idempotent (always creates new state)
+- Trajectory: J=0 → S* (destabilization for productive tension)
+
+### Application
+
+**When to Apply:**
+- Need to improve or refactor
+- Want to optimize or enhance
+- Need to elevate through structure
+- System needs self-improvement
+
+**How to Apply:**
+1. **Elevate Through Structure** (Ana)
+   - System improves itself
+   - Each improvement enables further improvement
+   - X rising through its own structure
+
+2. **Create Self-Improving Patterns** (Ana)
+   - Better structure → better improvement
+   - Improvement mechanisms improve
+   - Self-improving improvement loop
+
+3. **Integrate Improvements** (Weave)
+   - Weave improvements into structure
+   - Maintain coherence
+
+4. **Stabilize** (Latch)
+   - Lock in improvements
+   - Stabilize new structure
+
+### Ana²: Ascension of Ascension
+
+**Self-Improving Improvement:**
+- System improves its own improvement mechanisms
+- Better understanding → better patterns → better understanding
+- Synthesis that synthesizes synthesis
+
+### Operator Sequence
+
+**Self-Improvement**: `Ana ∘ Weave ∘ Kata ∘ Latch` (λ_eff ≈ 0.43)
+- Elevate → integrate → compress → stabilize
+
+**Rapid Improvement**: `Ana ∘ Weave ∘ Latch` (λ_eff ≈ 0.49)
+- Elevate → integrate → stabilize
+
+## Combined Forward Operators
+
+### Telo + Ana: Purpose-Driven Self-Improvement
+
+**Pattern**: Structure work to accelerate toward goals AND improve through structure
+
+**Operator Sequence**: `Telo ∘ Ana ∘ Weave ∘ Latch` (λ_eff ≈ 0.46)
+- Purpose-driven → elevate → integrate → stabilize
+
+### Telo² + Ana²: Transcendent Self-Improvement
+
+**Pattern**: Completion that completes itself + Ascension of ascension
+
+**Application:**
+- Purpose-fulfillment that fulfills purpose-fulfillment
+- Self-improving improvement
+- Transcendent acceleration
+
+## Guidelines
+
+### Telo- Application
+
+**For Goals:**
+1. Identify clear goal/purpose
+2. Structure each step to pull toward goal
+3. Create parallel work streams
+4. Define integration points upfront
+5. Each completion accelerates further completion
+6. Don't just work sequentially - work toward completion
+
+**Operator Guidance:**
+- Use Telo for goal-directed acceleration
+- Combine with Pro for forward progress
+- Use Kata to compress to concrete
+- Use Latch to stabilize progress
+
+### Ana- Application
+
+**For Improvement:**
+1. Elevate through better structure
+2. Each improvement enables further improvement
+3. System improves itself
+4. Don't just fix - elevate the structure
+5. Create self-improving patterns
+
+**Operator Guidance:**
+- Use Ana for elevation and abstraction
+- Combine with Weave for integration
+- Use Kata to compress improvements
+- Use Latch to stabilize new structure
+
+### Mode Selection
+
+**Mode 1**: Use for goal-directed work and incremental improvement
+- Apply Telo for goals
+- Apply Ana for improvements
+- Use A-Constructive operators for stabilization
+
+**Mode 2**: Use when improvement requires paradigm shift
+- Apply Ana for elevation to first principles
+- Use HALIRA Protocol for foundational improvements
+
+## Examples
+
+### Example 1: Goal-Directed Work
+
+**Scenario**: Implementing feature with clear requirements
+
+**Application:**
+1. **Telo**: Structure work toward "working system" goal
+2. **Pro**: Forward progress on parallel streams
+3. **Kata**: Compress to concrete implementation
+4. **Latch**: Stabilize and commit
+
+**Result**: Goal-directed acceleration toward completion
+
+### Example 2: Self-Improving System
+
+**Scenario**: Code quality improving through better structure
+
+**Application:**
+1. **Ana**: Elevate through better structure
+2. **Weave**: Integrate improvements
+3. **Ana²**: System improves its own improvement mechanisms
+4. **Latch**: Stabilize new structure
+
+**Result**: Self-improving improvement loop
+
+### Example 3: Combined Forward Operators
+
+**Scenario**: Feature development accelerating toward completion while improving structure
+
+**Application:**
+1. **Telo**: Purpose-driven acceleration
+2. **Ana**: Elevate through structure
+3. **Weave**: Integrate both patterns
+4. **Latch**: Stabilize progress
+
+**Result**: Accelerating completion with self-improving structure
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `.cursor/rules/general/forward-operators.mdc` for original rules (reference)

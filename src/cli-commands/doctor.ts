@@ -6,7 +6,7 @@ import { createHostContext } from "../detect/context.js";
 import { CONFIDENCE_LABEL } from "../detect/signals.js";
 import { ASSETS } from "../init/registry.js";
 import { isScope, SCOPES, type Scope } from "../hosts/types.js";
-import { Settings, INIT_SETTING_KEYS } from "../config/settings.js";
+import { Settings, SETTING_KEYS } from "../config/settings.js";
 
 /**
  * `lambda doctor` — verify what `init` wrote, and say what is wrong with it.
@@ -132,8 +132,8 @@ export async function runDoctor(
     }
   }
 
-  const configSettings = INIT_SETTING_KEYS.map((key) => [key, settings.get(key)] as const).filter(
-    (entry): entry is readonly [(typeof INIT_SETTING_KEYS)[number], string] => entry[1] !== undefined,
+  const configSettings = SETTING_KEYS.map((key) => [key, settings.get(key)] as const).filter(
+    (entry): entry is readonly [(typeof SETTING_KEYS)[number], string] => entry[1] !== undefined,
   );
   console.log(
     `config       ${path.relative(projectRoot, settings.configFilePath()) || settings.configFilePath()}   ${configSettings

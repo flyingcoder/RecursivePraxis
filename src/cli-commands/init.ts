@@ -15,9 +15,9 @@ import { HostRegistry } from "../hosts/HostRegistry.js";
 import { createHostContext } from "../detect/context.js";
 import { isScope, SCOPES } from "../hosts/types.js";
 import type { FileAction, FileWriteResult } from "../init/write.js";
-import { INIT_SETTING_KEYS, Settings } from "../config/settings.js";
+import { SETTING_KEYS, Settings } from "../config/settings.js";
 
-const VALUE_FLAGS = ["--tools", "--scope", "--host", "--model", "--ollama-url"] as const;
+const VALUE_FLAGS = ["--tools", "--scope", "--context-injection"] as const;
 
 type ValueFlag = (typeof VALUE_FLAGS)[number];
 
@@ -72,7 +72,7 @@ interface ConfigSummary {
 function summarizeConfig(settings: Settings, configPath: string, written: boolean): ConfigSummary {
   const values: Record<string, string> = {};
   const sources: Record<string, string> = {};
-  for (const key of INIT_SETTING_KEYS) {
+  for (const key of SETTING_KEYS) {
     const value = settings.get(key);
     if (value === undefined) continue;
     values[key] = value;
@@ -197,10 +197,10 @@ export async function runInit(
   }
 
   // Config flags are resolved against the settings already on disk, so a
-  // partial re-init (e.g. only --model) keeps every other choice intact.
+  // partial re-init keeps every other choice intact.
   const current = await Settings.load({ cwd: projectRoot, baseDir });
   const configFlags = parseConfigFlags(
-    { host: values["--host"], model: values["--model"], ollamaUrl: values["--ollama-url"] },
+    { contextInjection: values["--context-injection"] },
     current,
   );
   if (!configFlags.ok) {

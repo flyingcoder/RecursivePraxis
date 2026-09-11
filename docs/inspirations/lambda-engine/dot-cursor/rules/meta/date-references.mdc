@@ -1,0 +1,138 @@
+---
+description: Temporal reference system for cursor rules - uses file creation dates as anchors for future-oriented date calculations
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Date References - Temporal Reference System
+
+Temporal reference system for cursor rules - uses file creation dates as anchors for future-oriented date calculations.
+
+## When to Apply
+
+This rule always applies (`alwaysApply: true`) to ensure proper temporal reference handling in all rules.
+
+## Use File Creation Dates for Temporal References
+
+### Hardcoded Dates Detection
+
+**❌ Hardcoded dates detected. Use file creation dates instead.**
+
+Replace hardcoded dates like "YYYY-MM-DD" with:
+- `{file.creationDate}` - The creation date of the current file
+- `{ref.creationDate}` - The creation date of `.cursor/.timestamp-reference`
+
+**Example:**
+```yaml
+# ❌ Bad:
+deprecatedSince: "2025-11-30"
+
+# ✅ Good:
+deprecatedSince: "{file.creationDate}"
+```
+
+This ensures rules work correctly regardless of when they're evaluated.
+
+## Dynamic Date Calculations
+
+**📅 Dynamic Date Calculations:**
+
+For temporal references in rules:
+
+**Use file creation dates as anchors:**
+- `{file.creationDate}` - Creation date of the rule file itself
+- `{ref.creationDate}` - Creation date of `.cursor/.timestamp-reference` (present moment anchor)
+
+**Relative date calculations:**
+- `{ref.creationDate + 30 days}` - 30 days from present
+- `{ref.creationDate + 1 year}` - 1 year from present
+- `{file.creationDate + 90 days}` - 90 days from file creation
+
+**Examples:**
+- Deprecation dates: `deprecatedSince: "{file.creationDate}"`
+- Grace periods: `removeAfter: "{file.creationDate + 60 days}"`
+- Review schedules: `nextReview: "{ref.creationDate + 30 days}"`
+
+All temporal references operate forward from the file creation date anchor.
+Rules work correctly regardless of when they're evaluated.
+
+## Temporal Context Establishment
+
+**🕐 Temporal Context Establishment:**
+
+Before making date assumptions or temporal references:
+
+1. **Create reference file first:**
+   - Create `.cursor/.timestamp-reference` to establish present date
+   - This file's creation date serves as the temporal anchor
+
+2. **Get file creation date:**
+   ```bash
+   stat -f "%Sm" -t "%Y-%m-%d" .cursor/.timestamp-reference
+   ```
+
+3. **Use in rules:**
+   - Reference `{ref.creationDate}` for present moment
+   - Reference `{file.creationDate}` for rule file's creation
+   - Calculate relative dates from these anchors
+
+4. **Pattern:**
+   - Never hardcode dates
+   - Always derive from file system metadata
+   - Use file creation dates as temporal anchors
+   - Calculate forward from anchors
+
+This pattern ensures rules are future-oriented and work correctly regardless of evaluation time.
+
+## Guidelines
+
+### Date Reference Best Practices
+
+1. **Never hardcode dates** in rules
+2. **Always use file creation dates** as temporal anchors
+3. **Calculate relative dates** from anchors
+4. **Use reference file** for present moment anchor
+
+### Temporal Anchor Pattern
+
+- **File creation date**: Use for rule-specific temporal references
+- **Reference file date**: Use for present moment calculations
+- **Relative calculations**: Always forward from anchors
+
+## Examples
+
+### Example 1: Deprecation Date
+
+**Scenario**: Marking a rule as deprecated
+
+**❌ Bad:**
+```yaml
+deprecatedSince: "2025-11-30"
+```
+
+**✅ Good:**
+```yaml
+deprecatedSince: "{file.creationDate}"
+```
+
+### Example 2: Grace Period
+
+**Scenario**: Rule removal after grace period
+
+**✅ Good:**
+```yaml
+removeAfter: "{file.creationDate + 60 days}"
+```
+
+### Example 3: Review Schedule
+
+**Scenario**: Schedule rule review
+
+**✅ Good:**
+```yaml
+nextReview: "{ref.creationDate + 30 days}"
+```
+
+## References
+
+- See: `.cursor/rules/meta/date-references.mdc` for original rule (reference)

@@ -1,10 +1,9 @@
 import { z } from "zod";
 
 /**
- * Shared structured-output contract for every model transport. Each adapter
- * forces the underlying provider to return JSON matching one of these
- * shapes, then validates with `.parse` so a malformed response throws
- * instead of silently propagating.
+ * Structured-output contract for a translator model's instruction bindings
+ * (`src/ir/execution.ts`). A malformed response throws via `.parse` rather
+ * than silently propagating.
  */
 
 export const evidenceRefSchema = z.object({
@@ -18,30 +17,6 @@ export const evidenceRefSchema = z.object({
     "domain-check",
   ]),
   hash: z.string(),
-});
-
-export const toolCallSchema = z.object({
-  name: z.string(),
-  capability: z.enum(["read", "write", "shell", "network"]),
-  args: z.record(z.string(), z.unknown()),
-  timeoutMs: z.number(),
-});
-
-export const stepOutputSchema = z.object({
-  summary: z.string(),
-  evidenceRefs: z.array(evidenceRefSchema),
-  artifacts: z.array(z.object({ mediaType: z.string(), content: z.string() })),
-  usage: z.object({ tokens: z.number(), costUsd: z.number(), latencyMs: z.number() }),
-  validatorPassed: z.boolean(),
-  uncertainty: z.number(),
-  requestedTools: z.array(toolCallSchema).optional(),
-});
-
-export const routingSchema = z.object({
-  uncertainty: z.number(),
-  contradictionDetected: z.boolean(),
-  unresolvedClaims: z.array(z.string()),
-  evidenceRefs: z.array(evidenceRefSchema),
 });
 
 /**
@@ -64,12 +39,3 @@ export type InstructionBinding = z.infer<typeof instructionBindingSchema>;
 
 /** Instruction index (as a string key) → binding, as returned by a translator. */
 export const instructionBindingMapSchema = z.record(z.string(), instructionBindingSchema);
-
-/** Strips the `$schema` field zod's JSON Schema output carries, which most
- * provider SDKs reject on a tool/output-format definition. */
-export function toPlainJsonSchema(schema: z.ZodTypeAny): Record<string, unknown> {
-  const { $schema, ...rest } = z.toJSONSchema(schema) as Record<string, unknown> & {
-    $schema?: unknown;
-  };
-  return rest;
-}

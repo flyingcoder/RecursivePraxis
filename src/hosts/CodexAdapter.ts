@@ -66,10 +66,13 @@ export class CodexAdapter extends HostAdapter {
       // Hooks are the one Codex surface that is not under `.agents/`: they live
       // in `.codex/hooks.json`, which is why this is a fragment with an absolute
       // path rather than a placement inside the layout root. No `eventAs` or
-      // `render` — Codex names the event `PreToolUse`, matches on the tool name,
-      // wraps handlers in a matcher group, and blocks on exit 2, which is the
-      // vocabulary `HOOK_EVENTS` and `Hook.toMatcherEntry` already speak. The
-      // file is the user's own, so our entry is appended, never written over.
+      // `render` — Codex agrees with Claude Code's own vocabulary for both
+      // hooks: `PreToolUse` matches on the tool name, wraps handlers in a
+      // matcher group, and blocks on exit 2; `UserPromptSubmit` carries no
+      // matcher and emits `hookSpecificOutput.additionalContext`. Both are
+      // exactly what `HOOK_EVENTS` and `Hook.toMatcherEntry` already speak, so
+      // every hook flows through the same default path. The file is the
+      // user's own, so our entries are appended, never written over.
       hooksFragment: {
         absPath: path.join(root, ".codex", "hooks.json"),
         pointer: ["hooks"],

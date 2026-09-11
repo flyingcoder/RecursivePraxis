@@ -1,0 +1,216 @@
+---
+description: Temporal time reference system for cursor rules - uses file creation times and current time for time-based calculations
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Time References - Temporal Time Reference System
+
+Temporal time reference system for cursor rules - uses file creation times and current time for time-based calculations.
+
+## When to Apply
+
+This rule always applies (`alwaysApply: true`) to ensure proper temporal time reference handling in all rules.
+
+## Use File Creation Times for Temporal References
+
+### Hardcoded Times Detection
+
+**❌ Hardcoded times detected. Use file creation times instead.**
+
+Replace hardcoded times like "HH:MM:SS" or example times with:
+- `{file.creationTime}` - The creation time of the current file
+- `{ref.currentTime}` - The current time from `.cursor/.timestamp-reference`
+- `{ref.creationTime}` - The creation time of `.cursor/.timestamp-reference`
+
+**Example:**
+```yaml
+# ❌ Bad:
+scheduledAt: "09:00:00"
+expiresAt: "17:00:00"
+
+# ✅ Good:
+scheduledAt: "{file.creationTime + 2 hours}"
+expiresAt: "{ref.currentTime + 4 hours}"
+```
+
+This ensures rules work correctly regardless of when they're evaluated.
+
+## Dynamic Time Calculations
+
+**🕐 Dynamic Time Calculations:**
+
+For temporal time references in rules:
+
+**Use file creation times as anchors:**
+- `{file.creationTime}` - Creation time of the rule file itself (HH:MM:SS format)
+- `{ref.currentTime}` - Current time from `.cursor/.timestamp-reference` (present moment anchor)
+- `{ref.creationTime}` - Creation time of `.cursor/.timestamp-reference` (session anchor)
+
+**Relative time calculations:**
+- `{ref.currentTime + 30 minutes}` - 30 minutes from now
+- `{ref.currentTime + 2 hours}` - 2 hours from now
+- `{file.creationTime + 1 hour}` - 1 hour from file creation
+- `{ref.currentTime - 15 minutes}` - 15 minutes ago
+
+**Time format:**
+- ISO 8601: `{ref.currentTime}` → "{ref.creationDate}T09:00:00Z"
+- 12-hour: `{ref.currentTime}` → "9:00 AM"
+- 24-hour: `{ref.currentTime}` → "09:00:00"
+
+**Examples:**
+- Scheduled tasks: `scheduledAt: "{ref.currentTime + 1 hour}"`
+- Timeouts: `timeout: "{ref.currentTime + 30 minutes}"`
+- Expiration: `expiresAt: "{file.creationTime + 4 hours}"`
+- Grace periods: `gracePeriod: "{ref.currentTime + 15 minutes}"`
+
+All temporal time references operate forward from the file creation time anchor or current time.
+Rules work correctly regardless of when they're evaluated.
+
+## Time Context Establishment
+
+**🕐 Time Context Establishment:**
+
+Before making time assumptions or temporal time references:
+
+1. **Create reference file first:**
+   - Create `.cursor/.timestamp-reference` to establish present time
+   - This file's creation time serves as the temporal anchor
+
+2. **Get file creation time:**
+   ```bash
+   # macOS/Linux
+   stat -f "%Sm" -t "%Y-%m-%dT%H:%M:%SZ" .cursor/.timestamp-reference
+   
+   # Or use ISO 8601 format
+   date -u +"%Y-%m-%dT%H:%M:%SZ"
+   ```
+
+3. **Use in rules:**
+   - Reference `{ref.currentTime}` for present moment
+   - Reference `{file.creationTime}` for rule file's creation time
+   - Calculate relative times from these anchors
+
+4. **Pattern:**
+   - Never hardcode times
+   - Always derive from file system metadata or current time
+   - Use file creation times as temporal anchors
+   - Calculate forward from anchors
+
+This pattern ensures rules are time-aware and work correctly regardless of evaluation time.
+
+## Time-Based Operations
+
+### Time Detection
+
+**Detect current time:**
+- Use `{ref.currentTime}` for present moment
+- Use `{file.creationTime}` for file creation time
+- Calculate relative times from anchors
+
+### Time Comparisons
+
+**Compare times:**
+- `{ref.currentTime} > {file.creationTime + 1 hour}` - Check if 1 hour passed
+- `{ref.currentTime} < {scheduledTime}` - Check if before scheduled time
+- `{ref.currentTime} >= {expiresAt}` - Check if expired
+
+### Time Zones
+
+**Handle time zones:**
+- Use UTC for consistency: `{ref.currentTime}` (UTC)
+- Convert to local: `{ref.currentTime} + localOffset`
+- Store timezone: `{ref.currentTime} + "America/New_York"`
+
+## Guidelines
+
+### Time Reference Best Practices
+
+1. **Never hardcode times** in rules
+2. **Always use file creation times** or current time as temporal anchors
+3. **Calculate relative times** from anchors
+4. **Use reference file** for present moment anchor
+5. **Handle time zones** consistently (prefer UTC)
+
+### Temporal Anchor Pattern
+
+- **File creation time**: Use for rule-specific temporal references
+- **Reference file time**: Use for present moment calculations
+- **Current time**: Use for real-time operations
+- **Relative calculations**: Always forward from anchors
+
+### Time Format Standards
+
+- **ISO 8601**: `{ref.creationDate}T09:00:00Z` (preferred, uses file creation date)
+- **12-hour**: `9:00 AM`
+- **24-hour**: `09:00:00`
+- **Unix timestamp**: Calculated from file creation time (seconds since epoch)
+
+## Examples
+
+### Example 1: Scheduled Task
+
+**Scenario**: Schedule a task for later
+
+**❌ Bad:**
+```yaml
+scheduledAt: "09:00:00"
+```
+
+**✅ Good:**
+```yaml
+scheduledAt: "{ref.currentTime + 1 hour}"
+```
+
+### Example 2: Timeout
+
+**Scenario**: Set timeout for operation
+
+**✅ Good:**
+```yaml
+timeout: "{ref.currentTime + 30 minutes}"
+```
+
+### Example 3: Expiration
+
+**Scenario**: Set expiration time
+
+**✅ Good:**
+```yaml
+expiresAt: "{file.creationTime + 4 hours}"
+```
+
+### Example 4: Grace Period
+
+**Scenario**: Allow grace period before action
+
+**✅ Good:**
+```yaml
+gracePeriod: "{ref.currentTime + 15 minutes}"
+actionAfter: "{gracePeriod}"
+```
+
+### Example 5: New File Creation Timestamp
+
+**Scenario**: Get the creation timestamp of a new file
+
+**✅ Good:**
+```yaml
+# For a new file, use file creation date and time
+createdAt: "{file.creationDate}T{file.creationTime}Z"
+# Example output: Uses the actual file creation date/time, e.g., "2024-12-04T08:30:00Z"
+```
+
+## Integration with Date References
+
+Time references work together with date references:
+
+- **Date + Time**: `{ref.creationDate}T{ref.currentTime}Z` → Uses file creation date + current time
+- **Full timestamp**: Combine date and time for complete temporal reference
+- **Duration calculations**: Use both date and time for precise durations
+- **For new files**: Use `{file.creationDate}T{file.creationTime}Z` to get the file's creation timestamp
+
+## References
+
+- See: `date-references.mdc` for date reference system
+- See: `.cursor/rules/meta/date-references.mdc` for original date rule (reference)

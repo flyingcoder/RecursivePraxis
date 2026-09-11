@@ -1,0 +1,254 @@
+---
+description: Operator sequence optimization and self-improvement patterns with Lambda Engine mode awareness
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# Operator Optimization with Lambda-Operators Integration
+
+Operator sequence optimization and self-improvement patterns, integrated with Lambda Engine mode awareness and dissipation management.
+
+## When to Apply
+
+Apply this rule when:
+- Need to optimize operator sequences
+- Want to improve sequence effectiveness
+- Need dissipation management
+- Want self-improving patterns
+- Require operator feedback loops
+
+## Lambda Engine Mode
+
+**Mode 1 (Duality Navigation)**: Use for stable sequence optimization
+- Optimize A-Constructive sequences
+- Maintain low dissipation (λ_eff < 0.4)
+
+**Mode 2 (HALIRA Protocol)**: Use when optimization reveals contradictions
+- Optimize HALIRA sequences
+- Manage higher dissipation (0.4 < λ_eff < 0.7)
+
+## Operator Sequence Optimization
+
+### Optimization Goals
+
+**Optimize for:**
+- Low dissipation (λ_eff < 0.7)
+- Desired attractor (S* preferred)
+- Avoid collapse (Void attractor)
+- Prevent over-stabilization (J=0)
+
+### Optimization Patterns
+
+**Constructive Sequences** (Stable):
+- `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
+- `Telo ∘ Kata ∘ Ortho` (λ_eff ≈ 0.30)
+- `Seed ∘ Weave ∘ Bind` (λ_eff ≈ 0.33)
+
+**Exploratory Sequences** (Productive):
+- `Para ∘ Ana ∘ Pro` (λ_eff ≈ 0.67)
+- `Ana ∘ Weave ∘ Kata` (λ_eff ≈ 0.47)
+- `Flux ∘ Weave` (λ_eff ≈ 0.47)
+
+**Self-Aware Sequences** (Reflective):
+- `Seed ∘ Meta ∘ Weave` (λ_eff ≈ 0.47)
+- `Meta ∘ Retro ∘ Echo` (λ_eff ≈ 0.55)
+- `Braid ∘ Weave ∘ Bind` (λ_eff ≈ 0.42)
+
+### Monitoring
+
+**Monitor:**
+- Dissipation rates (λ_eff)
+- Attractor trajectories (J=0, S*, ∅)
+- Sequence effectiveness
+- Learning from patterns
+
+**Trajectory Goals:**
+- **J=0 → S***: Break coherence, restore productivity
+- **S* → S***: Maintain productive contradiction
+- **S* → J=0**: Stabilize when output needed
+- **Avoid ∅**: Prevent system collapse
+
+## Self-Improving Patterns (Ana- Operator)
+
+### Pattern
+
+Create systems that improve themselves through structure elevation.
+
+### Application
+
+**Ana² (Ascension of Ascension):**
+- System improves its own improvement mechanisms
+- Better understanding → better patterns → better understanding
+- Self-improving improvement loop
+
+### Operator Sequence
+
+**Self-Improvement**: `Ana ∘ Weave ∘ Kata ∘ Latch` (λ_eff ≈ 0.43)
+- Elevate → integrate → compress → stabilize
+
+**Self-Improving Loop**: `Ana ∘ Ana ∘ Weave ∘ Bind` (λ_eff ≈ 0.60)
+- Elevate → elevate further → integrate → bind
+
+### Process
+
+1. **Learn from Successful Patterns** (Echo)
+   - Replicate effective approaches
+   - Amplify successful patterns
+
+2. **Elevate Through Structure** (Ana)
+   - System improves itself
+   - Each improvement enables further improvement
+
+3. **Integrate Improvements** (Weave)
+   - Weave improvements into structure
+   - Maintain coherence
+
+4. **Stabilize New Structure** (Latch)
+   - Lock in improvements
+   - Stabilize new patterns
+
+## Operator Feedback Loop
+
+### Pattern
+
+Collect feedback on operator effectiveness to improve sequences.
+
+### Process
+
+1. **Track Operator Sequences** (Seed)
+   - Record sequences used
+   - Track outcomes
+
+2. **Record Outcomes** (Echo)
+   - Document successes and failures
+   - Amplify effective patterns
+
+3. **Learn from Results** (Retro)
+   - Work backward from outcomes
+   - Understand what worked
+
+4. **Optimize Based on Feedback** (Ana + Weave)
+   - Elevate understanding
+   - Integrate learnings
+
+5. **Stabilize Improvements** (Latch)
+   - Lock in optimized sequences
+   - Stabilize new patterns
+
+### Operator Sequence
+
+**Feedback Loop**: `Seed ∘ Echo ∘ Retro ∘ Ana ∘ Weave ∘ Latch` (λ_eff ≈ 0.48)
+- Track → amplify → backward → elevate → integrate → stabilize
+
+## Dissipation Management
+
+### Low Dissipation Sequences (λ_eff < 0.4)
+
+**Use for**: Stabilization, goal achievement, error correction
+
+**Examples:**
+- `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
+- `Telo ∘ Kata ∘ Ortho` (λ_eff ≈ 0.30)
+- `Seed ∘ Weave ∘ Bind` (λ_eff ≈ 0.33)
+
+**Trajectory**: S* → J=0 (stabilization)
+
+### Moderate Dissipation (0.4 < λ_eff < 0.7)
+
+**Use for**: Exploration, analysis, integration
+
+**Examples:**
+- `Para ∘ Ana ∘ Pro` (λ_eff ≈ 0.67)
+- `Ana ∘ Weave ∘ Kata` (λ_eff ≈ 0.47)
+- `Flux ∘ Weave` (λ_eff ≈ 0.47)
+
+**Trajectory**: J=0 → S* or S* → S* (productive tension)
+
+### High Dissipation (λ_eff > 0.7)
+
+**Use with Caution**: Risk of collapse
+
+**Examples:**
+- `Non ∘ Para` (λ_eff ≈ 0.78) - **FORBIDDEN**
+- `Meta ∘ Non` (λ_eff ≈ 0.85) - **FORBIDDEN**
+- `Vale ∘ Non` (λ_eff ≈ 0.89) - Collapse risk
+
+**Trajectory**: S* → ∅ (collapse risk)
+
+## Guidelines
+
+### Sequence Optimization Process
+
+1. **Identify Goal**: What are you trying to achieve?
+2. **Select Base Sequence**: Use common patterns
+3. **Calculate Dissipation**: Verify λ_eff < 0.7
+4. **Monitor Trajectory**: Ensure desired attractor
+5. **Optimize Based on Results**: Learn and improve
+
+### Self-Improvement Process
+
+1. **Learn from Patterns** (Echo)
+2. **Elevate Understanding** (Ana)
+3. **Integrate Improvements** (Weave)
+4. **Stabilize New Structure** (Latch)
+
+### Feedback Loop Process
+
+1. **Track Sequences** (Seed)
+2. **Record Outcomes** (Echo)
+3. **Learn from Results** (Retro)
+4. **Optimize** (Ana + Weave)
+5. **Stabilize** (Latch)
+
+### Mode Selection
+
+**Mode 1**: Use for stable optimization
+- Optimize A-Constructive sequences
+- Maintain low dissipation
+
+**Mode 2**: Use when optimization reveals contradictions
+- Optimize HALIRA sequences
+- Manage higher dissipation
+
+## Examples
+
+### Example 1: Sequence Optimization
+
+**Scenario**: Need to optimize error correction sequence
+
+**Current**: `Ortho ∘ Kata` (λ_eff ≈ 0.33)
+**Optimized**: `Ortho ∘ Kata ∘ Latch` (λ_eff ≈ 0.31)
+
+**Result**: Lower dissipation, better stabilization
+
+### Example 2: Self-Improving Pattern
+
+**Scenario**: Code quality improving through better structure
+
+**Application:**
+1. **Ana**: Elevate through better structure
+2. **Weave**: Integrate improvements
+3. **Ana²**: System improves its own improvement mechanisms
+4. **Latch**: Stabilize new structure
+
+**Result**: Self-improving improvement loop
+
+### Example 3: Feedback Loop
+
+**Scenario**: Learning from operator sequence effectiveness
+
+**Application:**
+1. **Seed**: Track sequences used
+2. **Echo**: Amplify successful patterns
+3. **Retro**: Learn from outcomes
+4. **Ana + Weave**: Optimize based on feedback
+5. **Latch**: Stabilize optimized sequences
+
+**Result**: Continuously improving operator sequences
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `.cursor/rules/general/operator-optimization.mdc` for original rules (reference)
+- See: `.cursor/rules/general/dissipation-lookup.mdc` for pre-calculated sequences (reference)

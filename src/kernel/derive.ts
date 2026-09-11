@@ -17,10 +17,10 @@ import type { DissipationState } from "./types.js";
  * into numbers: the judgment stays visible and arguable, the arithmetic stays
  * checkable.
  *
- * It lives in the kernel rather than in `engine/` because both the engine's
- * planner and the intent-derivation path need it, and the kernel may not
- * import from the engine. A second copy of the formula is exactly the drift
- * this arrangement prevents.
+ * It lives in the kernel because the intent-derivation path (`src/mcp/tools.ts`,
+ * `deriveInitialDissipation`) needs it and the kernel may not import from
+ * outside itself. A second copy of the formula is exactly the drift this
+ * arrangement prevents.
  */
 
 function clamp01(value: number): number {
@@ -36,9 +36,8 @@ function clamp01(value: number): number {
  * fail" or "that claim was resolved last turn" by name, which is the entire
  * difference between this and picking D = 0.85 by feel.
  *
- * `ObservableTaskState` in `engine/core.ts` satisfies this structurally.
- * Declaring it here rather than as a `Pick<ObservableTaskState, …>` is what
- * keeps the kernel free of an engine dependency.
+ * Declared as its own interface, not derived from a caller's larger state
+ * type, so this module stays free of a dependency on any one caller's shape.
  */
 export interface IntentSignals {
   /** 0..1. The free scalar — prefer moving weight onto the countable fields. */

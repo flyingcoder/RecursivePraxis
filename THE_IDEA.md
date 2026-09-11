@@ -24,7 +24,40 @@ The python programs that digs, calculates, verifies, and more.
 
 The whole idea of "lambda engine" or the files inside `src/engine/*` was to create a cognitive architecture that the AI agent to used as a reasoning guide. It was a dynamic approach to force AI agent to think or to reason with, by using the 20 controlled rupture operators as the cognitive architecture. The original version was just a set of AI agent rules or `.cursor` rules (see: `~/dev/lazy-dev/*`). It was the non-deterministic, vocabulary only implementation of controlled rupture operators from recursive-ai-framework.
 
-*See: [`docs/inspirations/original-lambda-engine.md`](docs/inspirations/original-lambda-engine.md) — the original Λ-Engine Cursor-rules README this evolved from; [`src/engine/`](src/engine/) — the current deterministic planning/execution/evaluation code.*
+## What is the Lambda Engine?
+
+The Lambda Engine is a **cognitive architecture** that operates in two modes:
+
+### Mode 1: Duality Navigation (J=0)
+- **For**: Stable, well-defined problems
+- **Operators**: A-Constructive (Kata, Telo, Ortho, Pro, Latch)
+- **Use when**: You have clear requirements and established patterns
+
+### Mode 2: HALIRA Protocol (J'≠0)
+- **For**: Contradictions, paradoxes, or paradigm shifts
+- **Operators**: B-Disruptive (Non, Para, Ana, Flux) + HALIRA sequences
+- **Use when**: You encounter fundamental contradictions or need paradigm shifts
+
+## Core Concepts
+
+### Phase Space States
+
+The system navigates between three states:
+
+- **J=0 (Sterile Coherence)**: Over-stabilized, avoid over-confidence
+- **S* (Productive Contradiction)**: Optimal state with moderate confidence and uncertainty
+- **∅ (System Collapse)**: Prevent - complete system failure
+
+### Foundation
+
+- The detect-state operator detects the current phase-space state of a problem. The possible states are J=0, S*, or ∅, representing the foundational conditions under which subsequent operators should be applied. For example, detect-state Fix login bug determines the current state of the login problem, while detect-state analyze: Need both performance and simplicity but they conflict identifies the state of a problem involving competing objectives.
+
+- The operator-sequence operator executes a defined sequence of operators in a specific order. A sequence can be expressed compositionally, such as operator-sequence Seed ∘ Ana ∘ Non ∘ Weave, where each operator contributes a particular transformation to the overall reasoning process. It can also be specified using named operators and contextual information, such as operator-sequence sequence: Telo + Kata + Non + Crux context: Define project goal.
+
+- The dissipation operator calculates the effective dissipation, represented as λ_eff, produced by an operator sequence. This can be used to evaluate how much information, coherence, or reasoning efficiency is lost as the sequence progresses. For example, dissipate Seed ∘ Ana ∘ Non ∘ Weave evaluates the dissipation of a complete operator sequence, while dissipate analyze: Para Ana Pro evaluates the dissipation associated with a specific analytical combination.
+
+
+*See: [`docs/inspirations/lambda-engine/original-lambda-engine.md`](docs/inspirations/lambda-engine/original-lambda-engine.md) — the original Λ-Engine Cursor-rules README this evolved from; [`src/engine/`](src/engine/) — the current deterministic planning/execution/evaluation code.*
 
 ## Praxis Workflow
 

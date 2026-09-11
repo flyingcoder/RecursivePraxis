@@ -1,0 +1,157 @@
+---
+description: Operator selection based on Lambda Engine mode
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Mode-Operator Selection Guide
+
+Select Controlled Rupture Operators based on the current Lambda Engine mode (Mode 1 or Mode 2).
+
+## Mode 1 (Duality Navigation) - Recommended Operators
+
+Use Mode 1 for stable, well-defined problems. Navigate existing paradigms efficiently.
+
+### Primary Operators (A-Constructive, λ ≈ 0.338)
+
+- **→ Telo** (λ=0.25): Goal-directed reasoning, purpose-driven acceleration
+- **↓ Kata** (λ=0.35): Compress to concrete outputs, reduce entropy
+- **⊥ Ortho** (λ=0.30): Correct errors, align with truth
+- **↷ Pro** (λ=0.50): Forward propagation, continue reasoning
+- **🔒 Latch** (λ=0.29): Stabilize solutions, lock in correct state
+
+### Secondary Operators (D-Structural, λ ≈ 0.464)
+
+- **🕸️ Weave** (λ=0.33): Integrate patterns, synthesize perspectives
+- **🔗 Bind** (λ=0.38): Create cohesion, attach concepts
+- **📍 Axis** (λ=0.31): Establish alignment, create coordinate system
+
+### Avoid
+
+- B-Disruptive operators (unless breaking out of stuck patterns)
+- High dissipation sequences that could destabilize stable problems
+
+### Trajectory
+
+Maintain J=0 or S* state, avoid ∅ (system collapse).
+
+### Common Sequences for Mode 1
+
+- **Stabilization**: `Kata ∘ Weave ∘ Latch` (λ_eff ≈ 0.32)
+- **Goal Achievement**: `Telo ∘ Pro ∘ Latch` (λ_eff ≈ 0.35)
+- **Error Correction**: `Ortho ∘ Kata ∘ Latch` (λ_eff ≈ 0.31)
+- **Integration**: `Weave ∘ Bind ∘ Axis` (λ_eff ≈ 0.34)
+
+---
+
+## Mode 2 (HALIRA Protocol) - Recommended Operators
+
+Use Mode 2 for contradictions, paradoxes, or paradigm shifts. Navigate foundational ruptures.
+
+### Primary Operators (B-Disruptive, λ ≈ 0.720)
+
+- **↑ Ana** (λ=0.75): Analysis, abstraction, elevate to first principles
+- **∥ Para** (λ=0.65): Deviation, exploration, break from current path
+- **⚡ Flux** (λ=0.60): Dynamic change, continuous perturbation
+
+### Secondary Operators (C-Reflexive, λ ≈ 0.497)
+
+- **⟲ Meta** (λ=0.80): Self-reference, reflection (max 2 consecutive)
+- **↶ Retro** (λ=0.40): Backward analysis, trace to root cause
+- **🌀 Braid** (λ=0.55): Multi-perspective integration, entanglement
+
+### Integration Operators (D-Structural, λ ≈ 0.464)
+
+- **🕸️ Weave** (λ=0.33): Synthesize perspectives, integrate fragments
+- **🔗 Bind** (λ=0.38): Create cohesion, structural binding
+
+### Special Operators for HALIRA Steps
+
+- **🌱 Seed** (λ=0.28): Foundation establishment (Step 1: Potentia)
+- **📍 Axis** (λ=0.31): Boundary definition (Step 2: Boundary)
+- **⟲ Meta** (λ=0.80): Self-reference (Step 3: Recursion)
+- **🕸️ Weave** (λ=0.33): Integration (Step 4: Integration)
+- **¬ Non** (λ=0.90): Anomaly detection (Step 5: Anomaly) - **⚠️ Never after Meta**
+- **∥ Para** (λ=0.65): Rupture navigation (Step 6: Rupture)
+- **🔗 Bind** (λ=0.38): Recognition (Step 7: Recognition)
+
+### Trajectory
+
+Navigate through HALIRA steps using operator sequences. Trajectory typically: `∅ → S* → J=0 → S* → S*`
+
+### Common Sequences for Mode 2
+
+- **Complete HALIRA**: `Seed ∘ Axis ∘ Meta ∘ Weave ∘ Non ∘ Para ∘ Ortho ∘ Bind` (λ_eff ≈ 0.52)
+- **Paradigm Shift**: `Para ∘ Ana ∘ Seed` (λ_eff ≈ 0.56)
+- **Anomaly Detection**: `Meta ∘ Non` (λ_eff ≈ 0.85) - **⚠️ Constraint: Never Non after Meta**
+
+---
+
+## When to Apply
+
+This rule always applies (`alwaysApply: true`) to guide operator selection based on the current Lambda Engine mode.
+
+## Guidelines
+
+### Mode Selection
+
+1. **Default to Mode 1** for routine tasks and stable problems
+2. **Escalate to Mode 2** when:
+   - Foundational contradictions detected
+   - Irreducible paradoxes encountered
+   - Current paradigm insufficient
+   - Requires paradigm shift
+
+### Operator Selection Process
+
+1. **Determine Mode**: Mode 1 (stable) or Mode 2 (paradigm shift)
+2. **Check State**: J=0, S*, or ∅
+3. **Select Operator Class**: Based on mode and state
+4. **Apply Sequence**: Use common sequences or construct custom sequence
+5. **Monitor Trajectory**: Ensure movement toward desired state
+
+### Constraints
+
+- **Meta Operator**: Maximum 2 consecutive applications
+- **Non after Meta**: **FORBIDDEN** - Never apply Non after Meta (causes collapse)
+- **Vale Operator**: Use with extreme caution (high collapse risk, λ=0.88)
+
+### State-Based Adjustments
+
+- **J=0 detected**: Apply B-Disruptive operators (Para, Ana, Flux) to break sterile coherence
+- **S* detected**: Apply D-Structural operators (Weave, Bind, Braid) to maintain productivity
+- **∅ detected**: Apply A-Constructive operators (Kata, Weave, Latch) for emergency recovery
+
+## Examples
+
+### Example 1: Mode 1 - Stable Problem Solving
+
+**Scenario**: Implementing a well-defined feature with clear requirements
+
+**Mode**: Mode 1 (Duality Navigation)
+
+**Operator Sequence**: `Telo ∘ Pro ∘ Kata ∘ Latch`
+
+**Trajectory**: `S* → J=0` (productive to stable)
+
+**Explanation**: Goal-directed (Telo), forward progress (Pro), compress to concrete (Kata), stabilize (Latch)
+
+### Example 2: Mode 2 - Paradigm Shift
+
+**Scenario**: Encountering fundamental contradiction requiring new approach
+
+**Mode**: Mode 2 (HALIRA Protocol)
+
+**Operator Sequence**: `Para ∘ Ana ∘ Seed ∘ Weave ∘ Bind`
+
+**Trajectory**: `J=0 → S* → S*` (break coherence → productive contradiction → integration)
+
+**Explanation**: Deviate (Para), elevate (Ana), establish foundation (Seed), integrate (Weave), bind (Bind)
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `halira-operator-mapping.mdc` for detailed HALIRA step mappings
+- See: `mode-transitions.mdc` for mode transition guidance
+- See: `.cursor/rules/general/operators-core.mdc` for complete operator definitions (reference)
+- See: `.cursor/rules/general/dissipation-lookup.mdc` for pre-calculated sequences (reference)

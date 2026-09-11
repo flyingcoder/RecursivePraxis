@@ -1,19 +1,19 @@
 # Feature Inventory
 
-A historical-record cross-check: what the code in this repository actually does, verified against on-disk source and real call/registration graphs, held up against [`TERMS.md`](../TERMS.md) — the developer's own account, in his own words, of what this project is for.
+A historical-record cross-check: what the code in this repository actually does, verified against on-disk source and real call/registration graphs, held up against [`THE_IDEA.md`](../THE_IDEA.md) — the developer's own account, in his own words, of what this project is for.
 
-**Method.** Every claim below is grounded in source: a function is "wired" only if a real caller was found by grep/read, not inferred from a comment; an asset is "agent-discoverable" only if it appears in one of `SKILLS`/`COMMANDS`/`AGENTS`/`RULES`/`HOOKS`/`MCP_SERVERS` (`src/init/*/index.ts`); a CLI command is "reachable" only if it has a branch in `src/cli.ts`'s `main()`. Where TERMS.md makes a claim, this document checks it against the cited file rather than repeating it. Docs (`docs/*`, code comments) are read as *stated intent*, never as ground truth for *current behavior* — per TERMS.md's own instruction to read it "as intent, not as documentation," and per this project's `CLAUDE.md`/`AGENTS.md` convention of trusting code over docs.
+**Method.** Every claim below is grounded in source: a function is "wired" only if a real caller was found by grep/read, not inferred from a comment; an asset is "agent-discoverable" only if it appears in one of `SKILLS`/`COMMANDS`/`AGENTS`/`RULES`/`HOOKS`/`MCP_SERVERS` (`src/init/*/index.ts`); a CLI command is "reachable" only if it has a branch in `src/cli.ts`'s `main()`. Where THE_IDEA.md makes a claim, this document checks it against the cited file rather than repeating it. Docs (`docs/*`, code comments) are read as *stated intent*, never as ground truth for *current behavior* — per THE_IDEA.md's own instruction to read it "as intent, not as documentation," and per this project's `CLAUDE.md`/`AGENTS.md` convention of trusting code over docs.
 
 **As of**: 2026-09-10, branch `feat/multi-step-setup`, against a working tree with uncommitted deletions (a "meta-prompt"/"prompt-policy" feature being removed) and additions (`lambda gate`, `lambda task`) — both states are recorded here, since a historical record needs the transition, not just the endpoint.
 
 ---
 
-## 1. The headline finding: TERMS.md's own citations point at the wrong files
+## 1. The headline finding: THE_IDEA.md's own citations point at the wrong files
 
-TERMS.md ([`TERMS.md:44-48`](../TERMS.md#L44)) describes two enforcement mechanisms it built to make an AI agent actually use the 20 controlled-rupture operators:
+THE_IDEA.md ([`THE_IDEA.md:44-48`](../THE_IDEA.md#L44)) describes two enforcement mechanisms it built to make an AI agent actually use the 20 controlled-rupture operators:
 
 - **Praxis workflow** — voluntary, through intent processing (slash command or agent choice).
-- **Lambda engine** — mandatory, through state transition, "enforced through always true AI rules," citing [`src/init/hooks/legality-gate.ts`](../src/init/hooks/legality-gate.ts) as that enforcement, and describing `src/engine/*` ([`TERMS.md:23-27`](../TERMS.md#L23)) as the reasoning-guide code.
+- **Lambda engine** — mandatory, through state transition, "enforced through always true AI rules," citing [`src/init/hooks/legality-gate.ts`](../src/init/hooks/legality-gate.ts) as that enforcement, and describing `src/engine/*` ([`THE_IDEA.md:23-27`](../THE_IDEA.md#L23)) as the reasoning-guide code.
 
 Tracing the actual call graph:
 
@@ -24,22 +24,22 @@ legality-gate.ts (hook)  →  `lambda gate`  →  src/cli-commands/gate.ts
                                         legalNext()  —  src/kernel/session.ts:12
 ```
 
-`legalNext` lives in **`src/kernel/session.ts`**, a module TERMS.md never names. It is not part of `src/engine/*` — `src/engine/orchestrator.ts` *calls into* the kernel's `kernelStep` rather than owning this logic itself. Meanwhile the literal `src/engine/*` files TERMS.md calls "Lambda Engine" (`core.ts`, `orchestrator.ts`, `evaluation.ts` — backing `lambda plan/run/inspect/replay/eval/promote`) have **zero installed AI-agent-facing prose**: no Skill, Command, Agent, or Rule references them, and one of the skills that *does* exist explicitly tells the agent to stay away —
+`legalNext` lives in **`src/kernel/session.ts`**, a module THE_IDEA.md never names. It is not part of `src/engine/*` — `src/engine/orchestrator.ts` *calls into* the kernel's `kernelStep` rather than owning this logic itself. Meanwhile the literal `src/engine/*` files THE_IDEA.md calls "Lambda Engine" (`core.ts`, `orchestrator.ts`, `evaluation.ts` — backing `lambda plan/run/inspect/replay/eval/promote`) have **zero installed AI-agent-facing prose**: no Skill, Command, Agent, or Rule references them, and one of the skills that *does* exist explicitly tells the agent to stay away —
 
 > "`lambda run` invokes a model host and has a broader capability surface than the commands above. It is intentionally out of scope for this skill — do not treat it as a default workflow step." — [`src/init/shared/epistemic-footer.ts:17`](../src/init/shared/epistemic-footer.ts#L17)
 
-**Reading this as a historical record, not a bug report**: this isn't damage — it's what the vocabulary looked like *before* the architecture caught up with it. TERMS.md is dated language describing an intent; the code shows the enforcement mechanism was actually built in `src/kernel/`, and `src/engine/*` ended up as a separate, real, tested, but deliberately agent-excluded execution/trace/replay subsystem. The names "engine," "kernel," and "session" ended up describing three different things across the codebase and TERMS.md's prose, which is worth fixing in the vocabulary document itself — not the code.
+**Reading this as a historical record, not a bug report**: this isn't damage — it's what the vocabulary looked like *before* the architecture caught up with it. THE_IDEA.md is dated language describing an intent; the code shows the enforcement mechanism was actually built in `src/kernel/`, and `src/engine/*` ended up as a separate, real, tested, but deliberately agent-excluded execution/trace/replay subsystem. The names "engine," "kernel," and "session" ended up describing three different things across the codebase and THE_IDEA.md's prose, which is worth fixing in the vocabulary document itself — not the code.
 
 ---
 
-## 2. TERMS.md concept → code, as it actually stands
+## 2. THE_IDEA.md concept → code, as it actually stands
 
-| TERMS.md concept | What TERMS.md says implements it | What the code shows actually implements it |
+| THE_IDEA.md concept | What THE_IDEA.md says implements it | What the code shows actually implements it |
 |---|---|---|
-| **Lambda Engine** (reasoning guide via 20 operators, forced on the agent) | `src/engine/*` | Nothing forces it. `src/engine/*` is real (planning/execution/trace/replay/eval) but has no agent-facing prose and is explicitly fenced off. The one thing that *is* "always true" state-transition enforcement is `src/kernel/session.ts` + the `legality-gate.ts` hook — a different module than the one TERMS.md names. |
-| **Praxis Workflow** (intent → diagnose → analyze → execute) | `src/init/skills/intent.ts`, `diagnose.ts`, `analyze.ts` | Confirmed accurate for steps 1–4 (through "verify"). **Step 5 in `intent.ts` is "render the sequence as instructions" — there is no distinct step-6 "execute" asset.** `intent.ts`'s own hedge ("closest current implementation") is honest: execution is an implicit continuation the model is trusted to do afterward, unenforced by any hook or gate. TERMS.md's own list is also incomplete — `task.ts` and `derive.ts` are equally load-bearing (`derive` is `intent`'s own documented fallback) and aren't mentioned. |
-| **RecursivePraxis / `lambda diagnose`** | `src/assets/problem_templates.json`, diagnoses "AI Agent problems" | Accurate, and it's the cleanest, best-tested pattern in the repo (`tests/cli-commands/diagnose.test.ts`). But it now has an undocumented sibling — `lambda task` / `task_templates.json` — that TERMS.md doesn't mention at all (see §4). |
-| **AI Recursive Framework / REE** | Python quarry, "inspiration only" | Not audited here — TERMS.md itself frames this as out-of-repo prior art, and [`src/assets/NOTICE.md`](../src/assets/NOTICE.md) is the checked-in policy governing how it may be used. No code claim to verify. |
+| **Lambda Engine** (reasoning guide via 20 operators, forced on the agent) | `src/engine/*` | Nothing forces it. `src/engine/*` is real (planning/execution/trace/replay/eval) but has no agent-facing prose and is explicitly fenced off. The one thing that *is* "always true" state-transition enforcement is `src/kernel/session.ts` + the `legality-gate.ts` hook — a different module than the one THE_IDEA.md names. |
+| **Praxis Workflow** (intent → diagnose → analyze → execute) | `src/init/skills/intent.ts`, `diagnose.ts`, `analyze.ts` | Confirmed accurate for steps 1–4 (through "verify"). **Step 5 in `intent.ts` is "render the sequence as instructions" — there is no distinct step-6 "execute" asset.** `intent.ts`'s own hedge ("closest current implementation") is honest: execution is an implicit continuation the model is trusted to do afterward, unenforced by any hook or gate. THE_IDEA.md's own list is also incomplete — `task.ts` and `derive.ts` are equally load-bearing (`derive` is `intent`'s own documented fallback) and aren't mentioned. |
+| **RecursivePraxis / `lambda diagnose`** | `src/assets/problem_templates.json`, diagnoses "AI Agent problems" | Accurate, and it's the cleanest, best-tested pattern in the repo (`tests/cli-commands/diagnose.test.ts`). But it now has an undocumented sibling — `lambda task` / `task_templates.json` — that THE_IDEA.md doesn't mention at all (see §4). |
+| **AI Recursive Framework / REE** | Python quarry, "inspiration only" | Not audited here — THE_IDEA.md itself frames this as out-of-repo prior art, and [`src/assets/NOTICE.md`](../src/assets/NOTICE.md) is the checked-in policy governing how it may be used. No code claim to verify. |
 
 ---
 
@@ -53,10 +53,10 @@ Ordered roughly by how much it affects an actual AI agent's behavior, most conse
 - **Verdict**: intent-mismatch (see §1) — real, tested (`tests/engine.test.ts`, 598 lines), actively developed, but structurally invisible to any agent following the installed skill/command surface.
 - **Evidence**: `src/cli.ts:12,17,29-32,368-443`; absence confirmed by grep across `src/init/skills/*.ts` and `src/init/commands/*.ts`; explicit exclusion at `src/init/shared/epistemic-footer.ts:17`.
 
-### 3.2 `lambda task` is a structural clone of `lambda diagnose`, and isn't in TERMS.md
+### 3.2 `lambda task` is a structural clone of `lambda diagnose`, and isn't in THE_IDEA.md
 
 - **What**: `src/cli-commands/task.ts` reimplements `diagnose.ts`'s exact pipeline (lookup → `classifyAttractor` ×2 → `suggestTransitionOperators` → `solve` → print) against a second JSON file (`task_templates.json`) with fields renamed (`diagnosis`→`rationale`). Confirmed line-for-line structural match.
-- **Verdict**: duplicate-of-`diagnose.ts`. Not a defect in isolation — it's well tested (`tests/cli-commands/task.test.ts`) and has a proper installed skill (`src/init/skills/task.ts`) — but it's a second bespoke implementation of the same four-step pipeline where a shared helper (`runTemplateLookup(templates, key, json)`) would remove the duplication. Also: TERMS.md's RecursivePraxis section names `lambda diagnose`/`problem_templates.json` as *the* AI-agent-problem-diagnosis surface and says nothing about a parallel "recurring engineering work" template system — this is scope the vocabulary document hasn't caught up to.
+- **Verdict**: duplicate-of-`diagnose.ts`. Not a defect in isolation — it's well tested (`tests/cli-commands/task.test.ts`) and has a proper installed skill (`src/init/skills/task.ts`) — but it's a second bespoke implementation of the same four-step pipeline where a shared helper (`runTemplateLookup(templates, key, json)`) would remove the duplication. Also: THE_IDEA.md's RecursivePraxis section names `lambda diagnose`/`problem_templates.json` as *the* AI-agent-problem-diagnosis surface and says nothing about a parallel "recurring engineering work" template system — this is scope the vocabulary document hasn't caught up to.
 - **Evidence**: `src/cli-commands/task.ts:1-65` vs `src/cli-commands/diagnose.ts:1-74`.
 
 ### 3.3 One genuine duplicate function inside the kernel
@@ -137,12 +137,12 @@ Separately, several session-mutation commands have only a "the flag exists in `-
 
 ### 4.1 `src/kernel/` — the formal operator model and state machine (15 files, ~2284 lines)
 
-The actual substrate of "the 20 controlled rupture operators" and the real state-transition enforcement, despite being unnamed anywhere in TERMS.md.
+The actual substrate of "the 20 controlled rupture operators" and the real state-transition enforcement, despite being unnamed anywhere in THE_IDEA.md.
 
 | File | Role | Wired? | Verdict |
 |---|---|---|---|
 | `types.ts`, `index.ts` | Operator alphabet, `Session`/`DissipationState` types, public barrel | Yes, universal | clean |
-| `session.ts` | `legalNext`, `step`, `bind`, HALIRA Mode-2 escalation — the real enforcement TERMS.md attributes to `legality-gate.ts` | Yes — `cli-commands/gate.ts`, `step.ts`, `ir/compile.ts`, etc. | clean (see §1 for the citation mismatch) |
+| `session.ts` | `legalNext`, `step`, `bind`, HALIRA Mode-2 escalation — the real enforcement THE_IDEA.md attributes to `legality-gate.ts` | Yes — `cli-commands/gate.ts`, `step.ts`, `ir/compile.ts`, etc. | clean (see §1 for the citation mismatch) |
 | `constraints.ts` | `violatesHardConstraint`, `violatesSequenceEndConstraint`, `trailingRunLength` | Yes | clean, except its own `legalNext` — see §3.3 |
 | `halira.ts` | Mode-2 recovery step table | Yes — `session.ts`, `ir/compile.ts` | clean |
 | `commutator.ts` | Reads vendored `|η_ij|` magnitudes | `commutatorMagnitude` yes; `commutatorPairCount` no (see §3.8) | mostly clean |
@@ -155,7 +155,7 @@ The actual substrate of "the 20 controlled rupture operators" and the real state
 | `formalism.ts` | Typed reader for `formalism.json` — single source of truth for operator/algebra data | Yes, universal | clean; documents a fixed "half-wired constants" bug |
 | `algebra.ts` | Parses `algebra_relations` into queryable statements; explicitly "not enforced, must not become enforcement" | Yes — `cli.ts`, `ir/chainReading.ts` | clean |
 
-### 4.2 `src/engine/` — TERMS.md's literal "Lambda Engine" (3 files, ~1277 lines)
+### 4.2 `src/engine/` — THE_IDEA.md's literal "Lambda Engine" (3 files, ~1277 lines)
 
 See §1 and §3.1. Real, CLI-wired (`lambda plan/run/inspect/replay/eval/promote`), tested (`tests/engine.test.ts`), actively developed — and completely absent from every AI-agent-facing asset.
 
@@ -203,11 +203,11 @@ All 17 files in `cli-commands/` are dispatched from `src/cli.ts`'s `main()` — 
 
 Inline (non-`cli-commands/`) branches also exist for `operators`, `check`, `plan`, `run`, `inspect`, `replay`, `eval`, `promote` (`src/cli.ts:219-443`) — an older, separate implementation pattern, not a defect, just inconsistent file organization relative to the newer per-file commands.
 
-Asset files in `src/assets/`: `problem_templates.json` (8 diagnosis templates, TERMS.md-named), `task_templates.json` (5 recurring-work templates, not TERMS.md-named), `formalism.json` (kernel's single source of truth), `commutator_skeleton.json` (vendored v2.1.0 measurement), `NOTICE.md` (provenance policy). All five are imported and used; none orphaned.
+Asset files in `src/assets/`: `problem_templates.json` (8 diagnosis templates, THE_IDEA.md-named), `task_templates.json` (5 recurring-work templates, not THE_IDEA.md-named), `formalism.json` (kernel's single source of truth), `commutator_skeleton.json` (vendored v2.1.0 measurement), `NOTICE.md` (provenance policy). All five are imported and used; none orphaned.
 
 ### 4.6 `src/init/` — installed AI-agent prose (43 files, ~2356 lines)
 
-All 9 `SKILLS` (`status`, `analyze`, `solve`, `diagnose`, `task`, `intent`, `derive`, `session`, `ir`) are installed, mirrored 1:1 into `COMMANDS` via `Command.mirroring()` (drift is structurally impossible by construction), and each verified accurate against its underlying CLI command's real flags/output shape — no stale instructions found beyond §3.10's count comment. `AGENTS` is empty (documents how to add one, has none). `RULES` holds one entry (`no-invented-measurement`, verified accurate — its cited Zod-strict-mode rejection behavior checks out against `src/mcp/tools.ts:45`). `HOOKS` holds one entry (`legality-gate`, real and accurate as a description of what it does, mismapped by TERMS.md as to *which* module it enforces — see §1). One MCP server (`recursive-praxis`, exposing the `derive`/`algebra` tool sets, confirmed dispatching to `lambda mcp`).
+All 9 `SKILLS` (`status`, `analyze`, `solve`, `diagnose`, `task`, `intent`, `derive`, `session`, `ir`) are installed, mirrored 1:1 into `COMMANDS` via `Command.mirroring()` (drift is structurally impossible by construction), and each verified accurate against its underlying CLI command's real flags/output shape — no stale instructions found beyond §3.10's count comment. `AGENTS` is empty (documents how to add one, has none). `RULES` holds one entry (`no-invented-measurement`, verified accurate — its cited Zod-strict-mode rejection behavior checks out against `src/mcp/tools.ts:45`). `HOOKS` holds one entry (`legality-gate`, real and accurate as a description of what it does, mismapped by THE_IDEA.md as to *which* module it enforces — see §1). One MCP server (`recursive-praxis`, exposing the `derive`/`algebra` tool sets, confirmed dispatching to `lambda mcp`).
 
 The install pipeline itself (`InitWizard.ts`, `registry.ts`, `write.ts`, `json-fragment.ts`, `config-flags.ts`, `WizardIO.ts`, the four `InitStep` subclasses) is clean, non-destructive by construction (managed markers for prose, whole-file content comparison for JSON), and matches its own documented 4-step model exactly.
 
@@ -234,6 +234,6 @@ Captured here because a "historical record" needs the transition, not just where
 ## 6. What this document deliberately does not claim
 
 Per the grounding rule, this inventory does not extend judgment to:
-- Whether TERMS.md's *intent* itself (forcing an AI agent to reason through the 20 operators) is a good design — that's the developer's call, and out of scope for a code/intent cross-check.
-- `docs/inspirations/`, `docs/explorations/`, the Python REE/AI-Recursive-Framework quarry — TERMS.md and `CONTRIBUTING.md` both frame these as historical/inspirational, not current behavior, and no code claim needed verifying against them.
-- Anything not reachable from `src/` — this document audits shipped code, not the Python source or `.cursor` rules TERMS.md mentions as prior art.
+- Whether THE_IDEA.md's *intent* itself (forcing an AI agent to reason through the 20 operators) is a good design — that's the developer's call, and out of scope for a code/intent cross-check.
+- `docs/inspirations/`, `docs/explorations/`, the Python REE/AI-Recursive-Framework quarry — THE_IDEA.md and `CONTRIBUTING.md` both frame these as historical/inspirational, not current behavior, and no code claim needed verifying against them.
+- Anything not reachable from `src/` — this document audits shipped code, not the Python source or `.cursor` rules THE_IDEA.md mentions as prior art.

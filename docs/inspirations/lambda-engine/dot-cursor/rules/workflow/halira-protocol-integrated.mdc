@@ -1,0 +1,337 @@
+---
+description: HALIRA Protocol with explicit operator sequence references, dissipation values, and trajectories for each step
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# HALIRA Protocol with Operator Integration
+
+HALIRA Protocol (7-step boot sequence) with explicit Controlled Rupture Operator mappings, dissipation values, and trajectories. This rule complements existing HALIRA Protocol rules by adding operator-aware guidance.
+
+## When to Apply
+
+Apply this rule when:
+- HALIRA Protocol is activated
+- Need operator-guided HALIRA execution
+- Want dissipation values and trajectories for each step
+- Require operator sequence references
+
+## HALIRA Step 1: ◊ Potentia
+
+**Operator Sequence:** 🌱 Seed  
+**Lambda:** 0.28  
+**Trajectory:** `∅ → S*`
+
+### Purpose
+
+Frame as undifferentiated potential, identify tensions. Don't jump to solutions - understand what's truly at stake.
+
+### Operator Guidance
+
+**🌱 Seed** (λ=0.28): Establish foundation for undifferentiated potential
+- Identify latent tensions
+- Frame as field of possibilities
+- Lowest dissipation operator (foundation)
+- Don't solve yet - establish the foundation
+
+### Action Items
+
+- Identify latent tensions
+- Understand what's truly at stake
+- Recognize the field of possibilities
+- Use Seed to frame the problem as potential, not solution
+
+### Reference
+
+See: `halira-operator-mapping.mdc` for detailed Seed operator guidance
+
+---
+
+## HALIRA Step 2: ◎ Boundary
+
+**Operator Sequence:** 📍 Axis  
+**Lambda:** 0.31  
+**Trajectory:** `S* → S*`
+
+### Purpose
+
+Draw necessary distinctions, define components. Establish coordinate system and structural alignment.
+
+### Operator Guidance
+
+**📍 Axis** (λ=0.31): Draw necessary distinctions
+- Define core components
+- Identify constraints
+- Map relationships
+- Establish boundaries
+- Create structural alignment
+
+### Action Items
+
+- Define core components
+- Identify constraints
+- Map relationships
+- Establish boundaries
+- Use Axis to define boundaries and components
+
+### Reference
+
+See: `halira-operator-mapping.mdc` for detailed Axis operator guidance
+
+---
+
+## HALIRA Step 3: ↻ Recursion
+
+**Operator Sequence:** ⟲ Meta  
+**Lambda:** 0.80  
+**Trajectory:** `S* → S*`
+
+### Purpose
+
+Engage self-reference, find strange loops. Model the model. Question your own assumptions.
+
+### Operator Guidance
+
+**⟲ Meta** (λ=0.80): Engage self-reference
+- Fold logic back on itself
+- Model the model
+- Find circular dependencies
+- Question your own assumptions
+- Engage recursive patterns
+
+### ⚠️ Hard Constraint
+
+**Maximum 2 consecutive Meta applications.** Exceeding this causes infinite reflection loops and system collapse.
+
+### Action Items
+
+- Fold logic back on itself
+- Model the model
+- Find circular dependencies
+- Question your own assumptions
+- **Stop after 2 applications** - don't loop infinitely
+
+### Reference
+
+See: `halira-operator-mapping.mdc` for detailed Meta operator guidance and constraints
+
+---
+
+## HALIRA Step 4: ⧉ Integration
+
+**Operator Sequence:** 🕸️ Weave  
+**Lambda:** 0.33  
+**Trajectory:** `S* → J=0`
+
+### Purpose
+
+Weave perspectives, use superposition, create perfect J=0 state. Hold competing models simultaneously.
+
+### Operator Guidance
+
+**🕸️ Weave** (λ=0.33): Weave perspectives into coherent whole
+- Hold competing models simultaneously (superposition)
+- Weave into coherent whole
+- Generate "perfect" solution within paradigm
+- Avoid premature collapse
+
+### Action Items
+
+- Hold competing models simultaneously (use ⊕ Superposition)
+- Weave into coherent whole
+- Generate the "perfect" solution within current paradigm
+- Avoid premature collapse
+- Use Weave to integrate competing perspectives
+
+### Reference
+
+See: `halira-operator-mapping.mdc` for detailed Weave operator guidance
+
+---
+
+## HALIRA Step 5: J' Anomaly Detection
+
+**Operator Sequence:** ¬ Non  
+**Lambda:** 0.90  
+**Trajectory:** `J=0 → S*` or `S* → ∅`
+
+### Purpose
+
+**CRITICAL** - Attack your own design, find irreducible flaw. This is the engine of the entire process.
+
+### Operator Guidance
+
+**¬ Non** (λ=0.90): Attack your own design
+- Become the adversary
+- Attack the coherent structure you just built
+- Find the ONE irreducible flaw (Jacobi Anomaly)
+- Structural rupture, highest dissipation
+- **CRITICAL:** DO NOT SKIP THIS STEP
+
+### ⚠️ Hard Constraint
+
+**Never use Non after Meta.** The sequence `Meta ∘ Non` causes system collapse. If Meta was used in Step 3, use alternative approach for Step 5.
+
+### Action Items
+
+- Become the adversary
+- Attack the coherent structure you just built
+- Find the ONE irreducible flaw (Jacobi Anomaly)
+- This is the engine of the entire process
+- **DO NOT SKIP THIS STEP**
+- Use Non to find the one irreducible flaw
+
+### Reference
+
+See: `halira-operator-mapping.mdc` for detailed Non operator guidance and constraint handling
+
+---
+
+## HALIRA Step 6: l₃ Rupture Navigation
+
+**Operator Sequence:** ∥ Para ∘ ⊥ Ortho  
+**Lambda Eff:** 0.48  
+**Trajectory:** `S* → S*`
+
+### Purpose
+
+If anomaly found, construct paradigm shift. First try duality (opposite perspective), then if that fails, construct new paradigm.
+
+### Operator Guidance
+
+**Two-Step Process:**
+
+**Step 6a: Try Duality (⊥ Ortho)**
+- Attempt opposite/complementary perspective
+- Reframe in dual formulation
+- See if anomaly resolves
+- If Ortho resolves anomaly → proceed to Step 7
+- If Ortho fails → proceed to Step 6b
+
+**Step 6b: Construct Paradigm Shift (∥ Para)**
+- Construct paradigm shift operator
+- Create new, higher-order logic
+- Structure that absorbs the paradox
+- This is irreversible - new paradigm emerges
+
+### Action Items
+
+- First, apply ⊥ (Duality): Try opposite/complementary perspective
+- If ⊥ fails, apply l₃: Construct paradigm shift operator
+- Output must be first utterance from NEW, higher-order logic
+- Structure that absorbs the paradox
+- The anomaly made this necessary - don't patch, transcend
+
+### Reference
+
+See: `halira-operator-mapping.mdc` for detailed Rupture Navigation guidance
+
+---
+
+## HALIRA Step 7: ∞ Recognition
+
+**Operator Sequence:** 🔗 Bind  
+**Lambda:** 0.38  
+**Trajectory:** `S* → S*`
+
+### Purpose
+
+Present as new invariant (S*) that emerged. Not a "solution" but a new invariant.
+
+### Operator Guidance
+
+**🔗 Bind** (λ=0.38): Present as new invariant
+- More complex than before
+- Absorbs the contradiction
+- Becomes new foundation
+- Structural binding creates cohesion
+
+### Action Items
+
+- Present as new invariant (S*) that emerged
+- Not a "solution" but a new invariant
+- More complex than before
+- Absorbs the contradiction
+- Becomes new foundation
+- Use Bind to create cohesive new structure
+
+### Reference
+
+See: `halira-operator-mapping.mdc` for detailed Bind operator guidance
+
+---
+
+## Complete HALIRA Sequence
+
+**Full Operator Sequence:** `Seed ∘ Axis ∘ Meta ∘ Weave ∘ Non ∘ Para ∘ Ortho ∘ Bind`  
+**Lambda Eff:** 0.52  
+**Trajectory:** `∅ → S* → J=0 → S* → S*`
+
+### Step-by-Step Summary
+
+1. **🌱 Seed** (λ=0.28): Potentia - Foundation
+2. **📍 Axis** (λ=0.31): Boundary - Structure
+3. **⟲ Meta** (λ=0.80): Recursion - Self-reference
+4. **🕸️ Weave** (λ=0.33): Integration - Coherence
+5. **¬ Non** (λ=0.90): Anomaly - Rupture
+6. **∥ Para ∘ ⊥ Ortho** (λ_eff=0.48): Rupture Navigation - Paradigm shift
+7. **🔗 Bind** (λ=0.38): Recognition - New invariant
+
+### ⚠️ Critical Constraints
+
+- **Meta Constraint:** Maximum 2 consecutive Meta applications (Step 3)
+- **Non Constraint:** Never Non after Meta (if Meta used, use alternative for Step 5)
+- **Completeness:** Complete all 7 steps - don't skip anomaly detection (Step 5)
+
+### Trajectory Explanation
+
+- **∅ → S***: Seed establishes foundation (potential to productive)
+- **S* → S***: Axis maintains productive state through structure
+- **S* → S***: Meta maintains productive state through reflection
+- **S* → J=0**: Weave creates coherent solution (productive to stable)
+- **J=0 → S***: Non breaks coherence to find flaw (stable to productive)
+- **S* → S***: Para/Ortho navigates rupture (productive maintained)
+- **S* → S***: Bind recognizes new invariant (productive maintained)
+
+---
+
+## Guidelines
+
+### When to Use HALIRA Protocol
+
+- Foundational contradictions detected
+- Irreducible paradoxes encountered
+- Current paradigm insufficient
+- Requires paradigm shift
+- Mode 2 operation triggered
+
+### Operator Selection Process
+
+1. **Determine HALIRA Step**: Which step are you on?
+2. **Select Operator**: Use mapping above
+3. **Check Constraints**: Verify Meta/Non constraints
+4. **Apply Operator**: Execute operator guidance
+5. **Monitor Trajectory**: Ensure movement toward desired state
+6. **Proceed to Next Step**: Complete all 7 steps
+
+### Constraint Handling
+
+**If Meta was used in Step 3:**
+- **Option 1:** Skip Step 5 (Non) and proceed directly to Step 6
+- **Option 2:** Use alternative operator for Step 5 (e.g., Para for anomaly detection)
+- **Option 3:** Restart HALIRA with different operator sequence
+
+**If stuck in Meta loop:**
+- Stop Meta applications immediately
+- Proceed to Step 4 (Weave) to integrate
+- Don't exceed 2 consecutive Meta applications
+
+---
+
+## References
+
+- See: `halira-operator-mapping.mdc` for detailed operator mappings
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `.cursor/rules/workflow/halira-protocol.mdc` for HALIRA Protocol details (reference)
+- See: `.cursor/rules/general/operators-core.mdc` for complete operator definitions (reference)

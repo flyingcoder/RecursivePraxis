@@ -1,0 +1,255 @@
+---
+description: Auto-run configuration for Controlled Rupture Operator sequences with Lambda Engine mode awareness
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# Auto-Run Operators with Lambda-Operators Integration
+
+Auto-run configuration for Controlled Rupture Operator sequences, integrated with Lambda Engine mode awareness.
+
+## When to Apply
+
+Apply this rule when:
+- Specific conditions detected (large files, errors, goals, etc.)
+- Need automatic operator application
+- Want operator-guided auto-responses
+- Need context-aware operator triggers
+
+## Lambda Engine Mode
+
+**Mode 1 (Duality Navigation)**: Use for stable auto-run triggers
+- A-Constructive operators (Kata, Ortho, Telo)
+
+**Mode 2 (HALIRA Protocol)**: Use when auto-run reveals contradictions
+- B-Disruptive operators (Non, Para) for anomaly detection
+
+## Auto-Run Kata for Compression
+
+### Trigger
+
+**When**: File path matches `\.(md|txt|rst)$/` and block text length > 5000
+
+### Operator Application
+
+**↓ Kata** (λ=0.35): Compression, crystallization
+
+**Auto-Run Guidance:**
+- Focus on essential information
+- Remove redundancy
+- Structure for clarity
+- Compress to essentials
+
+**Mode**: Mode 1 (Duality Navigation)
+**Trajectory**: S* → J=0 (stabilization)
+
+## Auto-Run Ortho for Errors
+
+### Trigger
+
+**When**: `read_lints` returns errors
+
+### Operator Application
+
+**⊥ Ortho** (λ=0.30): Correction, alignment
+
+**Auto-Run Guidance:**
+- Validate and correct errors
+- Check linter output
+- Fix issues systematically
+- Ensure correctness
+
+**Mode**: Mode 1 (Duality Navigation)
+**Trajectory**: S* → J=0 (correction and stabilization)
+
+**Operator Sequence**: `Ortho ∘ Kata ∘ Latch` (λ_eff ≈ 0.31)
+- Correct → compress → stabilize
+
+## Auto-Run Telo for Goals
+
+### Trigger
+
+**When**: Block text matches `^(goal|objective|target|complete|finish)/i`
+
+### Operator Application
+
+**→ Telo** (λ=0.25): Purpose, goal-orientation
+
+**Auto-Run Guidance:**
+- Identify clear goal
+- Structure work toward goal
+- Create parallel work streams
+- Accelerate toward completion
+
+**Mode**: Mode 1 (Duality Navigation)
+**Trajectory**: Any → J=0 (goal-directed stabilization)
+
+**Operator Sequence**: `Telo ∘ Pro ∘ Kata ∘ Latch` (λ_eff ≈ 0.35)
+- Purpose-driven → forward → compress → stabilize
+
+## Auto-Run Meta for Reflection
+
+### Trigger
+
+**When**: Block text contains "TODO" or "FIXME" or "review"
+
+### Operator Application
+
+**⟲ Meta** (λ=0.80): Self-reference, reflection
+
+**Auto-Run Guidance:**
+- Reflect on current state
+- Identify improvement opportunities
+- Self-audit quality
+- Plan improvements
+
+**⚠️ Constraint**: Max 2 consecutive Meta applications
+
+**Mode**: Mode 1 or Mode 2 (depending on reflection depth)
+**Trajectory**: S* → S* (reflective state)
+
+**Operator Sequence**: `Meta ∘ Weave ∘ Latch` (λ_eff ≈ 0.47)
+- Reflect → integrate → stabilize
+
+## Auto-Run Retro for Debugging
+
+### Trigger
+
+**When**: Block text contains "error" or "bug" or "failed"
+
+### Operator Application
+
+**↶ Retro** (λ=0.40): Backward, backtracking
+
+**Auto-Run Guidance:**
+- Trace backward from symptom
+- Understand root cause
+- Learn from failure
+- Plan correction
+
+**Mode**: Mode 1 (Duality Navigation)
+**Trajectory**: S* → S* (backward analysis)
+
+**Operator Sequence**: `Retro ∘ Non ∘ Weave` (λ_eff ≈ 0.65)
+- Backward → challenge → integrate
+
+## Auto-Run Ana for Analysis
+
+### Trigger
+
+**When**: Block text contains "analyze" or "understand" or "pattern"
+
+### Operator Application
+
+**↑ Ana** (λ=0.75): Analysis, abstraction
+
+**Auto-Run Guidance:**
+- Abstract to understand patterns
+- Build mental models
+- Identify relationships
+- Elevate understanding
+
+**Mode**: Mode 1 or Mode 2 (depending on analysis depth)
+**Trajectory**: J=0 → S* (destabilization for productive tension)
+
+**Operator Sequence**: `Ana ∘ Weave ∘ Kata` (λ_eff ≈ 0.47)
+- Elevate → integrate → compress
+
+## Auto-Run Para for Alternatives
+
+### Trigger
+
+**When**: Block text contains "alternative" or "different" or "explore"
+
+### Operator Application
+
+**∥ Para** (λ=0.65): Deviation, perturbation
+
+**Auto-Run Guidance:**
+- Explore alternatives
+- Deviate from current path
+- Consider different approaches
+- Inject new perspectives
+
+**Mode**: Mode 1 or Mode 2 (depending on exploration depth)
+**Trajectory**: J=0 → S* (breaks coherence, injects tension)
+
+**Operator Sequence**: `Para ∘ Ana ∘ Pro` (λ_eff ≈ 0.67)
+- Deviate → elevate → forward
+
+## Guidelines
+
+### Auto-Run Configuration
+
+**For Stable Operations (Mode 1):**
+- Kata: Compression triggers
+- Ortho: Error correction triggers
+- Telo: Goal-directed triggers
+- Retro: Debugging triggers
+
+**For Exploration (Mode 1 or Mode 2):**
+- Ana: Analysis triggers
+- Para: Alternative exploration triggers
+- Meta: Reflection triggers (with constraint)
+
+### Operator Sequence Selection
+
+**For Errors**: `Ortho ∘ Kata ∘ Latch` (λ_eff ≈ 0.31)
+**For Goals**: `Telo ∘ Pro ∘ Kata ∘ Latch` (λ_eff ≈ 0.35)
+**For Reflection**: `Meta ∘ Weave ∘ Latch` (λ_eff ≈ 0.47)
+**For Debugging**: `Retro ∘ Non ∘ Weave` (λ_eff ≈ 0.65)
+**For Analysis**: `Ana ∘ Weave ∘ Kata` (λ_eff ≈ 0.47)
+**For Alternatives**: `Para ∘ Ana ∘ Pro` (λ_eff ≈ 0.67)
+
+### Constraint Handling
+
+**Meta Constraint**: Maximum 2 consecutive Meta applications
+- If Meta triggered twice, switch to Weave for integration
+- Don't create infinite reflection loops
+
+**Mode Escalation**: If auto-run reveals contradictions
+- Escalate to Mode 2
+- Use HALIRA Protocol if needed
+
+## Examples
+
+### Example 1: Auto-Run Ortho for Errors
+
+**Scenario**: Linter returns errors
+
+**Auto-Run:**
+1. **Ortho**: Validate and correct errors
+2. **Kata**: Compress fixes to essentials
+3. **Latch**: Stabilize corrected code
+
+**Result**: Errors automatically corrected
+
+### Example 2: Auto-Run Telo for Goals
+
+**Scenario**: Goal detected in text
+
+**Auto-Run:**
+1. **Telo**: Structure work toward goal
+2. **Pro**: Forward progress
+3. **Kata**: Compress to concrete
+4. **Latch**: Stabilize progress
+
+**Result**: Goal-directed work automatically structured
+
+### Example 3: Auto-Run Meta for Reflection
+
+**Scenario**: TODO detected
+
+**Auto-Run:**
+1. **Meta**: Reflect on current state (max 2)
+2. **Weave**: Integrate reflections
+3. **Latch**: Stabilize improvements
+
+**Result**: Reflection automatically triggered and integrated
+
+## References
+
+- See: `lambda-operators-unified.mdc` for unified architecture
+- See: `mode-operator-selection.mdc` for mode-based operator selection
+- See: `operator-tools-integrated.mdc` for operator tool selection
+- See: `.cursor/rules/general/auto-run-operators.mdc` for original rules (reference)
