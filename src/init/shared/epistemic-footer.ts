@@ -14,5 +14,4 @@ export const EPISTEMIC_FOOTER = `
 - λ values are **authored** constants unless a CLI payload explicitly marks a field as measured. Never describe them as empirical measurements in your own words.
 - \`record\`, \`validate\`, \`score\`, and \`revise\` are reserved verbs with no implementation in this build. Do not invoke them, and do not simulate or narrate what they would do.
 - This skill only teaches you to call and interpret the existing \`lambda\` CLI. It is not a planning or delivery workflow: it does not track specs, changes, tasks, or "done" status. Use your project's own delivery process for that.
-- \`lambda run\` invokes a model host and has a broader capability surface than the commands above. It is intentionally out of scope for this skill — do not treat it as a default workflow step.
 `.trim();
